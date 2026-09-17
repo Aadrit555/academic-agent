@@ -57,12 +57,23 @@ class ValidationService:
             with open(temp_file, "w", encoding="utf-8") as f:
                 f.write(code_content)
 
+            # Isolated environment without exposing API keys or secrets
+            isolated_env = {
+                "PATH": os.environ.get("PATH", ""),
+                "SYSTEMROOT": os.environ.get("SYSTEMROOT", ""),
+                "TEMP": temp_dir,
+                "TMP": temp_dir,
+                "COMSPEC": os.environ.get("COMSPEC", ""),
+                "PATHEXT": os.environ.get("PATHEXT", ""),
+                "WINDIR": os.environ.get("WINDIR", ""),
+            }
+
             try:
                 if file_type == ".c":
                     out_binary = Path(temp_dir) / ("test_bin.exe" if sys.platform == "win32" else "test_bin")
                     # MinGW gcc
                     compile_cmd = ["gcc", "-Wall", "-Wextra", "-o", str(out_binary), str(temp_file)]
-                    res = subprocess.run(compile_cmd, capture_output=True, text=True, timeout=timeout)
+                    res = subprocess.run(compile_cmd, capture_output=True, text=True, timeout=timeout, env=isolated_env, cwd=temp_dir)
                     compiler_output = (res.stdout + "\n" + res.stderr).strip()
 
                     if res.returncode != 0:
@@ -74,7 +85,7 @@ class ValidationService:
                         checklist[3]["details"] = "Compiled cleanly with gcc -Wall -Wextra"
 
                         # Run executable test
-                        run_res = subprocess.run([str(out_binary)], capture_output=True, text=True, timeout=timeout)
+                        run_res = subprocess.run([str(out_binary)], capture_output=True, text=True, timeout=timeout, env=isolated_env, cwd=temp_dir)
                         test_output = (run_res.stdout + "\n" + run_res.stderr).strip()
                         if run_res.returncode == 0:
                             checklist[4]["passed"] = True
@@ -89,12 +100,12 @@ class ValidationService:
                 elif file_type == ".cpp":
                     out_binary = Path(temp_dir) / ("test_bin.exe" if sys.platform == "win32" else "test_bin")
                     compile_cmd = ["g++", "-Wall", "-Wextra", "-o", str(out_binary), str(temp_file)]
-                    res = subprocess.run(compile_cmd, capture_output=True, text=True, timeout=timeout)
+                    res = subprocess.run(compile_cmd, capture_output=True, text=True, timeout=timeout, env=isolated_env, cwd=temp_dir)
                     compiler_output = (res.stdout + "\n" + res.stderr).strip()
 
                     if res.returncode == 0:
                         checklist[3]["passed"] = True
-                        run_res = subprocess.run([str(out_binary)], capture_output=True, text=True, timeout=timeout)
+                        run_res = subprocess.run([str(out_binary)], capture_output=True, text=True, timeout=timeout, env=isolated_env, cwd=temp_dir)
                         test_output = run_res.stdout.strip()
                         checklist[4]["passed"] = (run_res.returncode == 0)
                         checklist[5]["passed"] = (run_res.returncode == 0)
@@ -104,7 +115,7 @@ class ValidationService:
 
                 elif file_type == ".py":
                     # Syntax & compile check
-                    res = subprocess.run([sys.executable, "-m", "py_compile", str(temp_file)], capture_output=True, text=True, timeout=timeout)
+                    res = subprocess.run([sys.executable, "-m", "py_compile", str(temp_file)], capture_output=True, text=True, timeout=timeout, env=isolated_env, cwd=temp_dir)
                     compiler_output = (res.stdout + "\n" + res.stderr).strip()
                     if res.returncode != 0:
                         error_details = f"Python syntax error:\n{compiler_output}"
@@ -114,7 +125,7 @@ class ValidationService:
                         checklist[3]["details"] = "Python bytecode compilation succeeded"
 
                         # Execution run
-                        run_res = subprocess.run([sys.executable, str(temp_file)], capture_output=True, text=True, timeout=timeout)
+                        run_res = subprocess.run([sys.executable, str(temp_file)], capture_output=True, text=True, timeout=timeout, env=isolated_env, cwd=temp_dir)
                         test_output = (run_res.stdout + "\n" + run_res.stderr).strip()
                         if run_res.returncode == 0:
                             checklist[4]["passed"] = True
@@ -126,7 +137,7 @@ class ValidationService:
                             error_details = f"Runtime exception:\n{test_output}"
 
                 elif file_type == ".java":
-                    res = subprocess.run(["javac", str(temp_file)], capture_output=True, text=True, timeout=timeout)
+                    res = subprocess.run(["javac", str(temp_file)], capture_output=True, text=True, timeout=timeout, env=isolated_env, cwd=temp_dir)
                     compiler_output = (res.stdout + "\n" + res.stderr).strip()
                     if res.returncode == 0:
                         checklist[3]["passed"] = True

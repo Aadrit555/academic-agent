@@ -127,3 +127,47 @@ def test_dynamic_assignment_specification(db_session, test_user_and_course):
     assert len(spec["required_tests"]) >= 2
     assert any("Edge case" in t for t in spec["required_tests"])
 
+def test_dynamic_languages_specification(db_session, test_user_and_course):
+    user, course = test_user_and_course
+    # Test C++
+    cw_cpp = Coursework(
+        user_id=user.id,
+        course_id=course.id,
+        classroom_course_id="c1",
+        coursework_id="w_cpp",
+        title="Matrix Multiplication in C++",
+        description="Implement parallel matrix multiplication in C++"
+    )
+    spec_cpp = GeneratorService.extract_assignment_specification(cw_cpp)
+    assert spec_cpp["language"] == "cpp"
+    assert any(".cpp" in f for f in spec_cpp["required_files"])
+    assert "g++" in spec_cpp["compiler_flags"]
+
+    # Test Java
+    cw_java = Coursework(
+        user_id=user.id,
+        course_id=course.id,
+        classroom_course_id="c1",
+        coursework_id="w_java",
+        title="OOP Banking System in Java",
+        description="Implement accounts and transactions using Java"
+    )
+    spec_java = GeneratorService.extract_assignment_specification(cw_java)
+    assert spec_java["language"] == "java"
+    assert "Main.java" in spec_java["required_files"]
+    assert "javac" in spec_java["compiler_flags"]
+
+    # Test General C (non-merge)
+    cw_gen_c = Coursework(
+        user_id=user.id,
+        course_id=course.id,
+        classroom_course_id="c1",
+        coursework_id="w_genc",
+        title="Producer Consumer Problem",
+        description="Write solution in C using POSIX semaphores."
+    )
+    spec_gen_c = GeneratorService.extract_assignment_specification(cw_gen_c)
+    assert spec_gen_c["language"] == "c"
+    assert any(f.endswith(".c") for f in spec_gen_c["required_files"])
+    assert "MergeSort.c" not in spec_gen_c["required_files"]
+
