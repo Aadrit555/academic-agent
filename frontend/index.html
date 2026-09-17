@@ -4,336 +4,444 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Google Classroom - Academic Agent Companion</title>
+  <title>Academic Agent - SRM AP Autonomous Academic Operating System</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="stylesheet" href="/css/styles.css">
 </head>
 
 <body>
 
-  <!-- Google Classroom Top Bar -->
-  <header class="gc-topbar">
-    <div class="gc-brand">
-      <div class="gc-icon-badge" title="Google Classroom">GC</div>
-      <div class="gc-title-group">
-        <h1 class="gc-title" id="classroom-active-course-title">Google Classroom</h1>
-        <select id="classroom-course-select" class="gc-course-select" title="Switch Enrolled Course">
-          <option value="">Loading courses...</option>
-        </select>
+  <!-- Top Navigation & Brand Header -->
+  <header class="app-header">
+    <div class="app-brand">
+      <div class="app-logo-badge" title="Academic Agent">AA</div>
+      <div class="app-title-group">
+        <div class="app-title">
+          <span>ACADEMIC AGENT</span>
+          <span class="app-badge-tag">SRM AP</span>
+        </div>
+        <span class="app-subtitle">Autonomous Academic Operating System</span>
       </div>
     </div>
 
-    <nav class="gc-nav-tabs" aria-label="Classroom Navigation">
-      <div class="gc-tab active" data-gc-tab="stream">Stream</div>
-      <div class="gc-tab" data-gc-tab="classwork">Classwork</div>
-      <div class="gc-tab" data-gc-tab="people">People</div>
-      <div class="gc-tab" data-gc-tab="grades">Grades</div>
-    </nav>
-
-    <div class="gc-controls">
-      <div class="auth-chip connected" id="classroom-auth-status"
-        style="border-color: rgba(52, 211, 153, 0.4); background: rgba(16, 185, 129, 0.12);">
+    <!-- Live Integrations Status Indicators in Header -->
+    <div class="header-status-group">
+      <!-- SRM AP ERP Status Chip -->
+      <div class="auth-chip" id="classroom-auth-status" title="SRM AP eVarsity Status"
+        onclick="openModal('integrations-modal')">
         <span class="chip-dot" style="background:#10b981;"></span>
-        <span id="google-user-email" style="font-weight:600; color:#34d399;">AADRIT · AP25110010004 (Live ERP)</span>
+        <span id="google-user-email">Checking ERP...</span>
       </div>
-      <button class="btn btn-primary btn-sm" id="open-integrations-btn"
-        title="Manage SRM AP ERP & Google Classroom Integrations">Integrations (ERP & Google)</button>
-      <button class="btn btn-secondary btn-sm" id="account-modal-btn" title="Student Account & Profile">Account</button>
+
+      <!-- Google Classroom Status Chip -->
+      <div class="auth-chip" id="header-google-status" title="Google Classroom Status"
+        onclick="openModal('integrations-modal')">
+        <span class="chip-dot"></span>
+        <span id="google-status-text">Google Classroom</span>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="header-actions">
+      <button class="btn btn-secondary btn-sm" id="open-integrations-btn" title="Manage Integrations">
+        <span>Integrations Hub</span>
+      </button>
+      <button class="btn btn-secondary btn-sm" id="account-modal-btn" title="Account Settings">
+        <span>Account</span>
+      </button>
       <button class="btn btn-secondary btn-sm" id="open-command-palette-btn" title="Command Palette (Ctrl+K)">
         <span class="palette-kbd">Ctrl+K</span>
       </button>
-      <button class="btn btn-secondary btn-sm" id="toggle-addon-expansion-btn"
-        title="Toggle Studio Expansion View">Expand Studio</button>
-      <!-- Kept for automated compatibility without cluttering live view -->
-      <button class="btn btn-secondary btn-sm" id="connect-demo-btn" style="display:none;" title="Connect Demo">Connect
-        Demo</button>
-      <button class="btn btn-secondary btn-sm" id="start-expo-demo-btn" style="display:none;" title="Run Demo Tour">Run
-        Demo Tour</button>
     </div>
   </header>
 
-  <!-- Master Classroom Workspace Layout -->
-  <div class="classroom-layout" id="classroom-workspace-layout">
+  <!-- Primary Navigation Tabs Bar -->
+  <nav class="app-nav-bar" aria-label="Main Navigation">
+    <button class="nav-tab-btn active addon-nav-tab" data-tab="home">
+      <span>Overview</span>
+    </button>
+    <button class="nav-tab-btn addon-nav-tab" data-tab="erp">
+      <span>SRM AP ERP</span>
+    </button>
+    <button class="nav-tab-btn addon-nav-tab" data-tab="next-class">
+      <span>Timetable</span>
+    </button>
+    <button class="nav-tab-btn addon-nav-tab" data-tab="classroom">
+      <span>Google Classroom</span>
+    </button>
+    <button class="nav-tab-btn addon-nav-tab" data-tab="assignments">
+      <span>Compiler Studio</span>
+    </button>
+    <button class="nav-tab-btn addon-nav-tab" data-tab="study">
+      <span>Study Brain (RAG)</span>
+    </button>
+    <button class="nav-tab-btn addon-nav-tab" data-tab="attendance">
+      <span>Lens Attendance</span>
+    </button>
+  </nav>
 
-    <!-- Google Classroom Main Surface -->
-    <main class="gc-main-surface" id="gc-main-surface">
-      <!-- Course Banner -->
-      <section class="course-banner" id="course-banner-section">
-        <div>
-          <h2 class="course-banner-title" id="course-banner-title">DESIGN AND ANALYSIS OF ALGORITHMS - CSE 204</h2>
-          <p class="course-banner-sub" id="course-banner-sub">Faculty: Dr. Dipayan Chakraborty, Dr. S R Ngamwal Anal ·
-            Room C 504 / C 801</p>
+  <!-- Main Content Workspace -->
+  <main class="app-main">
+
+    <!-- TAB 1: OVERVIEW -->
+    <section class="view-panel active addon-view-panel" id="addon-view-home">
+      <!-- Live Next Class Hero Card -->
+      <div class="hero-next-class">
+        <div class="hero-class-info">
+          <div class="hero-class-meta">
+            <span class="status-pill status-ready" id="home-class-status-badge">NEXT CLASS</span>
+            <span id="home-next-time"
+              style="font-family: var(--font-mono); font-size: 13px; color: #93c5fd; font-weight: 600;">Loading
+              schedule...</span>
+          </div>
+          <h2 class="hero-subject-name" id="home-next-subject">Loading current timetable...</h2>
+          <div class="hero-details-row">
+            <div>Room: <b class="room-pill" id="home-next-room">--</b></div>
+            <div class="faculty-tag" id="home-next-faculty"></div>
+          </div>
         </div>
-        <div class="course-meta-tags" id="course-meta-tags">
-          <span class="course-meta-tag" id="course-meta-semester">III SEMESTER</span>
-          <span class="course-meta-tag" id="course-meta-section">SECTION K</span>
-          <span class="course-meta-tag" id="course-meta-inst">SRM UNIVERSITY AP</span>
+        <div class="hero-action-box">
+          <button class="btn btn-primary" onclick="navigateToAddonTab('attendance')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+            <span>Mark Attendance</span>
+          </button>
+          <span style="font-size: 11px; color: var(--text-muted);">Matches current room slot</span>
         </div>
-      </section>
-
-      <!-- Classroom Stream 2-Column Grid -->
-      <div class="gc-stream-grid">
-        <!-- Left: Upcoming Deadlines Widget -->
-        <aside class="gc-sidebar-box">
-          <div class="gc-box-title">Upcoming Deadlines</div>
-          <div id="classroom-upcoming-deadlines-list">
-            <div style="font-size: 12px; color: var(--text-muted);">Loading coursework deadlines...</div>
-          </div>
-          <div style="margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--border-subtle);">
-            <a href="javascript:void(0)" onclick="navigateToAddonTab('assignments')"
-              style="font-size: 11px; color: #60a5fa; text-decoration: none; font-weight: 500;">
-              View all assignments in Add-on &rarr;
-            </a>
-          </div>
-        </aside>
-
-        <!-- Right: Coursework Stream Feed -->
-        <section class="stream-feed">
-          <div
-            style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-sm);">
-            <div>
-              <span style="font-size: 13px; font-weight: 600; color: #fff;">Course Stream</span>
-              <span style="font-size: 11px; color: var(--text-secondary); margin-left: 8px;">Synced with Google
-                Classroom API</span>
-            </div>
-            <button class="btn btn-secondary btn-sm" id="sync-classroom-btn">Sync Classroom</button>
-          </div>
-
-          <!-- Classroom coursework feed items -->
-          <div id="classroom-stream-feed">
-            <!-- Dynamically populated by ClassroomModule -->
-          </div>
-
-          <!-- Classwork Tab Placeholder (used when switching topbar tabs) -->
-          <div id="classroom-classwork-tab-content" style="display: none;">
-            <!-- Dynamically populated by ClassroomModule -->
-          </div>
-        </section>
       </div>
-    </main>
 
-    <!-- Academic Agent Embedded Companion Add-on Panel -->
-    <aside class="addon-companion-panel" id="academic-agent-addon-panel">
-      <!-- Add-on Header -->
-      <div class="addon-header">
-        <div class="addon-brand">
-          <span class="addon-brand-badge">COMPANION</span>
-          <span class="addon-title">ACADEMIC AGENT</span>
+      <!-- Quick Metrics Grid -->
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <span class="metric-label">Deliverables Verified</span>
+          <span class="metric-value" id="home-ready-count" style="color: #34d399;">0</span>
+          <span class="metric-sub">Ready for turn-in</span>
         </div>
-        <div style="display: flex; gap: 6px;">
-          <button class="btn btn-secondary btn-sm" onclick="CommandPalette.open()"
-            title="Open Command Palette (Ctrl+K)">
-            <span class="palette-kbd">Ctrl+K</span>
+        <div class="metric-card">
+          <span class="metric-label">Auto-Submits Scheduled</span>
+          <span class="metric-value" id="home-scheduled-count" style="color: #60a5fa;">0</span>
+          <span class="metric-sub">Before deadlines</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-label">Indexed Documents</span>
+          <span class="metric-value" id="home-docs-count" style="color: #fbbf24;">0</span>
+          <span class="metric-sub">Course RAG knowledge base</span>
+        </div>
+        <div class="metric-card" onclick="navigateToAddonTab('erp')" style="cursor: pointer;">
+          <span class="metric-label">ERP Connection</span>
+          <span class="metric-value" id="home-erp-metric" style="color: #34d399; font-size: 18px;">SRM AP</span>
+          <span class="metric-sub" id="home-erp-sub">Click to inspect attendance</span>
+        </div>
+      </div>
+
+      <!-- Urgent Assignment & Coursework Context -->
+      <div class="panel-card">
+        <div class="card-header">
+          <div class="card-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            <span>Upcoming Coursework Deadlines</span>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="navigateToAddonTab('classroom')">View All in Classroom
+            &rarr;</button>
+        </div>
+        <div id="home-urgent-assignment-card">
+          <div style="font-size: 13px; color: var(--text-secondary); padding: 12px 0;">Loading pending coursework...
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Action Jump Grid -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px;">
+        <button class="btn btn-secondary" onclick="navigateToAddonTab('assignments')"
+          style="padding: 14px; justify-content: space-between;">
+          <div style="text-align: left;">
+            <div style="font-weight: 700; color: #fff;">Compiler Studio</div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Synthesize code, validate & compile
+            </div>
+          </div>
+          <span>&rarr;</span>
+        </button>
+
+        <button class="btn btn-secondary" onclick="navigateToAddonTab('study')"
+          style="padding: 14px; justify-content: space-between;">
+          <div style="text-align: left;">
+            <div style="font-weight: 700; color: #fff;">Study Brain RAG</div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Query course materials & notes
+            </div>
+          </div>
+          <span>&rarr;</span>
+        </button>
+
+        <button class="btn btn-secondary" onclick="navigateToAddonTab('erp')"
+          style="padding: 14px; justify-content: space-between;">
+          <div style="text-align: left;">
+            <div style="font-weight: 700; color: #fff;">SRM AP eVarsity</div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Live attendance & safe bunk margin
+            </div>
+          </div>
+          <span>&rarr;</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- TAB 2: SRM AP ERP (EVARSITY) -->
+    <section class="view-panel addon-view-panel" id="addon-view-erp">
+      <!-- Connected ERP Status Summary Card -->
+      <div class="panel-card" id="erp-modal-status-card"
+        style="display: none; background: rgba(16, 185, 129, 0.05); border-color: rgba(16, 185, 129, 0.3);">
+        <!-- Dynamically populated via IntegrationsModule.loadStatus() -->
+      </div>
+
+      <!-- Direct SRM AP Login Form (shown when not connected) -->
+      <div class="panel-card" id="erp-login-form-container">
+        <div class="card-header">
+          <div class="card-title">Connect SRM AP eVarsity Portal</div>
+          <span class="status-pill status-ready">DIRECT LIVE INTEGRATION</span>
+        </div>
+        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.5;">
+          Direct live synchronization with <b>student.srmap.edu.in</b>.
+          Academic Agent automatically solves the portal captcha locally with an in-memory ONNX CRNN model,
+          retrieves your official enrolled courses, attendance with safe bunk margins, and timetable with per-day
+          variable rooms.
+        </p>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label">SRM AP Registration Number:</label>
+            <input type="text" id="erp-direct-id-input" placeholder="e.g. AP23110010042" autocomplete="username"
+              class="form-input" style="font-family: var(--font-mono);">
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+              <label class="form-label" style="margin-bottom: 0;">Portal Password:</label>
+              <button type="button" id="erp-toggle-password-btn"
+                style="background: none; border: none; color: #60a5fa; font-size: 11px; cursor: pointer;">Show</button>
+            </div>
+            <input type="password" id="erp-direct-password-input" placeholder="Enter eVarsity password"
+              autocomplete="current-password" class="form-input">
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-muted);">
+            <span style="color: #10b981;">🔒</span>
+            <span>AES-128/Fernet encrypted at rest. Zero plaintext exposure.</span>
+          </div>
+          <button class="btn btn-primary" id="btn-connect-direct-erp" style="padding: 9px 20px;">
+            CONNECT SRM AP ERP
           </button>
         </div>
       </div>
 
-      <!-- 5 Primary Navigation Tabs strictly -->
-      <nav class="addon-nav-bar" aria-label="Academic Agent Add-on Tabs">
-        <button class="addon-nav-tab active" data-tab="home">Home</button>
-        <button class="addon-nav-tab" data-tab="assignments">Assignments</button>
-        <button class="addon-nav-tab" data-tab="study">Study</button>
-        <button class="addon-nav-tab" data-tab="next-class">Next Class</button>
-        <button class="addon-nav-tab" data-tab="attendance">Attendance</button>
-      </nav>
-
-      <!-- Add-on Tab Contents -->
-      <div class="addon-content">
-
-        <!-- TAB 1: HOME CONTEXT VIEW -->
-        <div class="addon-view-panel active" id="addon-view-home">
-          <!-- Next Class Card -->
-          <div class="panel-card" style="background: rgba(37, 99, 235, 0.06); border-color: rgba(59, 130, 246, 0.3);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-              <span class="status-pill status-ready" id="home-class-status-badge">NEXT CLASS</span>
-              <span id="home-next-time" style="font-family: var(--font-mono); font-size: 11px; color: #94a3b8;">10:00 -
-                11:00</span>
-            </div>
-            <h3 id="home-next-subject" style="color: #fff; font-size: 15px; font-weight: 700; margin: 4px 0;">Loading schedule...</h3>
-            <div style="font-size: 12px; color: #cbd5e1;">
-              Scheduled Room: <b id="home-next-room" style="color: #60a5fa; font-family: var(--font-mono);">--</b>
-            </div>
+      <!-- Live Subject Attendance Table with Safe Bunk Margins -->
+      <div class="panel-card">
+        <div class="card-header">
+          <div class="card-title">
+            <span>Live Subject Attendance &amp; Safe Bunk Calculator</span>
           </div>
-
-          <!-- Urgent Assignment Context Card -->
-          <div class="panel-card" id="home-urgent-assignment-card">
-            <div style="font-size: 12px; color: var(--text-secondary);">Loading assignment pipeline...</div>
-          </div>
-
-          <!-- Operational Stats Counters -->
-          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
-            <div class="panel-card" style="text-align: center; padding: 10px 6px;">
-              <div style="font-size: 18px; font-weight: 800; color: #34d399; font-family: var(--font-mono);"
-                id="home-ready-count">0</div>
-              <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; margin-top: 2px;">
-                Deliverables Ready</div>
-            </div>
-            <div class="panel-card" style="text-align: center; padding: 10px 6px;">
-              <div style="font-size: 18px; font-weight: 800; color: #60a5fa; font-family: var(--font-mono);"
-                id="home-scheduled-count">0</div>
-              <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; margin-top: 2px;">
-                Auto-Submits</div>
-            </div>
-            <div class="panel-card" style="text-align: center; padding: 10px 6px;">
-              <div style="font-size: 18px; font-weight: 800; color: #fbbf24; font-family: var(--font-mono);"
-                id="home-docs-count">0</div>
-              <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; margin-top: 2px;">Docs
-                Indexed</div>
-            </div>
-          </div>
-
-          <!-- Quick Action Buttons -->
-          <div style="display: flex; flex-direction: column; gap: 8px;">
-            <button class="btn btn-primary" onclick="navigateToAddonTab('assignments')"
-              style="justify-content: space-between;">
-              <span>Open Compiler &amp; Deliverable Studio</span>
-              <span>&rarr;</span>
-            </button>
-            <button class="btn btn-secondary" onclick="navigateToAddonTab('attendance')"
-              style="justify-content: space-between;">
-              <span>Scan Attendance with Camera</span>
-              <span>&rarr;</span>
-            </button>
-            <button class="btn btn-secondary" onclick="navigateToAddonTab('study')"
-              style="justify-content: space-between;">
-              <span>Query Course Study Brain RAG</span>
-              <span>&rarr;</span>
-            </button>
+          <button class="btn btn-secondary btn-sm" id="btn-refresh-attendance-tab">
+            <span>🔄 Sync ERP</span>
+          </button>
+        </div>
+        <div id="erp-attendance-cards-list">
+          <div style="font-size: 13px; color: var(--text-muted); padding: 16px 0; text-align: center;">
+            Connect your SRM AP ERP account above to load your live subject attendance and safe bunk margins.
           </div>
         </div>
+      </div>
+    </section>
 
-        <!-- TAB 2: ASSIGNMENTS & COMPILER STUDIO -->
-        <div class="addon-view-panel" id="addon-view-assignments">
+    <!-- TAB 3: TIMETABLE & NEXT CLASS -->
+    <section class="view-panel addon-view-panel" id="addon-view-next-class">
+      <!-- Next Class Card with Exact Room -->
+      <div id="timetable-next-class-box">
+        <!-- Populated by TimetableModule.renderNextClassCard() -->
+      </div>
+
+      <!-- Weekly Schedule Baseline -->
+      <div class="panel-card">
+        <div class="card-header">
           <div>
-            <label
-              style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px; display: block;">Select
-              Coursework:</label>
-            <select id="generator-assignment-select"
-              style="width: 100%; background: #111827; border: 1px solid var(--border); color: #fff; padding: 8px 10px; border-radius: var(--radius-sm); font-size: 12px;">
+            <div class="card-title">Weekly Schedule Baseline</div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+              Direct from SRM AP ERP · Distinct variable rooms per day (e.g. C 504 / X 201 / C 1011)
+            </div>
+          </div>
+          <button class="btn btn-secondary btn-sm" id="open-import-timetable-btn">Import Schedule JSON</button>
+        </div>
+
+        <!-- Weekly Schedule 5-Day Grid -->
+        <div class="weekly-matrix-grid" id="weekly-timetable-matrix">
+          <!-- Populated by TimetableModule.renderWeekly() -->
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: GOOGLE CLASSROOM -->
+    <section class="view-panel addon-view-panel" id="addon-view-classroom">
+      <!-- Google Classroom Connection Header -->
+      <div class="panel-card"
+        style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div class="cw-icon">GC</div>
+          <div>
+            <div style="font-size: 15px; font-weight: 700; color: #fff;">Google Classroom Integration</div>
+            <div style="font-size: 12px; color: var(--text-muted);">
+              Official Google Workspace API · Direct sync for enrolled courses and active coursework
+            </div>
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <select id="classroom-course-select" class="form-select" style="width: auto; min-width: 220px;"
+            title="Filter Enrolled Course">
+            <option value="">Loading courses...</option>
+          </select>
+          <button class="btn btn-secondary btn-sm" id="sync-classroom-btn">Sync Classroom</button>
+          <button class="btn btn-primary btn-sm" onclick="openModal('integrations-modal')">Google OAuth</button>
+        </div>
+      </div>
+
+      <!-- Classroom Coursework Grid -->
+      <div class="coursework-grid" id="classroom-stream-feed">
+        <!-- Populated by ClassroomModule.renderClassroomStream() with honest empty state if empty -->
+      </div>
+    </section>
+
+    <!-- TAB 5: COMPILER & DELIVERABLE STUDIO -->
+    <section class="view-panel addon-view-panel" id="addon-view-assignments">
+      <!-- Assignment Selection Bar -->
+      <div class="panel-card" style="padding: 12px 18px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap;">
+          <div style="flex: 1; min-width: 260px;">
+            <label class="form-label" style="margin-bottom: 4px;">Select Target Coursework:</label>
+            <select id="generator-assignment-select" class="form-select">
               <!-- Populated by GeneratorModule -->
             </select>
           </div>
+          <div style="display: flex; gap: 8px; align-items: flex-end;">
+            <button class="btn btn-primary btn-sm" id="btn-trigger-generate">Generate Deliverable</button>
+            <button class="btn btn-success btn-sm" id="btn-trigger-validate">Validate Code</button>
+            <button class="btn btn-secondary btn-sm" id="download-deliverable-btn" style="display: none;">Download
+              File</button>
+            <button class="btn btn-secondary btn-sm" id="btn-trigger-automate">Auto-Submit</button>
+          </div>
+        </div>
+      </div>
 
-          <!-- AI Dynamic Specification Card -->
+      <!-- Studio 2-Column Grid -->
+      <div class="studio-grid">
+        <!-- Left: AI Specification Card -->
+        <div style="display: flex; flex-direction: column; gap: 16px;">
           <div id="assignment-spec-container">
             <div class="spec-card">
               <div class="spec-badge">AI SPECIFICATION EXTRACTION</div>
-              <p style="font-size: 12px; color: var(--text-secondary); margin-top: 6px;">Select an assignment to extract
-                deliverables, compiler flags, and test requirements.</p>
+              <p style="font-size: 12px; color: var(--text-secondary); margin-top: 6px;">
+                Select an assignment to extract deliverables, compiler flags, and test requirements.
+              </p>
             </div>
           </div>
 
-          <!-- Action Buttons -->
-          <div style="display: flex; gap: 8px;">
-            <button class="btn btn-primary btn-sm" id="btn-trigger-generate" style="flex: 1;">Generate
-              Deliverable</button>
-            <button class="btn btn-success btn-sm" id="btn-trigger-validate" style="flex: 1;">Validate Code</button>
-            <button class="btn btn-secondary btn-sm" id="btn-trigger-automate"
-              title="Configure Automated Turn-In">Auto-Submit</button>
-          </div>
-
-          <!-- Deliverable Studio Code Preview -->
-          <div class="panel-card" style="padding: 10px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <span id="deliverable-header" style="font-weight: 700; font-size: 12px; color: #fff;">Deliverable
-                Studio</span>
-              <button class="btn btn-secondary btn-sm" id="download-deliverable-btn"
-                style="display: none; padding: 3px 8px; font-size: 10px;">Download File</button>
-            </div>
-            <pre class="code-viewer-panel"
-              id="code-viewer-panel">// Select coursework to inspect code and synthesized files</pre>
-          </div>
-
-          <!-- Live Compiler Validation Report -->
-          <div class="panel-card" style="padding: 12px;">
+          <!-- Compiler Validation Checklist -->
+          <div class="panel-card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
               <span style="font-size: 11px; font-weight: 800; color: #fff; letter-spacing: 0.5px;">VALIDATION
-                REPORT</span>
+                CRITERIA</span>
               <span class="status-pill status-not_started" id="validation-status-pill">PENDING</span>
             </div>
-
             <ul class="checklist" id="validation-checklist">
-              <li class="checklist-item"><span class="check-icon check-fail">-</span> Instructions understood</li>
-              <li class="checklist-item"><span class="check-icon check-fail">-</span> Required files generated</li>
-              <li class="checklist-item"><span class="check-icon check-fail">-</span> Compilation verified (gcc / javac)
-              </li>
-              <li class="checklist-item"><span class="check-icon check-fail">-</span> Test cases passed</li>
-              <li class="checklist-item"><span class="check-icon check-fail">-</span> Submission package ready</li>
+              <li class="checklist-item"><span class="check-icon check-fail">-</span> Instructions parsed</li>
+              <li class="checklist-item"><span class="check-icon check-fail">-</span> Deliverables synthesized</li>
+              <li class="checklist-item"><span class="check-icon check-fail">-</span> Compilation verified (gcc / javac
+                / python)</li>
+              <li class="checklist-item"><span class="check-icon check-fail">-</span> Automated test cases passed</li>
+              <li class="checklist-item"><span class="check-icon check-fail">-</span> Package verified for turn-in</li>
             </ul>
-
-            <div id="compiler-output-box" class="compiler-terminal-box" style="margin-top: 10px; display: none;">
-              <div style="font-size: 10px; font-weight: 700; color: #94a3b8; margin-bottom: 4px;">COMPILER OUTPUT:</div>
-              <pre id="compiler-output-text" style="color: #34d399;"></pre>
-            </div>
           </div>
         </div>
 
-        <!-- TAB 3: STUDY BRAIN RAG -->
-        <div class="addon-view-panel" id="addon-view-study">
-          <div>
-            <label
-              style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px; display: block;">Course
-              Scope:</label>
-            <select id="study-brain-course-select"
-              style="width: 100%; background: #111827; border: 1px solid var(--border); color: #fff; padding: 7px 10px; border-radius: var(--radius-sm); font-size: 12px;">
-              <!-- Populated by StudyBrainModule -->
-            </select>
+        <!-- Right: Code Viewer & Real Compiler Terminal -->
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          <div class="panel-card" style="padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span id="deliverable-header" style="font-weight: 700; font-size: 13px; color: #fff;">Deliverable
+                Studio</span>
+            </div>
+            <pre class="code-viewer-panel"
+              id="code-viewer-panel">// Select coursework above to inspect synthesized code and artifacts</pre>
           </div>
 
-          <!-- Upload Materials Box -->
+          <div id="compiler-output-box" class="compiler-terminal-box" style="display: none;">
+            <div style="font-size: 10px; font-weight: 700; color: #94a3b8; margin-bottom: 4px;">LIVE COMPILER / RUNTIME
+              OUTPUT:</div>
+            <pre id="compiler-output-text" style="color: #34d399;"></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 6: STUDY BRAIN (RAG) -->
+    <section class="view-panel addon-view-panel" id="addon-view-study">
+      <div style="display: grid; grid-template-columns: 320px 1fr; gap: 20px;">
+        <!-- Left: Course Scope & Document Upload -->
+        <div style="display: flex; flex-direction: column; gap: 16px;">
           <div class="panel-card">
-            <div
-              style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">
-              Upload Course Material (PDF, DOCX, TXT):</div>
+            <label class="form-label">Course Knowledge Base:</label>
+            <select id="study-brain-course-select" class="form-select" style="margin-bottom: 14px;">
+              <!-- Populated by StudyBrainModule -->
+            </select>
+
+            <label class="form-label">Upload Material (PDF, DOCX, TXT):</label>
             <input type="file" id="material-file-input"
-              style="font-size: 11px; color: #94a3b8; width: 100%; margin-bottom: 8px;">
-            <button class="btn btn-primary btn-sm" id="upload-material-btn" style="width: 100%;">Upload Course
+              style="font-size: 12px; color: #94a3b8; width: 100%; margin-bottom: 10px;">
+            <button class="btn btn-primary btn-sm" id="upload-material-btn" style="width: 100%;">Upload &amp; Index
               Document</button>
           </div>
 
-          <!-- Indexed Course Materials Shelf -->
-          <div>
-            <div
-              style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">
-              Indexed Course Documents</div>
+          <div class="panel-card">
+            <div class="card-title" style="margin-bottom: 8px;">Indexed Course Documents</div>
             <div id="study-brain-materials-list" style="display: flex; flex-direction: column; gap: 6px;">
               <div style="color: var(--text-muted); font-size: 12px;">No documents indexed yet.</div>
             </div>
           </div>
+        </div>
 
-          <!-- Quick AI Study Action Pills -->
-          <div>
-            <div
-              style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">
-              Study Actions</div>
-            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+        <!-- Right: AI Study Actions & Grounded Chat Interface -->
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          <div class="panel-card">
+            <div class="card-title" style="margin-bottom: 10px;">Grounded Study Actions</div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px;">
               <button class="btn btn-secondary btn-sm brain-action-pill" data-action="summary">Summarize Unit</button>
               <button class="btn btn-secondary btn-sm brain-action-pill" data-action="questions">10 Exam
                 Questions</button>
-              <button class="btn btn-secondary btn-sm brain-action-pill" data-action="explanation">Explain
+              <button class="btn btn-secondary btn-sm brain-action-pill" data-action="explanation">Explain Core
                 Concept</button>
               <button class="btn btn-secondary btn-sm brain-action-pill" data-action="targeted_study">What to Study
                 First</button>
             </div>
+
+            <div style="display: flex; gap: 8px;">
+              <input type="text" id="brain-query-input"
+                placeholder="Ask specific question grounded in your course materials..." class="form-input">
+              <button class="btn btn-primary" id="run-brain-query-btn">Ask Question</button>
+            </div>
           </div>
 
-          <!-- Custom Query Input -->
-          <div style="display: flex; gap: 6px;">
-            <input type="text" id="brain-query-input" placeholder="Ask question about course material..."
-              style="flex: 1; background: var(--bg-surface); border: 1px solid var(--border); color: #fff; padding: 7px 10px; border-radius: var(--radius-sm); font-size: 12px;">
-            <button class="btn btn-primary btn-sm" id="run-brain-query-btn">Ask</button>
-          </div>
-
-          <!-- Study Brain Result Box -->
-          <div class="panel-card" style="min-height: 120px;">
-            <div id="study-brain-title" style="font-size: 13px; font-weight: 700; color: #60a5fa; margin-bottom: 8px;">
-              Select an action or enter a query above.</div>
+          <!-- Grounded Answer Card with Citations -->
+          <div class="panel-card" style="min-height: 200px;">
+            <div id="study-brain-title" style="font-size: 14px; font-weight: 700; color: #60a5fa; margin-bottom: 8px;">
+              Study Brain Ready
+            </div>
             <div id="study-brain-content"
-              style="font-size: 12px; line-height: 1.5; color: #e2e8f0; white-space: pre-wrap;">Course materials are
-              indexed per course and queried with exact source attribution.</div>
-
+              style="font-size: 13px; line-height: 1.6; color: #e2e8f0; white-space: pre-wrap;">Select an action or ask
+              a question to query your indexed course documents. Answers are strictly grounded with exact page
+              citations.</div>
             <div id="study-brain-citations"
-              style="margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); display: none;">
+              style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); display: none;">
               <div
                 style="font-size: 10px; font-weight: 700; color: #94a3b8; margin-bottom: 6px; text-transform: uppercase;">
                 SOURCE CITATIONS:</div>
@@ -341,117 +449,90 @@
             </div>
           </div>
         </div>
+      </div>
+    </section>
 
-        <!-- TAB 4: NEXT CLASS & TIMETABLE CONTEXT -->
-        <div class="addon-view-panel" id="addon-view-next-class">
-          <!-- Next Class Card with Exact Room -->
-          <div id="timetable-next-class-box">
-            <!-- Populated by TimetableModule -->
+    <!-- TAB 7: LENS ATTENDANCE -->
+    <section class="view-panel addon-view-panel" id="addon-view-attendance">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <!-- Left: WebRTC Camera Viewfinder & Manual Input -->
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          <div class="panel-card">
+            <div class="card-header">
+              <div class="card-title">Camera Attendance Scanner</div>
+              <span class="status-pill status-ready">OPENCV OPTICAL SCANNER</span>
+            </div>
+
+            <!-- Viewport -->
+            <div class="camera-scanner-frame" id="scanner-viewport">
+              <video id="scanner-video" class="scanner-video" playsinline autoplay muted></video>
+              <div class="viewfinder-reticle"></div>
+              <div class="scanner-laser"></div>
+            </div>
+
+            <div id="scanner-status-text"
+              style="font-size: 12px; color: var(--text-secondary); text-align: center; margin: 10px 0;">
+              Camera ready for optical attendance detection.
+            </div>
+
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-primary" id="btn-start-camera-scan" style="flex: 1;">Open Camera
+                Viewfinder</button>
+              <button class="btn btn-secondary" id="btn-stop-camera-scan">Stop</button>
+            </div>
+
+            <!-- Manual Attendance Code Input -->
+            <div
+              style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-subtle); display: flex; gap: 8px;">
+              <input type="text" id="manual-attendance-code-input" placeholder="Or type code (e.g. A235646)"
+                class="form-input" style="font-family: var(--font-mono); text-transform: uppercase;">
+              <button class="btn btn-secondary" id="btn-submit-manual-code">Submit Code</button>
+            </div>
           </div>
 
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Weekly
-              Schedule Baseline</span>
-            <button class="btn btn-secondary btn-sm" id="open-import-timetable-btn"
-              style="padding: 3px 8px; font-size: 10px;">Import Timetable</button>
-          </div>
-
-          <!-- Weekly Schedule Columns -->
-          <div id="weekly-timetable-matrix" style="display: flex; flex-direction: column; gap: 10px;">
-            <!-- Populated by TimetableModule -->
-          </div>
-        </div>
-
-        <!-- TAB 5: CAMERA ATTENDANCE SCANNER -->
-        <div class="addon-view-panel" id="addon-view-attendance">
-          <div>
-            <div style="font-size: 13px; font-weight: 700; color: #fff;">Camera Attendance Scanner</div>
-            <p style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">
-              Google Lens-style optical verification matching your current timetable slot.
-            </p>
-          </div>
-
-          <!-- Camera Lens Viewfinder -->
-          <div class="camera-scanner-frame" id="scanner-viewport">
-            <video id="scanner-video" class="scanner-video" playsinline autoplay muted></video>
-            <div class="viewfinder-reticle"></div>
-            <div class="scanner-laser"></div>
-          </div>
-
-          <div id="scanner-status-text" style="font-size: 11px; color: var(--text-secondary); text-align: center;">
-            Camera ready for optical attendance detection.
-          </div>
-
-          <!-- Camera Scanner Controls -->
-          <div style="display: flex; gap: 6px;">
-            <button class="btn btn-primary btn-sm" id="btn-start-camera-scan" style="flex: 1;">Open Camera Viewfinder</button>
-            <button class="btn btn-secondary btn-sm" id="btn-stop-camera-scan">Stop</button>
-          </div>
-
-          <!-- Direct Manual Attendance Code Input -->
-          <div style="margin-top: 8px; display: flex; gap: 6px;">
-            <input type="text" id="manual-attendance-code-input" placeholder="Or enter attendance code (e.g. A235646)"
-              autocomplete="off" spellcheck="false"
-              style="flex: 1; background: #111827; border: 1px solid var(--border); color: #fff; padding: 7px 10px; border-radius: var(--radius-sm); font-size: 12px; font-family: var(--font-mono); text-transform: uppercase;">
-            <button class="btn btn-secondary btn-sm" id="btn-submit-manual-code">Submit Code</button>
-          </div>
-
-          <!-- Detected Attendance Code Card -->
+          <!-- Recognized Attendance Code Card -->
           <div class="panel-card" id="scanner-detected-card"
             style="display: none; border-color: #10b981; background: rgba(16, 185, 129, 0.05);">
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <div>
-                <span style="font-size: 10px; font-weight: 700; color: #10b981; text-transform: uppercase;">CODE RECOGNIZED</span>
+                <span style="font-size: 10px; font-weight: 700; color: #10b981; text-transform: uppercase;">CODE
+                  RECOGNIZED</span>
                 <div id="detected-code-value"
-                  style="font-family: var(--font-mono); font-size: 18px; font-weight: 800; color: #fff;">--</div>
+                  style="font-family: var(--font-mono); font-size: 20px; font-weight: 800; color: #fff;">--</div>
               </div>
-              <span class="status-pill status-ready">MATCHED</span>
+              <span class="status-pill status-ready">TIMETABLE MATCH</span>
             </div>
-            <div id="detected-class-context" style="font-size: 12px; color: #cbd5e1; margin: 6px 0 10px;">
-              --
-            </div>
-            <button class="btn btn-success btn-sm" id="confirm-attendance-btn" style="width: 100%;">
+            <div id="detected-class-context" style="font-size: 13px; color: #cbd5e1; margin: 8px 0 12px;">--</div>
+            <button class="btn btn-success" id="confirm-attendance-btn" style="width: 100%;">
               Confirm &amp; Mark Attendance
             </button>
           </div>
-
-          <!-- Live ERP Attendance & Margin Overview -->
-          <div style="margin-top: 6px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Live
-                ERP Subject Attendance</span>
-              <button class="btn btn-secondary btn-sm" id="btn-refresh-attendance-tab"
-                style="padding: 2px 8px; font-size: 10px;">Sync ERP</button>
-            </div>
-            <div id="erp-attendance-cards-list" style="display: flex; flex-direction: column; gap: 8px;">
-              <!-- Populated dynamically by CameraScannerModule.loadERPAttendance() -->
-            </div>
-          </div>
-
-          <!-- Recent Attendance History -->
-          <div style="margin-top: 14px; border-top: 1px solid var(--border); padding-top: 12px;">
-            <div
-              style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">
-              Recent Camera Sign-in Codes</div>
-            <div id="recent-attendance-list" style="display: flex; flex-direction: column; gap: 6px;">
-              <!-- Populated by CameraScannerModule -->
-            </div>
-          </div>
         </div>
 
+        <!-- Right: Recent Sign-in History -->
+        <div class="panel-card">
+          <div class="card-header">
+            <div class="card-title">Recent Attendance Activity</div>
+          </div>
+          <div id="recent-attendance-list" style="display: flex; flex-direction: column; gap: 8px;">
+            <!-- Populated by CameraScannerModule -->
+          </div>
+        </div>
       </div>
-    </aside>
+    </section>
 
-  </div>
+  </main>
+
+  <!-- ====================================================================== -->
+  <!-- MODALS                                                                 -->
+  <!-- ====================================================================== -->
 
   <!-- MODAL: COMMAND PALETTE (Ctrl+K) -->
   <div class="modal-overlay" id="command-palette-modal">
     <div class="palette-box">
-      <input type="text" class="palette-input" id="palette-search-input"
-        placeholder="Type a command or search actions..." autocomplete="off">
-      <div class="palette-results" id="palette-results-list">
-        <!-- Results rendered by CommandPalette -->
-      </div>
+      <input type="text" class="palette-input" id="palette-search-input" placeholder="Type a command or jump to view..."
+        autocomplete="off">
+      <div class="palette-results" id="palette-results-list"></div>
     </div>
   </div>
 
@@ -463,15 +544,12 @@
         <button class="modal-close" onclick="closeModal('schedule-modal')">&times;</button>
       </div>
       <div class="modal-body">
-        <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 14px;">
+        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 14px;">
           Automatically turn in validated deliverables to Google Classroom before the assignment deadline.
         </p>
-        <div style="margin-bottom: 14px;">
-          <label
-            style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; display: block; margin-bottom: 6px;">Submit
-            Time Offset:</label>
-          <select id="schedule-offset-select"
-            style="width: 100%; background: #111827; border: 1px solid var(--border); color: #fff; padding: 8px; border-radius: var(--radius-sm); font-size: 12px;">
+        <div class="form-group">
+          <label class="form-label">Submit Time Offset:</label>
+          <select id="schedule-offset-select" class="form-select">
             <option value="4.0" selected>4 hours before deadline (Default)</option>
             <option value="2.0">2 hours before deadline</option>
             <option value="6.0">6 hours before deadline</option>
@@ -479,11 +557,6 @@
             <option value="24.0">24 hours before deadline</option>
             <option value="0.05">Immediate test (3 minutes)</option>
           </select>
-        </div>
-        <div
-          style="background: rgba(37, 99, 235, 0.08); border: 1px solid rgba(37, 99, 235, 0.3); border-radius: var(--radius-sm); padding: 8px 10px; font-size: 11px; color: #93c5fd;">
-          <b>Workflow Sequence:</b> Pre-validation check &rarr; Google Drive upload &rarr; modifyAttachments &rarr;
-          turnIn &rarr; State verification.
         </div>
       </div>
       <div class="modal-footer">
@@ -502,11 +575,10 @@
       </div>
       <div class="modal-body">
         <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 10px;">
-          Paste JSON array of classes. Note: Subjects can have different normal rooms on different days (e.g. Digital
-          Electronics in X-201 Tue, C-1011 Thu, C-504 Fri).
+          Paste JSON array of classes with subject, day_of_week (0=Mon), start_time, end_time, and classroom.
         </p>
-        <textarea id="timetable-json-input" rows="8"
-          style="width: 100%; background: #09090b; border: 1px solid var(--border); border-radius: var(--radius-sm); color: #fff; font-family: var(--font-mono); font-size: 11px; padding: 10px; resize: vertical;"></textarea>
+        <textarea id="timetable-json-input" rows="8" class="form-textarea"
+          style="font-family: var(--font-mono); font-size: 12px;"></textarea>
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary btn-sm" onclick="closeModal('import-timetable-modal')">Cancel</button>
@@ -515,203 +587,88 @@
     </div>
   </div>
 
-  <!-- MODAL: AUTHENTICATION SETTINGS -->
+  <!-- MODAL: STUDENT PROFILE & AUTH -->
   <div class="modal-overlay" id="auth-modal">
     <div class="modal-box" style="max-width: 420px;">
       <div class="modal-header">
-        <h3 class="modal-title">Account &amp; OAuth Settings</h3>
+        <h3 class="modal-title">Student Account</h3>
         <button class="modal-close" onclick="closeModal('auth-modal')">&times;</button>
       </div>
       <div class="modal-body">
-        <div id="auth-user-status" style="margin-bottom: 12px; font-size: 12px; color: var(--text-secondary);">
-          Sign in or register your student profile (e.g. your university email).
+        <div id="auth-user-status" style="margin-bottom: 12px; font-size: 13px; color: var(--text-secondary);">
+          Sign in or register your student account.
         </div>
-        <div id="auth-form-container">
-          <div style="margin-bottom: 10px;">
-            <label
-              style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; display: block; margin-bottom: 4px;">Email:</label>
-            <input type="email" id="auth-email-input" placeholder="student@university.edu"
-              style="width: 100%; background: #111827; border: 1px solid var(--border); color: #fff; padding: 8px; border-radius: var(--radius-sm); font-size: 12px;">
-          </div>
-          <div style="margin-bottom: 12px;">
-            <label
-              style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; display: block; margin-bottom: 4px;">Password:</label>
-            <input type="password" id="auth-password-input" placeholder="Min. 8 characters"
-              style="width: 100%; background: #111827; border: 1px solid var(--border); color: #fff; padding: 8px; border-radius: var(--radius-sm); font-size: 12px;">
-          </div>
-          <div style="display: flex; gap: 8px;">
-            <button class="btn btn-primary btn-sm" id="btn-login-submit" style="flex: 1;">Sign In</button>
-            <button class="btn btn-secondary btn-sm" id="btn-register-submit" style="flex: 1;">Register</button>
-          </div>
+        <div class="form-group">
+          <label class="form-label">Email:</label>
+          <input type="email" id="auth-email-input" placeholder="student@srmap.edu.in" class="form-input">
         </div>
-
-        <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); text-align: center;">
-          <button class="btn btn-secondary btn-sm" style="width: 100%; justify-content: center;"
-            onclick="closeModal('auth-modal'); openModal('integrations-modal');">
-            Connect Real Google Classroom &amp; ERP &rarr;
-          </button>
+        <div class="form-group">
+          <label class="form-label">Password:</label>
+          <input type="password" id="auth-password-input" placeholder="Min. 8 characters" class="form-input">
         </div>
-
-        <div
-          style="margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between;">
-          <a href="/privacy" style="font-size: 11px; color: var(--text-muted); text-decoration: none;">Privacy
-            Policy</a>
-          <a href="/terms" style="font-size: 11px; color: var(--text-muted); text-decoration: none;">Terms of
-            Service</a>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-primary btn-sm" id="btn-login-submit" style="flex: 1;">Sign In</button>
+          <button class="btn btn-secondary btn-sm" id="btn-register-submit" style="flex: 1;">Register</button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- MODAL: REAL GOOGLE CLASSROOM & ERP INTEGRATION HUB -->
+  <!-- MODAL: REAL INTEGRATIONS HUB (GOOGLE & ERP) -->
   <div class="modal-overlay" id="integrations-modal">
-    <div class="modal-box" style="max-width: 560px;">
+    <div class="modal-box" style="max-width: 580px;">
       <div class="modal-header">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <h3 class="modal-title">Live Integrations Hub</h3>
-          <span class="status-pill status-ready">REAL ENVIRONMENT</span>
-        </div>
+        <h3 class="modal-title">Live Integrations Hub</h3>
         <button class="modal-close" onclick="closeModal('integrations-modal')">&times;</button>
       </div>
+      <div class="modal-body">
+        <!-- Sub-tabs -->
+        <div
+          style="display: flex; gap: 8px; border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 16px;">
+          <button class="btn btn-secondary btn-sm integration-sub-tab active" data-target="tab-panel-erp">SRM AP
+            ERP</button>
+          <button class="btn btn-secondary btn-sm integration-sub-tab" data-target="tab-panel-google">Google
+            Classroom</button>
+        </div>
 
-      <!-- Navigation Tabs inside Integrations Modal: Google Classroom & SRM AP ERP -->
-      <div style="display: flex; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.2); padding: 0 16px;">
-        <button class="integration-sub-tab active" data-target="tab-panel-google"
-          style="padding: 10px 16px; background: transparent; border: none; border-bottom: 2px solid var(--accent); color: #fff; font-size: 12px; font-weight: 700; cursor: pointer;">
-          Google Classroom
-        </button>
-        <button class="integration-sub-tab" data-target="tab-panel-erp"
-          style="padding: 10px 16px; background: transparent; border: none; border-bottom: 2px solid transparent; color: var(--text-secondary); font-size: 12px; font-weight: 700; cursor: pointer;">
-          SRM AP ERP (eVarsity)
-        </button>
-      </div>
-
-      <div class="modal-body" style="padding: 18px 20px;">
-        <!-- TAB 1: GOOGLE CLASSROOM OAUTH -->
-        <div class="integration-tab-panel" id="tab-panel-google">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-            <span style="font-size: 12px; color: var(--text-secondary);">Google Cloud OAuth 2.0 Credentials</span>
-            <span class="status-pill status-not_started" id="google-modal-status-badge">OFFLINE</span>
+        <!-- ERP Tab -->
+        <div class="integration-tab-panel" id="tab-panel-erp">
+          <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 14px;">
+            Synchronize live data with <b>student.srmap.edu.in</b>.
+          </p>
+          <div class="form-group">
+            <label class="form-label">SRM Registration Number:</label>
+            <input type="text" id="erp-modal-id-input" placeholder="e.g. AP23110010042" class="form-input"
+              style="font-family: var(--font-mono);">
           </div>
-
-          <div
-            style="background: rgba(37, 99, 235, 0.06); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: var(--radius-sm); padding: 10px 12px; font-size: 11px; color: #93c5fd; margin-bottom: 14px; line-height: 1.4;">
-            <b>Google Cloud Setup:</b> Create a Web Application OAuth Client in <a
-              href="https://console.cloud.google.com/apis/credentials" target="_blank"
-              style="color: #60a5fa; text-decoration: underline;">Google Cloud Console</a>, enable Classroom &amp; Drive
-            APIs, and set the Authorized Redirect URI below.
+          <div class="form-group">
+            <label class="form-label">Password:</label>
+            <input type="password" id="erp-modal-password-input" placeholder="Portal Password" class="form-input">
           </div>
+          <button class="btn btn-primary" id="btn-connect-modal-erp" style="width: 100%;">Connect SRM AP ERP</button>
+        </div>
 
+        <!-- Google Tab -->
+        <div class="integration-tab-panel" id="tab-panel-google" style="display: none;">
           <div style="margin-bottom: 10px;">
-            <label
-              style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; display: block; margin-bottom: 4px;">Authorized
-              Redirect URI (Copy into Google Console):</label>
-            <input type="text" value="http://localhost:8000/api/auth/google/callback" readonly
-              style="width: 100%; background: #09090b; border: 1px solid var(--border); color: #60a5fa; font-family: var(--font-mono); padding: 7px 10px; border-radius: var(--radius-sm); font-size: 11px;">
+            <label class="form-label">Authorized Redirect URI:</label>
+            <input type="text" value="http://localhost:8000/api/auth/google/callback" readonly class="form-input"
+              style="color: #60a5fa; font-family: var(--font-mono); font-size: 11px;">
           </div>
-
-          <div style="margin-bottom: 10px;">
-            <label
-              style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; display: block; margin-bottom: 4px;">Client
-              ID:</label>
-            <input type="text" id="google-client-id-input" placeholder="e.g. 1234567890-xxx.apps.googleusercontent.com"
-              style="width: 100%; background: #111827; border: 1px solid var(--border); color: #fff; padding: 8px 10px; border-radius: var(--radius-sm); font-size: 12px;">
+          <div class="form-group">
+            <label class="form-label">Client ID:</label>
+            <input type="text" id="google-client-id-input" placeholder="OAuth Client ID" class="form-input">
           </div>
-
-          <div style="margin-bottom: 14px;">
-            <label
-              style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; display: block; margin-bottom: 4px;">Client
-              Secret:</label>
-            <input type="password" id="google-client-secret-input" placeholder="e.g. GOCSPX-xxxxxxxxxxxxxxxx"
-              style="width: 100%; background: #111827; border: 1px solid var(--border); color: #fff; padding: 8px 10px; border-radius: var(--radius-sm); font-size: 12px;">
+          <div class="form-group">
+            <label class="form-label">Client Secret:</label>
+            <input type="password" id="google-client-secret-input" placeholder="Client Secret" class="form-input">
           </div>
-
           <div style="display: flex; gap: 8px;">
             <button class="btn btn-primary btn-sm" id="btn-save-google-credentials" style="flex: 1;">Save Credentials
-              &amp; Sign In with Google</button>
+              &amp; Sign In</button>
             <button class="btn btn-secondary btn-sm" id="btn-launch-google-oauth">Sign In (Existing)</button>
           </div>
         </div>
-
-        <!-- TAB 2: SRM AP ERP (EVARSITY) -->
-        <div class="integration-tab-panel" id="tab-panel-erp" style="display: none;">
-          <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 14px; line-height: 1.5;">
-            Direct live synchronization exclusively with <b>SRM AP eVarsity / Student Corner</b>
-            (<code>student.srmap.edu.in</code>).
-            Enter your student credentials to automatically authenticate, solve the portal captcha locally, and fetch
-            your
-            official timetable, room numbers, enrolled courses, and attendance.
-          </p>
-
-          <!-- Connected ERP Status Card -->
-          <div class="panel-card" id="erp-modal-status-card"
-            style="display: none; margin-bottom: 14px; background: rgba(16, 185, 129, 0.06); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: var(--radius-sm); padding: 12px;">
-            <!-- Populated dynamically via IntegrationsModule.loadStatus() -->
-          </div>
-
-          <!-- Direct SRM AP Login Form -->
-          <div id="erp-login-form-container">
-            <div style="margin-bottom: 12px;">
-              <label
-                style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; display: block; margin-bottom: 5px;">
-                SRM AP Registration Number:
-              </label>
-              <input type="text" id="erp-direct-id-input" placeholder="e.g. AP23110010042 or AP24..."
-                autocomplete="username"
-                style="width: 100%; background: #111827; border: 1px solid var(--border); color: #fff; padding: 9px 12px; border-radius: var(--radius-sm); font-size: 13px; font-family: var(--font-mono);">
-            </div>
-
-            <div style="margin-bottom: 14px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">
-                  ERP Portal Password:
-                </label>
-                <button type="button" id="erp-toggle-password-btn"
-                  style="background: none; border: none; color: #60a5fa; font-size: 11px; cursor: pointer; padding: 0;">Show</button>
-              </div>
-              <input type="password" id="erp-direct-password-input" placeholder="Enter your SRM AP portal password"
-                autocomplete="current-password"
-                style="width: 100%; background: #111827; border: 1px solid var(--border); color: #fff; padding: 9px 12px; border-radius: var(--radius-sm); font-size: 13px;">
-              <div
-                style="display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 11px; color: var(--text-muted);">
-                <span style="color: #10b981;">🔒</span>
-                <span>Encrypted at rest with AES-128/Fernet. Credentials are never logged or exposed.</span>
-              </div>
-            </div>
-
-            <button class="btn btn-primary" id="btn-connect-direct-erp"
-              style="width: 100%; padding: 10px; font-weight: 600; font-size: 13px;">
-              CONNECT SRM AP ERP
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- FLOATING 12-STEP TEST TOUR OVERLAY -->
-  <div class="expo-overlay" id="expo-demo-overlay">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-      <span class="status-pill status-ready" id="demo-step-badge">STEP 1 OF 12</span>
-      <button class="toast-close" onclick="ExpoDemoModule.closeDemo()">&times;</button>
-    </div>
-    <div id="demo-step-title" style="font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 4px;">Initialize
-      Classroom Environment</div>
-    <p id="demo-step-desc" style="font-size: 11px; color: var(--text-secondary); margin-bottom: 10px;">Connecting
-      simulated Google Classroom environment with courses and pending coursework...</p>
-    <div
-      style="height: 3px; background: rgba(255, 255, 255, 0.1); border-radius: 2px; overflow: hidden; margin-bottom: 10px;">
-      <div id="demo-progress-bar" style="height: 100%; width: 8%; background: #3b82f6; transition: width 0.3s ease;">
-      </div>
-    </div>
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-      <button class="btn btn-secondary btn-sm" id="demo-pause-btn"
-        style="padding: 3px 8px; font-size: 10px;">Pause</button>
-      <div style="display: flex; gap: 6px;">
-        <button class="btn btn-secondary btn-sm" id="demo-close-btn"
-          style="padding: 3px 8px; font-size: 10px;">Close</button>
-        <button class="btn btn-primary btn-sm" id="demo-next-btn" style="padding: 3px 8px; font-size: 10px;">Next Step
-          &rarr;</button>
       </div>
     </div>
   </div>
@@ -726,7 +683,6 @@
   <script src="/js/validation.js"></script>
   <script src="/js/scheduler.js"></script>
   <script src="/js/integrations.js"></script>
-  <script src="/js/expo_demo.js"></script>
 </body>
 
 </html>

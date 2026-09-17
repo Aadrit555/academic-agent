@@ -118,12 +118,7 @@ document.addEventListener("DOMContentLoaded", () => {
     openImportBtn.addEventListener("click", () => {
       const ta = document.getElementById("timetable-json-input");
       if (ta && !ta.value.trim()) {
-        ta.value = JSON.stringify([
-          { "subject": "Data Structures", "day_of_week": 0, "start_time": "10:00", "end_time": "11:00", "classroom": "AB-204" },
-          { "subject": "Digital Electronics", "day_of_week": 1, "start_time": "09:00", "end_time": "09:50", "classroom": "X-201" },
-          { "subject": "Digital Electronics", "day_of_week": 3, "start_time": "09:00", "end_time": "09:50", "classroom": "C-1011" },
-          { "subject": "Digital Electronics", "day_of_week": 4, "start_time": "14:00", "end_time": "15:00", "classroom": "C-504" }
-        ], null, 2);
+        ta.placeholder = `[\n  {\n    "subject": "Course Name",\n    "day_of_week": 0,\n    "start_time": "09:00",\n    "end_time": "09:50",\n    "classroom": "Room Number",\n    "faculty": "Faculty Name"\n  }\n]`;
       }
       openModal("import-timetable-modal");
     });
