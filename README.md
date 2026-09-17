@@ -83,8 +83,9 @@ $$\mathbf{UNDERSTAND} \longrightarrow \mathbf{PLAN} \longrightarrow \mathbf{GENE
 - **Next Class Live Countdown**: Computes current ongoing or upcoming class and room location in real-time.
 - **Zero Plaintext Storage**: Student ERP passwords and session cookies are encrypted at rest using AES-128 CBC via Fernet encryption keys.
 
-### 8. 📷 Lens-Style Camera Attendance Scanner
-- **Optical Attendance Verification**: Real-time camera viewfinder with viewfinder target matching current timetable period codes.
+### 8. 📷 Lens-Style Camera & Optical Attendance Scanner
+- **Optical Attendance Verification**: Real-time camera viewfinder with OpenCV QR and optical code recognition.
+- **Manual Input Fallback**: Direct alphanumeric code input with active timetable session correlation.
 - **One-Tap Verification**: Verifies attendance code against schedule and records entry directly.
 
 ### 9. 🔒 Enterprise Security & OWASP Hardening
@@ -96,6 +97,21 @@ $$\mathbf{UNDERSTAND} \longrightarrow \mathbf{PLAN} \longrightarrow \mathbf{GENE
 - **Input Sanitization & XSS Mitigation**: Automated string and payload sanitization across all request inputs.
 - **IDOR Protection**: All course, coursework, timetable, and document operations enforce user boundary checks.
 - **Production Static Pages**: Custom 404 error page, Terms & Conditions, and Privacy Policy included.
+
+### 10. 🎬 Interactive 12-Step Guided Expo Demonstration
+- Run the complete end-to-end story with one click from the sidebar (`Run 12-Step Expo Demo`):
+  1. Connect Google Classroom
+  2. Import Academic Timetable
+  3. Upload Course Materials (`Unit-2.pdf`, `Lab-Manual.pdf`)
+  4. Detect Classroom Assignment (`DAA LAB 4: Implement Merge Sort in C`)
+  5. Generate Assignment Deliverable
+  6. Run Code Compilation & Validation Pipeline
+  7. Enable Auto-Submit 4 Hours Before Deadline
+  8. View Persistent Background Schedule
+  9. Ask Study Brain: "Summarize Unit 2"
+  10. Ask Study Brain: "Generate 10 Important Questions"
+  11. Display Next Class Context Widget
+  12. Execute Fast Attendance Action
 
 ---
 
@@ -124,8 +140,8 @@ academic_agent/
 │       ├── documents/               # Multi-format ingestion (PDF, DOCX, TXT, MD)
 │       ├── rag/                     # Course-scoped chunking, search, QA
 │       ├── ai/                      # Multi-tier AI (Gemini, Groq, heuristic fallback)
-│       ├── generation/              # Code (.c, .py) & Document (.docx, .pdf) generation
-│       ├── validation/              # Isolated gcc/javac/python compiler & tests
+│       ├── generation/              # Code (.c, .cpp, .py, .java) & Document (.docx, .pdf) generation
+│       ├── validation/              # Isolated gcc/g++/javac/python compiler & tests
 │       └── middleware/              # Rate limiting & OWASP security headers
 ├── frontend/                        # Responsive Classroom-first Single Page Application
 │   ├── index.html                   # Master Classroom surface & Companion Add-on
@@ -135,13 +151,13 @@ academic_agent/
 │   ├── favicon.svg                  # Brand favicon
 │   ├── css/styles.css               # Clean, non-vibecoded professional design system
 │   └── js/                          # Modular controllers & API client
-├── tests/                           # 53 automated tests (100% passing)
+├── tests/                           # 56 automated tests (100% passing)
 │   ├── test_erp_live.py             # SRM AP ERP, captcha solver, attendance & timetable tests
 │   ├── test_security.py             # Security audit, auth, IDOR, XSS, rate limiting tests
 │   ├── test_api_endpoints.py        # REST API endpoint tests
-│   ├── test_generation.py           # Deliverable generation tests
+│   ├── test_generation.py           # Deliverable generation tests (C, C++, Java, Python, DOCX)
 │   ├── test_validation.py           # GCC compiler & validator tests
-│   ├── test_submission_flow.py      # Scheduled submission engine tests
+│   ├── test_submission_flow.py      # Scheduled submission engine & 403 handling tests
 │   ├── test_timetable.py            # Timetable and room allocation tests
 │   └── test_rag_and_brain.py        # RAG and study brain tests
 └── uploads/                         # Course materials and generated deliverables
@@ -153,7 +169,7 @@ academic_agent/
 
 ### Prerequisites
 - Python 3.10+ (tested on Python 3.14)
-- GCC / MinGW (for C compilation)
+- GCC / MinGW (for C/C++ compilation)
 - Git
 
 ### 1. Install Dependencies
@@ -162,16 +178,27 @@ pip install -r requirements.txt
 ```
 
 ### 2. Configure Environment (Optional)
-Copy `.env.example` to `.env` for production deployments:
+Copy `.env.example` to `.env` for custom configuration:
 ```bash
 cp .env.example .env
+```
+Key configuration parameters:
+```env
+# Google Cloud OAuth 2.0 (For live Classroom & Drive)
+GOOGLE_CLASSROOM_CLIENT_ID=your-client-id.apps.googleusercontent.com
+GOOGLE_CLASSROOM_CLIENT_SECRET=your-client-secret
+GOOGLE_REDIRECT_URI=http://localhost:8000/api/auth/google/callback
+
+# AI Provider Keys (Optional: works with built-in heuristic engine if unset)
+GEMINI_API_KEY=your-gemini-api-key
+GROQ_API_KEY=your-groq-api-key
 ```
 
 ### 3. Run Automated Tests
 ```bash
 python -m pytest tests/ -v
 ```
-*53 passed tests verifying ERP connectivity, CRNN captcha inference, security headers, IDOR, XSS sanitization, RAG, and GCC validation.*
+*56 passed tests verifying live ERP connectivity, CRNN captcha inference, security headers, IDOR, XSS sanitization, RAG, multi-language generation, GCC validation, and Google Classroom state machine.*
 
 ### 4. Start the Application
 ```bash
