@@ -600,6 +600,24 @@ const AddonApp = {
     const container = document.getElementById("automation-details-box");
     if (!container) return;
 
+    const isSubmitted = this.state.activeItem && this.state.activeItem.status === "SUBMITTED";
+    if (isSubmitted) {
+      container.innerHTML = `
+        <div class="auto-box">
+          <div class="auto-row">
+            <div>
+              <div class="auto-title" style="color: var(--success, #10b981);">✓ ASSIGNMENT TURNED IN</div>
+              <div class="auto-sub">Deliverable verified and turned in to Google Classroom.</div>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="AddonApp.reclaimSubmission()">
+              Unsubmit / Reclaim
+            </button>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
     const sched = this.state.schedule;
     const isAutoOn = !!(sched && sched.auto_submit_enabled);
     const schedTimeStr = sched && sched.scheduled_time
@@ -625,6 +643,27 @@ const AddonApp = {
         </div>
       </div>
     `;
+  },
+
+  async reclaimSubmission() {
+    if (!this.state.selectedId) return;
+    if (!confirm("Do you want to unsubmit / reclaim this assignment in Google Classroom to make revisions?")) return;
+
+    try {
+      Toast.info("Reclaiming submission from Google Classroom...");
+      const res = await api("/submission/reclaim", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ coursework_id: this.state.selectedId })
+      });
+
+      Toast.success(res.message || "Submission reclaimed successfully.");
+      if (this.state.activeItem) this.state.activeItem.status = res.status || "READY_FOR_SUBMISSION";
+      this.renderAssignmentSection();
+      this.renderProgressTracker();
+    } catch (e) {
+      Toast.error(`Reclaim failed: ${e.message}`);
+    }
   },
 
   async toggleAutoSubmit() {

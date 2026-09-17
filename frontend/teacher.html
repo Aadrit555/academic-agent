@@ -64,8 +64,32 @@
     document.getElementById("teacher-course-id").textContent = courseId;
     document.getElementById("teacher-item-id").textContent = itemId;
 
-    function attachAddon() {
+    async function attachAddon() {
+      const btn = document.getElementById("btn-attach-addon");
+      btn.disabled = true;
+      btn.textContent = "Attaching to Classroom...";
+
       const origin = window.location.origin;
+      try {
+        const token = localStorage.getItem("academic_agent_jwt");
+        const headers = { "Content-Type": "application/json" };
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+
+        await fetch("/api/classroom/attachments", {
+          method: "POST",
+          headers: headers,
+          body: JSON.stringify({
+            course_id: courseId,
+            item_id: itemId,
+            title: "Academic Agent AI Assignment Executor",
+            base_url: origin,
+            max_points: 100.0
+          })
+        }).catch(err => console.warn("Classroom API attachment creation notice:", err));
+      } catch (e) {
+        console.warn("Classroom attachment backend notice:", e);
+      }
+
       const attachmentPayload = {
         type: "ADD_ATTACHMENT",
         attachment: {
@@ -80,10 +104,8 @@
         window.parent.postMessage(JSON.stringify(attachmentPayload), "*");
       }
 
-      const btn = document.getElementById("btn-attach-addon");
       btn.textContent = "✓ Academic Agent Attached to Assignment";
       btn.className = "btn btn-success btn-block";
-      btn.disabled = true;
     }
   </script>
 </body>

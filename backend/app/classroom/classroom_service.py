@@ -123,3 +123,103 @@ class ClassroomService:
 
         return synced_coursework
 
+    @classmethod
+    def create_addon_attachment(
+        cls,
+        db: Session,
+        user: User,
+        course_id: str,
+        item_id: str,
+        title: str = "Academic Agent AI Assignment Executor",
+        base_url: str = "http://127.0.0.1:8000",
+        max_points: float = 100.0,
+    ) -> dict:
+        """Creates an AddOnAttachment on coursework conforming to Google Classroom Discovery v1.
+        POST /v1/courses/{courseId}/courseWork/{itemId}/addOnAttachments
+        """
+        token, is_demo = AuthService.get_valid_token(db, user)
+        if not token or is_demo:
+            raise RuntimeError("Google Classroom is not connected. Please connect with your Google credentials.")
+
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+        }
+        url = f"{API_BASE}/courses/{course_id}/courseWork/{item_id}/addOnAttachments"
+        body = {
+            "title": title,
+            "teacherViewUri": {"uri": f"{base_url}/addon/teacher?courseId={course_id}&itemId={item_id}"},
+            "studentViewUri": {"uri": f"{base_url}/addon?courseId={course_id}&itemId={item_id}"},
+            "studentWorkReviewUri": {"uri": f"{base_url}/addon/review?courseId={course_id}&itemId={item_id}"},
+            "maxPoints": max_points
+        }
+        resp = requests.post(url, headers=headers, json=body, timeout=20)
+        resp.raise_for_status()
+        return resp.json()
+
+    @classmethod
+    def get_addon_context(cls, db: Session, user: User, course_id: str, item_id: str) -> dict:
+        """Fetches AddOnContext for coursework conforming to Google Classroom Discovery v1.
+        GET /v1/courses/{courseId}/courseWork/{itemId}/addOnContext
+        """
+        token, is_demo = AuthService.get_valid_token(db, user)
+        if not token or is_demo:
+            raise RuntimeError("Google Classroom is not connected.")
+
+        headers = {"Authorization": f"Bearer {token}", "Accept": "application/json"}
+        url = f"{API_BASE}/courses/{course_id}/courseWork/{item_id}/addOnContext"
+        resp = requests.get(url, headers=headers, timeout=15)
+        resp.raise_for_status()
+        return resp.json()
+
+    @classmethod
+    def list_addon_attachments(cls, db: Session, user: User, course_id: str, item_id: str) -> list[dict]:
+        """Lists AddOnAttachments on coursework conforming to Google Classroom Discovery v1.
+        GET /v1/courses/{courseId}/courseWork/{itemId}/addOnAttachments
+        """
+        token, is_demo = AuthService.get_valid_token(db, user)
+        if not token or is_demo:
+            raise RuntimeError("Google Classroom is not connected.")
+
+        headers = {"Authorization": f"Bearer {token}", "Accept": "application/json"}
+        url = f"{API_BASE}/courses/{course_id}/courseWork/{item_id}/addOnAttachments"
+        resp = requests.get(url, headers=headers, timeout=15)
+        resp.raise_for_status()
+        return resp.json().get("addOnAttachments", [])
+
+    @classmethod
+    def passback_grade(
+        cls,
+        db: Session,
+        user: User,
+        course_id: str,
+        item_id: str,
+        attachment_id: str,
+        submission_id: str,
+        points_earned: float
+    ) -> dict:
+        """Updates student submission points on add-on attachment conforming to Google Classroom Discovery v1.
+        PATCH /v1/courses/{courseId}/courseWork/{itemId}/addOnAttachments/{attachmentId}/studentSubmissions/{submissionId}?updateMask=pointsEarned
+        """
+        token, is_demo = AuthService.get_valid_token(db, user)
+        if not token or is_demo:
+            raise RuntimeError("Google Classroom is not connected.")
+
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+        }
+        url = (
+            f"{API_BASE}/courses/{course_id}/courseWork/{item_id}/"
+            f"addOnAttachments/{attachment_id}/studentSubmissions/{submission_id}"
+            "?updateMask=pointsEarned"
+        )
+        body = {
+            "pointsEarned": float(points_earned)
+        }
+        resp = requests.patch(url, headers=headers, json=body, timeout=20)
+        resp.raise_for_status()
+        return resp.json()
+

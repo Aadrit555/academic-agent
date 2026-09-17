@@ -123,3 +123,34 @@ class SubmissionService:
             db.commit()
             raise RuntimeError(f"Classroom submission failed: {str(e)}") from e
 
+    @classmethod
+    def reclaim_submission(cls, db: Session, user: User, coursework: Coursework) -> dict:
+        """Reclaims / unsubmits student submission conforming to Google Classroom Discovery v1.
+        POST /v1/courses/{courseId}/courseWork/{courseWorkId}/studentSubmissions/{id}:reclaim
+        """
+        token, is_demo = AuthService.get_valid_token(db, user)
+        if not token or is_demo:
+            raise RuntimeError("Google Classroom is not connected.")
+
+        cid = coursework.classroom_course_id
+        wid = coursework.coursework_id
+        submission_id = coursework.submission_id
+
+        headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+        if not submission_id:
+            sr = requests.get(f"{API_BASE}/courses/{cid}/courseWork/{wid}/studentSubmissions?userId=me", headers=headers, timeout=15)
+            sr.raise_for_status()
+            subs = sr.json().get("studentSubmissions", [])
+            if not subs:
+                raise RuntimeError(f"No student submission slot found in Classroom for course {cid}, coursework {wid}.")
+            submission_id = subs[0]["id"]
+            coursework.submission_id = submission_id
+
+        url = f"{API_BASE}/courses/{cid}/courseWork/{wid}/studentSubmissions/{submission_id}:reclaim"
+        resp = requests.post(url, json={}, headers=headers, timeout=20)
+        resp.raise_for_status()
+
+        coursework.status = "READY_FOR_SUBMISSION"
+        db.commit()
+        return resp.json() if resp.content else {"status": "RECLAIMED", "submission_id": submission_id}
+

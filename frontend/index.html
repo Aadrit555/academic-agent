@@ -38,8 +38,8 @@
           <span class="chip-text">Portal</span>
         </button>
 
-        <button class="icon-btn" id="btn-settings" title="Settings & Integrations"
-          onclick="openModal('settings-modal')" aria-label="Settings">
+        <button class="icon-btn" id="btn-settings" title="Settings & Integrations" onclick="openModal('settings-modal')"
+          aria-label="Settings">
           ⚙️
         </button>
       </div>
@@ -257,7 +257,8 @@
 
           <div id="google-login-view">
             <p class="modal-intro">
-              Connect your institutional Google account to automatically import enrolled courses, assignment instructions,
+              Connect your institutional Google account to automatically import enrolled courses, assignment
+              instructions,
               deadlines, and enable direct Google Drive deliverable turn-in.
             </p>
             <button class="btn btn-secondary btn-block" onclick="AddonApp.launchGoogleOAuth()">
@@ -269,12 +270,14 @@
         <!-- Tab 3: OAuth Credentials Config -->
         <div class="tab-pane" id="tab-pane-config" style="display: none;">
           <p class="modal-intro">
-            If running on a custom domain or staging environment, configure your Google Cloud OAuth Client ID and Secret here.
+            If running on a custom domain or staging environment, configure your Google Cloud OAuth Client ID and Secret
+            here.
           </p>
 
           <div class="form-group">
             <label class="form-label" for="config-client-id">Google Client ID</label>
-            <input type="text" class="form-input" id="config-client-id" placeholder="e.g. 123456789.apps.googleusercontent.com">
+            <input type="text" class="form-input" id="config-client-id"
+              placeholder="e.g. 123456789.apps.googleusercontent.com">
           </div>
 
           <div class="form-group">

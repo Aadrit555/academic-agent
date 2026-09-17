@@ -73,7 +73,12 @@
           return;
         }
 
-        const checklist = val && val.checklist ? val.checklist : [];
+        const attachmentId = params.get("attachmentId") || "";
+        const submissionId = params.get("submissionId") || "";
+        const courseId = params.get("courseId") || (matched ? matched.classroom_course_id : "");
+
+        const maxPoints = matched && matched.max_points ? matched.max_points : 100;
+        const suggestedGrade = val && val.passed ? maxPoints : Math.round(maxPoints * 0.7);
 
         container.innerHTML = `
           <div class="deliv-card">
@@ -102,10 +107,76 @@
                 `).join('')}
               </div>
             ` : ''}
+
+            <div class="grade-passback-box" style="margin-top: 16px; padding: 14px; background: var(--bg-tertiary, #0f172a); border-radius: 8px; border: 1px solid var(--border, #334155);">
+              <div style="font-weight: 600; font-size: 13px; color: var(--text-primary, #f8fafc); margin-bottom: 8px;">
+                GRADE PASSBACK TO GOOGLE CLASSROOM (Discovery API v1)
+              </div>
+              <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <label style="font-size: 12px; color: var(--text-secondary, #94a3b8);">Points:</label>
+                <input type="number" id="grade-input" value="${suggestedGrade}" min="0" max="${maxPoints}" step="1" 
+                  style="width: 80px; padding: 6px 8px; background: var(--bg-secondary, #1e293b); color: #fff; border: 1px solid var(--border, #475569); border-radius: 6px;">
+                <span style="font-size: 12px; color: var(--text-secondary, #94a3b8);">/ ${maxPoints} max</span>
+                <button class="btn btn-primary btn-sm" id="btn-passback" onclick="submitGradePassback('${escapeHtml(courseId)}', '${escapeHtml(matched.coursework_id || itemId)}', '${escapeHtml(attachmentId)}', '${escapeHtml(submissionId)}')">
+                  Pass Back Grade
+                </button>
+              </div>
+              <div id="grade-status" style="margin-top: 8px; font-size: 12px; display: none;"></div>
+            </div>
           </div>
         `;
       } catch (e) {
         container.innerHTML = `<div class="empty-compact text-danger">Failed to load submission review: ${escapeHtml(e.message)}</div>`;
+      }
+    }
+
+    async function submitGradePassback(courseId, itemId, attachmentId, submissionId) {
+      const btn = document.getElementById("btn-passback");
+      const statusEl = document.getElementById("grade-status");
+      const gradeInput = document.getElementById("grade-input");
+      const points = parseFloat(gradeInput.value);
+
+      if (isNaN(points)) {
+        alert("Please enter a valid numeric grade.");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = "Passing back...";
+      statusEl.style.display = "block";
+      statusEl.style.color = "#94a3b8";
+      statusEl.textContent = "Sending grade passback to Google Classroom API...";
+
+      try {
+        const token = localStorage.getItem("academic_agent_jwt");
+        const headers = { "Content-Type": "application/json" };
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+
+        const res = await fetch("/api/classroom/grade-passback", {
+          method: "POST",
+          headers: headers,
+          body: JSON.stringify({
+            course_id: courseId || "classroom_course",
+            item_id: itemId,
+            attachment_id: attachmentId || "attachment_1",
+            submission_id: submissionId || "me",
+            points_earned: points
+          })
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ detail: "Grade passback failed." }));
+          throw new Error(err.detail || "Classroom API rejected grade passback.");
+        }
+
+        statusEl.style.color = "#10b981";
+        statusEl.textContent = `✓ Grade of ${points} passed back to Google Classroom successfully.`;
+        btn.textContent = "✓ Grade Saved";
+      } catch (e) {
+        statusEl.style.color = "#ef4444";
+        statusEl.textContent = `Passback Note: ${e.message} (Ensure Google account is connected with teacher permissions).`;
+        btn.disabled = false;
+        btn.textContent = "Retry Passback";
       }
     }
 

@@ -27,9 +27,9 @@ def db_session():
 
 @pytest.fixture
 def auth_headers(db_session):
-    user = db_session.query(User).filter_by(email="erp_test@srmap.edu.in").first()
+    user = db_session.query(User).filter_by(email="erp_test@university.edu").first()
     if not user:
-        user = User(email="erp_test@srmap.edu.in", name="Aadrit Y", role="student")
+        user = User(email="erp_test@university.edu", name="Test Student", role="student")
         db_session.add(user)
         db_session.commit()
         db_session.refresh(user)
@@ -233,7 +233,7 @@ def test_study_brain_with_erp_context(auth_headers, db_session):
     # Setup dummy ERP integration & class
     integ = ERPService.get_or_create_integration(db_session, user)
     integ.is_connected = True
-    integ.student_name = "Aadrit Yadav"
+    integ.student_name = "Test Student"
     integ.attendance_data = json.dumps([
         {"subject": "Data Structures", "course_code": "CS207", "conducted": 30, "attended": 28, "percentage": 93.3, "margin": 7, "margin_message": "Can safely miss 7 classes"}
     ])

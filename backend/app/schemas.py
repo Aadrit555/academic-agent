@@ -242,3 +242,21 @@ class GoogleCredentialsConfigRequest(BaseModel):
     client_secret: str
     redirect_uri: Optional[str] = "http://localhost:8000/api/auth/google/callback"
 
+# Discovery API v1 Classroom Add-on Schemas
+class CreateAddonAttachmentRequest(BaseModel):
+    course_id: str
+    item_id: str
+    title: Optional[str] = "Academic Agent AI Assignment Executor"
+    max_points: Optional[float] = 100.0
+    base_url: Optional[str] = None
+
+class GradePassbackRequest(BaseModel):
+    course_id: str
+    item_id: str
+    attachment_id: str
+    submission_id: str
+    points_earned: float
+
+class ReclaimSubmissionRequest(BaseModel):
+    coursework_id: int
+

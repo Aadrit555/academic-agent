@@ -21,7 +21,8 @@ from backend.app.schemas import (
     GeneratedAssignmentResponse, AssignmentSpecificationResponse, ValidationResponse, 
     ScheduleSubmissionRequest, SubmissionScheduleResponse, SubmitNowRequest, 
     SubmissionResultResponse,
-    ERPLiveConnectRequest, ERPConnectSessionRequest, ERPImportScheduleRequest, GoogleCredentialsConfigRequest
+    ERPLiveConnectRequest, ERPConnectSessionRequest, ERPImportScheduleRequest, GoogleCredentialsConfigRequest,
+    CreateAddonAttachmentRequest, GradePassbackRequest, ReclaimSubmissionRequest
 )
 from backend.app.auth.security import create_access_token, verify_access_token
 from backend.app.auth.auth_service import AuthService, get_or_create_default_user
@@ -432,6 +433,77 @@ def get_coursework_list(db: Session = Depends(get_db), user: User = Depends(curr
         })
     return results
 
+@app.post("/api/classroom/attachments")
+def create_addon_attachment(
+    req: CreateAddonAttachmentRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(current_user)
+):
+    """Creates an AddOnAttachment conforming to Google Classroom Discovery v1."""
+    base_url = req.base_url or str(request.base_url).rstrip("/")
+    try:
+        res = ClassroomService.create_addon_attachment(
+            db, user,
+            course_id=req.course_id,
+            item_id=req.item_id,
+            title=req.title or "Academic Agent AI Assignment Executor",
+            base_url=base_url,
+            max_points=req.max_points or 100.0
+        )
+        return res
+    except Exception as e:
+        logger.error(f"Error creating add-on attachment: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.get("/api/classroom/attachments")
+def list_addon_attachments(
+    course_id: str = Query(...),
+    item_id: str = Query(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(current_user)
+):
+    """Lists AddOnAttachments on coursework conforming to Google Classroom Discovery v1."""
+    try:
+        return ClassroomService.list_addon_attachments(db, user, course_id=course_id, item_id=item_id)
+    except Exception as e:
+        logger.error(f"Error listing add-on attachments: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.get("/api/classroom/addon-context")
+def get_addon_context(
+    course_id: str = Query(...),
+    item_id: str = Query(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(current_user)
+):
+    """Fetches AddOnContext conforming to Google Classroom Discovery v1."""
+    try:
+        return ClassroomService.get_addon_context(db, user, course_id=course_id, item_id=item_id)
+    except Exception as e:
+        logger.error(f"Error fetching add-on context: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/api/classroom/grade-passback")
+def passback_grade(
+    req: GradePassbackRequest,
+    db: Session = Depends(get_db),
+    user: User = Depends(current_user)
+):
+    """Passes back grade to student submission conforming to Google Classroom Discovery v1."""
+    try:
+        return ClassroomService.passback_grade(
+            db, user,
+            course_id=req.course_id,
+            item_id=req.item_id,
+            attachment_id=req.attachment_id,
+            submission_id=req.submission_id,
+            points_earned=req.points_earned
+        )
+    except Exception as e:
+        logger.error(f"Error in grade passback: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
 # ── AI Study Brain & Document Ingestion Endpoints ────────────────────────────
 @app.post("/api/documents/upload", response_model=DocumentResponse)
 async def upload_document(
@@ -602,6 +674,28 @@ def submit_now(coursework_id: int, db: Session = Depends(get_db), user: User = D
             message="Assignment turned in successfully to Google Classroom."
         )
     except (ValueError, RuntimeError) as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/api/submission/reclaim")
+def reclaim_submission(
+    req: ReclaimSubmissionRequest,
+    db: Session = Depends(get_db),
+    user: User = Depends(current_user)
+):
+    """Reclaims / unsubmits student submission conforming to Google Classroom Discovery v1."""
+    cw = db.query(Coursework).filter_by(id=req.coursework_id, user_id=user.id).first()
+    if not cw:
+        raise HTTPException(status_code=404, detail="Coursework not found")
+    try:
+        res = SubmissionService.reclaim_submission(db, user, cw)
+        return {
+            "message": "Submission reclaimed successfully. You may now modify deliverables and resubmit.",
+            "coursework_id": cw.id,
+            "status": cw.status,
+            "details": res
+        }
+    except Exception as e:
+        logger.error(f"Error reclaiming submission: {e}")
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.get("/api/schedules")

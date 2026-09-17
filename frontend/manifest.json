@@ -1,6 +1,14 @@
 {
   "timeZone": "Asia/Kolkata",
   "dependencies": {},
+  "oauthScopes": [
+    "https://www.googleapis.com/auth/classroom.courses.readonly",
+    "https://www.googleapis.com/auth/classroom.coursework.me",
+    "https://www.googleapis.com/auth/classroom.addons.student",
+    "https://www.googleapis.com/auth/classroom.addons.teacher",
+    "https://www.googleapis.com/auth/drive.file",
+    "https://www.googleapis.com/auth/userinfo.email"
+  ],
   "addOns": {
     "common": {
       "name": "Academic Agent",
@@ -8,9 +16,15 @@
       "layoutProperties": {
         "primaryColor": "#2563eb",
         "secondaryColor": "#10b981"
-      }
+      },
+      "openLinkUrlPrefixes": [
+        "https://classroom.google.com/",
+        "http://127.0.0.1:8000/",
+        "https://student.srmap.edu.in/"
+      ]
     },
     "classroom": {
+      "attachmentDiscoveryUri": "http://127.0.0.1:8000/addon/teacher",
       "teacherViewUri": "http://127.0.0.1:8000/addon/teacher",
       "studentViewUri": "http://127.0.0.1:8000/addon",
       "studentWorkReviewUri": "http://127.0.0.1:8000/addon/review"

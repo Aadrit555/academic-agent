@@ -75,6 +75,8 @@ class AuthService:
     SCOPES = [
         "https://www.googleapis.com/auth/classroom.courses.readonly",
         "https://www.googleapis.com/auth/classroom.coursework.me",
+        "https://www.googleapis.com/auth/classroom.addons.student",
+        "https://www.googleapis.com/auth/classroom.addons.teacher",
         "https://www.googleapis.com/auth/drive.file",
         "https://www.googleapis.com/auth/userinfo.email",
     ]
