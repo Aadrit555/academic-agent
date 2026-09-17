@@ -1,0 +1,202 @@
+from pydantic import BaseModel, Field, ConfigDict
+from typing import Optional, List, Dict, Any
+from datetime import datetime
+
+# User Schemas
+class UserBase(BaseModel):
+    email: str
+    name: str
+
+class UserCreate(UserBase):
+    pass
+
+class UserResponse(UserBase):
+    id: int
+    created_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+# Course Schemas
+class CourseBase(BaseModel):
+    code: Optional[str] = ""
+    name: str
+    instructor: Optional[str] = ""
+    color: Optional[str] = "#4f46e5"
+    classroom_id: Optional[str] = ""
+
+class CourseCreate(CourseBase):
+    pass
+
+class CourseResponse(CourseBase):
+    id: int
+    user_id: int
+    created_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+# Timetable Schemas
+class TimetableEntryBase(BaseModel):
+    subject: str
+    day_of_week: int # 0=Monday, ..., 6=Sunday
+    start_time: str # "10:00"
+    end_time: str # "11:00"
+    classroom: Optional[str] = "AB-204"
+    course_id: Optional[int] = None
+
+class TimetableEntryCreate(TimetableEntryBase):
+    pass
+
+class TimetableEntryResponse(TimetableEntryBase):
+    id: int
+    user_id: int
+    created_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+class NextClassResponse(BaseModel):
+    has_class: bool
+    is_ongoing: bool = False
+    is_approaching: bool = False # within 15 min
+    subject: Optional[str] = None
+    start_time: Optional[str] = None
+    end_time: Optional[str] = None
+    classroom: Optional[str] = None
+    time_remaining_minutes: Optional[int] = None
+    course_id: Optional[int] = None
+
+# Classroom & Coursework Schemas
+class CourseworkResponse(BaseModel):
+    id: int
+    user_id: int
+    course_id: Optional[int]
+    course_name: Optional[str] = ""
+    classroom_course_id: str
+    coursework_id: str
+    title: str
+    description: Optional[str] = ""
+    due_date: Optional[str] = None
+    due_time: Optional[str] = None
+    max_points: Optional[float] = 100.0
+    alternate_link: Optional[str] = ""
+    status: str
+    submission_id: Optional[str] = ""
+    created_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+# Documents & Study Brain Schemas
+class DocumentResponse(BaseModel):
+    id: int
+    course_id: int
+    course_name: Optional[str] = ""
+    filename: str
+    file_type: str
+    file_size: int
+    page_count: int
+    uploaded_at: datetime
+    chunk_count: Optional[int] = 0
+    model_config = ConfigDict(from_attributes=True)
+
+class StudyBrainRequest(BaseModel):
+    course_id: int
+    action: str # "summary", "questions", "explanation", "targeted_study"
+    query: Optional[str] = ""
+    document_id: Optional[int] = None
+
+class StudyCitation(BaseModel):
+    document_name: str
+    page_number: int
+    snippet: str
+
+class StudyBrainResponse(BaseModel):
+    action: str
+    title: str
+    content: str
+    citations: List[StudyCitation] = []
+    course_id: int
+    document_name: Optional[str] = None
+
+# Assignment Generation Schemas
+class GenerateAssignmentRequest(BaseModel):
+    coursework_id: int
+    custom_instructions: Optional[str] = ""
+
+class GeneratedAssignmentResponse(BaseModel):
+    id: int
+    coursework_id: int
+    file_name: str
+    file_path: str
+    file_type: str
+    language: str
+    code_or_content: str
+    created_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+# Validation Schemas
+class ValidationCheckItem(BaseModel):
+    step: str
+    title: str
+    passed: bool
+    details: Optional[str] = ""
+
+class ValidationResponse(BaseModel):
+    id: int
+    assignment_id: int
+    passed: bool
+    status: str
+    checklist: List[ValidationCheckItem]
+    compiler_output: Optional[str] = ""
+    test_output: Optional[str] = ""
+    error_details: Optional[str] = ""
+    validated_at: datetime
+
+# Submission Scheduling Schemas
+class ScheduleSubmissionRequest(BaseModel):
+    coursework_id: int
+    offset_hours: Optional[float] = 4.0
+    auto_submit_enabled: Optional[bool] = True
+
+class SubmissionScheduleResponse(BaseModel):
+    id: int
+    coursework_id: int
+    assignment_id: Optional[int]
+    deadline_datetime: datetime
+    offset_hours: float
+    scheduled_time: datetime
+    auto_submit_enabled: bool
+    status: str
+    failure_reason: Optional[str] = ""
+    attempts: int
+    created_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+class SubmitNowRequest(BaseModel):
+    coursework_id: int
+
+class SubmissionResultResponse(BaseModel):
+    coursework_id: int
+    submission_id: str
+    state: str
+    drive_file_id: Optional[str] = ""
+    turned_in_at: datetime
+    message: str
+
+# Attendance Schemas
+class AttendanceMarkRequest(BaseModel):
+    subject: Optional[str] = ""
+    course_id: Optional[int] = None
+    attendance_code: str
+
+class AttendanceResponse(BaseModel):
+    id: int
+    subject: str
+    attendance_code: str
+    marked_at: datetime
+    status: str
+    message: str
+    model_config = ConfigDict(from_attributes=True)
+
+# Home Summary
+class HomeSummaryResponse(BaseModel):
+    next_class: NextClassResponse
+    current_class: Optional[NextClassResponse] = None
+    assignments: List[CourseworkResponse]
+    stats: Dict[str, Any]
+    attendance_ready: bool
+    current_subject: Optional[str] = None

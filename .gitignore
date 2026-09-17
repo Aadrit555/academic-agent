@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+
+# Database
+*.db
+*.sqlite3
+
+# Uploads
+uploads/generated/*
+!uploads/generated/.gitkeep
+uploads/materials/*
+!uploads/materials/.gitkeep
+
+# Pytest / Cache
+.pytest_cache/
+.coverage
+htmlcov/
+
+# References
+_references/
+
+# Environment secrets
+.env
+.env.local
+tokens.json
+credentials.json
