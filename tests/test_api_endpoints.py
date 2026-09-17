@@ -184,20 +184,35 @@ def test_erp_status_and_connect_endpoint(client):
     assert len(after_data["attendance_summary"]) > 0
 
 def test_erp_schedule_import_endpoint(client):
+    from backend.app.database import SessionLocal
+    from backend.app.models import User
+    from backend.app.auth.security import create_access_token
+    session = SessionLocal()
+    test_user = session.query(User).filter_by(email="import_test@srmap.edu.in").first()
+    if not test_user:
+        test_user = User(email="import_test@srmap.edu.in", name="Import Tester", role="student")
+        session.add(test_user)
+        session.commit()
+        session.refresh(test_user)
+    token = create_access_token(test_user.id, test_user.email, test_user.role)
+    session.close()
+
+    auth_headers = {"Authorization": f"Bearer {token}"}
     csv_schedule = """Day,Start,End,Subject,Room
-Monday,09:00,10:00,Operating Systems,AB-301
-Tuesday,11:00,12:00,Computer Networks,C-102
-Friday,14:00,15:00,Operating Systems,AB-502
+Monday,09:00,10:00,Digital Electronics,X 201
+Thursday,09:00,10:00,Digital Electronics,C 1011
+Friday,14:00,15:00,Digital Electronics,C 504
 """
-    res = client.post("/api/erp/import-schedule", json={"content": csv_schedule})
+    res = client.post("/api/erp/import-schedule", json={"content": csv_schedule}, headers=auth_headers)
     assert res.status_code == 200
     data = res.json()
     assert data["imported_count"] == 3
 
-    # Verify timetable updated in DB
-    tt_res = client.get("/api/timetable")
+    # Verify timetable updated in DB for the test user
+    tt_res = client.get("/api/timetable", headers=auth_headers)
     assert tt_res.status_code == 200
     entries = tt_res.json()
-    assert any(e["subject"] == "Operating Systems" for e in entries)
-    assert any(e["classroom"] == "AB-502" for e in entries)
+    assert any(e["subject"] == "Digital Electronics" for e in entries)
+    assert any(e["classroom"] == "C 504" for e in entries)
+
 
