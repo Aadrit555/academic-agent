@@ -9,7 +9,14 @@ logger = logging.getLogger("academic_agent.ai")
 class AIService:
     @classmethod
     def generate_completion(cls, prompt: str, system_prompt: str = "") -> str:
-        """Attempts Gemini first, Groq second, and falls back to deterministic academic engine."""
+        """Attempts OpenAI/ChatGPT first, Gemini second, Groq third, and falls back to deterministic engine."""
+        openai_key = settings.OPENAI_API_KEY
+        if openai_key:
+            try:
+                return cls._call_openai(prompt, system_prompt, openai_key)
+            except Exception as e:
+                logger.warning(f"[AI] OpenAI/ChatGPT call failed: {e}. Falling back...")
+
         gemini_key = settings.GEMINI_API_KEY
         if gemini_key:
             try:
@@ -26,6 +33,29 @@ class AIService:
 
         # Deterministic offline academic engine fallback
         return cls._offline_completion(prompt, system_prompt)
+
+    @classmethod
+    def _call_openai(cls, prompt: str, system_prompt: str, api_key: str) -> str:
+        url = "https://api.openai.com/v1/chat/completions"
+        messages = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": prompt})
+
+        payload = {
+            "model": "gpt-4o-mini",
+            "messages": messages,
+            "temperature": 0.2
+        }
+        resp = requests.post(
+            url,
+            json=payload,
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            timeout=30
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        return data["choices"][0]["message"]["content"]
 
     @classmethod
     def _call_gemini(cls, prompt: str, system_prompt: str, api_key: str) -> str:

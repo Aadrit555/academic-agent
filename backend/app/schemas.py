@@ -238,9 +238,10 @@ class ERPImportScheduleRequest(BaseModel):
     content: str # JSON, CSV, or ICS
 
 class GoogleCredentialsConfigRequest(BaseModel):
-    client_id: str
-    client_secret: str
+    client_id: Optional[str] = ""
+    client_secret: Optional[str] = ""
     redirect_uri: Optional[str] = "http://localhost:8000/api/auth/google/callback"
+    openai_api_key: Optional[str] = ""
 
 # Discovery API v1 Classroom Add-on Schemas
 class CreateAddonAttachmentRequest(BaseModel):

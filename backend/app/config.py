@@ -1,10 +1,13 @@
 import os
 import secrets
 from pathlib import Path
+from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
+load_dotenv(BASE_DIR / ".env")
 
 class Settings:
+    BASE_DIR: Path = BASE_DIR
     APP_NAME: str = "Academic Agent"
     APP_VERSION: str = "1.0.0"
     APP_ENV: str = os.getenv("APP_ENV", "production")
@@ -41,6 +44,7 @@ class Settings:
     GOOGLE_REDIRECT_URI: str = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/api/auth/google/callback")
     
     # AI Keys (Optional - offline deterministic engine used if unset)
+    OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", os.getenv("CHATGPT_API_KEY", ""))
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", os.getenv("GOOGLE_API_KEY", ""))
     GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
     

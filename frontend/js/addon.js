@@ -816,18 +816,22 @@ const AddonApp = {
   async saveGoogleCredentials() {
     const cid = (document.getElementById("config-client-id")?.value || "").trim();
     const sec = (document.getElementById("config-client-secret")?.value || "").trim();
-    if (!cid || !sec) {
-      Toast.warning("Please provide both Client ID and Client Secret.");
+    const openaiKey = (document.getElementById("config-openai-key")?.value || "").trim();
+
+    if (!cid && !sec && !openaiKey) {
+      Toast.warning("Please provide either Google credentials or an OpenAI API key.");
       return;
     }
     try {
-      await api("/config/google-credentials", {
+      const res = await api("/config/google-credentials", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ client_id: cid, client_secret: sec })
+        body: JSON.stringify({ client_id: cid, client_secret: sec, openai_api_key: openaiKey })
       });
-      Toast.success("OAuth credentials saved! You can now connect Google Classroom.");
-      this.switchModalTab("google");
+      Toast.success(res.message || "Credentials saved successfully!");
+      if (cid && sec) {
+        this.switchModalTab("google");
+      }
     } catch (e) {
       Toast.error(`Failed to save credentials: ${e.message}`);
     }

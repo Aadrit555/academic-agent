@@ -338,16 +338,22 @@ def configure_google_credentials(
     req: GoogleCredentialsConfigRequest,
     user: User = Depends(current_user)
 ):
-    """Saves Google Cloud OAuth credentials configured by the user in-app."""
-    cid = req.client_id.strip()
-    sec = req.client_secret.strip()
-    if not cid or not sec:
-        raise HTTPException(status_code=400, detail="Client ID and Client Secret are required.")
+    """Saves Google Cloud OAuth and/or OpenAI credentials configured by the user in-app."""
+    cid = (req.client_id or "").strip()
+    sec = (req.client_secret or "").strip()
+    openai_key = (req.openai_api_key or "").strip()
+
+    if not cid and not sec and not openai_key:
+        raise HTTPException(status_code=400, detail="Please provide either Google OAuth credentials or an OpenAI API key.")
     
-    settings.GOOGLE_CLIENT_ID = cid
-    settings.GOOGLE_CLIENT_SECRET = sec
+    if cid:
+        settings.GOOGLE_CLIENT_ID = cid
+    if sec:
+        settings.GOOGLE_CLIENT_SECRET = sec
     if req.redirect_uri:
         settings.GOOGLE_REDIRECT_URI = req.redirect_uri.strip()
+    if openai_key:
+        settings.OPENAI_API_KEY = openai_key
 
     # Safely persist to .env file in project root if possible
     try:
@@ -358,18 +364,32 @@ def configure_google_credentials(
         
         filtered = [
             l for l in existing_lines 
-            if not l.startswith("GOOGLE_CLASSROOM_") and not l.startswith("GOOGLE_CLIENT_") and not l.startswith("GOOGLE_REDIRECT_URI")
+            if not l.startswith("GOOGLE_CLASSROOM_") and not l.startswith("GOOGLE_CLIENT_") 
+            and not l.startswith("GOOGLE_REDIRECT_URI") and (not openai_key or not l.startswith("OPENAI_API_KEY") and not l.startswith("CHATGPT_API_KEY"))
         ]
-        filtered.append(f"GOOGLE_CLASSROOM_CLIENT_ID={cid}")
-        filtered.append(f"GOOGLE_CLASSROOM_CLIENT_SECRET={sec}")
+        if cid:
+            filtered.append(f"GOOGLE_CLASSROOM_CLIENT_ID={cid}")
+        if sec:
+            filtered.append(f"GOOGLE_CLASSROOM_CLIENT_SECRET={sec}")
         filtered.append(f"GOOGLE_REDIRECT_URI={settings.GOOGLE_REDIRECT_URI}")
+        if openai_key:
+            filtered.append(f"OPENAI_API_KEY={openai_key}")
         env_path.write_text("\n".join(filtered) + "\n", encoding="utf-8")
     except Exception as e:
         logger.warning(f"Could not persist credentials to .env file: {e}")
 
+    auth_url = ""
+    try:
+        if settings.GOOGLE_CLIENT_ID:
+            auth_url = AuthService.get_auth_url()
+    except Exception:
+        pass
+
     return {
-        "message": "Google Cloud OAuth credentials configured successfully. You can now authenticate with your institutional Google account.",
-        "auth_url": AuthService.get_auth_url()
+        "message": "Credentials configured successfully. You can now authenticate with your institutional Google account and use OpenAI services.",
+        "auth_url": auth_url,
+        "openai_configured": bool(settings.OPENAI_API_KEY),
+        "google_configured": bool(settings.GOOGLE_CLIENT_ID and settings.GOOGLE_CLIENT_SECRET)
     }
 
 # ── Timetable Endpoints ──────────────────────────────────────────────────────
