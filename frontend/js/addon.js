@@ -33,7 +33,7 @@ const AddonApp = {
     const params = new URLSearchParams(window.location.search);
     this.state.courseId = params.get("courseId");
     this.state.itemId = params.get("itemId");
-    
+
     // Auth redirect callback handling
     if (params.get("auth_success") === "true") {
       Toast.success("Google Classroom connected successfully!");
@@ -88,7 +88,7 @@ const AddonApp = {
     if (!card) return;
 
     try {
-      const next = await api("/erp/next-class").catch(() => null) 
+      const next = await api("/erp/next-class").catch(() => null)
         || await api("/timetable/next").catch(() => null);
 
       this.state.nextClass = next;
@@ -120,8 +120,8 @@ const AddonApp = {
         return;
       }
 
-      const statusBadge = isOngoing 
-        ? '<span class="pill pill-green">IN SESSION NOW</span>' 
+      const statusBadge = isOngoing
+        ? '<span class="pill pill-green">IN SESSION NOW</span>'
         : '<span class="pill pill-blue">NEXT CLASS</span>';
 
       card.innerHTML = `
@@ -241,8 +241,8 @@ const AddonApp = {
     if (!container) return;
 
     const deadlineStr = item.due_date ? `${item.due_date} ${item.due_time || ''}` : "No deadline specified";
-    const reqCount = this.state.spec && this.state.spec.required_files 
-      ? this.state.spec.required_files.length 
+    const reqCount = this.state.spec && this.state.spec.required_files
+      ? this.state.spec.required_files.length
       : 0;
 
     container.innerHTML = `
@@ -329,7 +329,7 @@ const AddonApp = {
 
     try {
       Toast.info("Analyzing assignment specification and synthesizing deliverables...");
-      
+
       const genRes = await api("/assignment/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -526,8 +526,8 @@ const AddonApp = {
 
     const sched = this.state.schedule;
     const isAutoOn = !!(sched && sched.auto_submit_enabled);
-    const schedTimeStr = sched && sched.scheduled_time 
-      ? new Date(sched.scheduled_time).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) 
+    const schedTimeStr = sched && sched.scheduled_time
+      ? new Date(sched.scheduled_time).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
       : 'Default: 4 hours before deadline';
 
     container.innerHTML = `
@@ -672,7 +672,7 @@ async function api(path, options = {}) {
   }
 
   let res = await fetch(`/api${path}`, { ...options, headers });
-  
+
   if (res.status === 401 && token) {
     localStorage.removeItem("academic_agent_jwt");
     delete headers["Authorization"];

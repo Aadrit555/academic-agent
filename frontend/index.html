@@ -31,12 +31,14 @@
           <span>Google</span>
         </div>
 
-        <div class="status-chip disconnected" id="addon-erp-chip" title="SRM AP eVarsity Status" onclick="openModal('erp-modal')">
+        <div class="status-chip disconnected" id="addon-erp-chip" title="SRM AP eVarsity Status"
+          onclick="openModal('erp-modal')">
           <span class="chip-dot"></span>
           <span>SRM ERP</span>
         </div>
 
-        <button class="icon-btn" id="btn-settings" title="Settings & ERP Auth" onclick="openModal('erp-modal')" aria-label="Settings">
+        <button class="icon-btn" id="btn-settings" title="Settings & ERP Auth" onclick="openModal('erp-modal')"
+          aria-label="Settings">
           ⚙️
         </button>
       </div>
@@ -75,10 +77,12 @@
       <div class="section-label">PROGRESS</div>
       <div id="progress-tracker-box">
         <div class="progress-stepper">
-          <div class="step-item"><span class="step-icon">○</span><span class="step-label">Assignment analyzed</span></div>
+          <div class="step-item"><span class="step-icon">○</span><span class="step-label">Assignment analyzed</span>
+          </div>
           <div class="step-item"><span class="step-icon">○</span><span class="step-label">Files generated</span></div>
           <div class="step-item"><span class="step-icon">○</span><span class="step-label">Validation passed</span></div>
-          <div class="step-item"><span class="step-icon">○</span><span class="step-label">Submission scheduled</span></div>
+          <div class="step-item"><span class="step-icon">○</span><span class="step-label">Submission scheduled</span>
+          </div>
         </div>
       </div>
     </section>
@@ -96,17 +100,20 @@
     <!-- ── Section 5: Course Material AI (RAG Grounding) ─────────────────── -->
     <section class="addon-section" id="section-material">
       <div class="section-label">COURSE MATERIAL AI</div>
-      
+
       <div class="material-actions-bar">
-        <button class="btn btn-secondary btn-sm" id="btn-summarize-material" onclick="AddonApp.queryMaterial('summary')">
+        <button class="btn btn-secondary btn-sm" id="btn-summarize-material"
+          onclick="AddonApp.queryMaterial('summary')">
           📖 Summarize
         </button>
-        <button class="btn btn-secondary btn-sm" id="btn-questions-material" onclick="AddonApp.queryMaterial('questions')">
+        <button class="btn btn-secondary btn-sm" id="btn-questions-material"
+          onclick="AddonApp.queryMaterial('questions')">
           ❓ Questions
         </button>
         <label class="btn btn-secondary btn-sm btn-upload-label" title="Upload PDF/DOCX for AI grounding">
           <span>📎 Upload Material</span>
-          <input type="file" id="material-file-upload" accept=".pdf,.docx,.txt,.md" style="display: none;" onchange="AddonApp.handleMaterialUpload(this)">
+          <input type="file" id="material-file-upload" accept=".pdf,.docx,.txt,.md" style="display: none;"
+            onchange="AddonApp.handleMaterialUpload(this)">
         </label>
       </div>
 
@@ -162,17 +169,20 @@
 
       <div class="modal-body">
         <p class="modal-intro">
-          Authenticate with your SRM AP student registration number and portal password to automatically sync your live timetable, variable classrooms, and academic calendar.
+          Authenticate with your SRM AP student registration number and portal password to automatically sync your live
+          timetable, variable classrooms, and academic calendar.
         </p>
 
         <div class="form-group">
           <label class="form-label" for="erp-id-input">Registration Number / Portal ID</label>
-          <input type="text" class="form-input" id="erp-id-input" placeholder="e.g. AP23110010042" autocomplete="username">
+          <input type="text" class="form-input" id="erp-id-input" placeholder="e.g. AP23110010042"
+            autocomplete="username">
         </div>
 
         <div class="form-group">
           <label class="form-label" for="erp-password-input">Portal Password</label>
-          <input type="password" class="form-input" id="erp-password-input" placeholder="Enter portal password" autocomplete="current-password">
+          <input type="password" class="form-input" id="erp-password-input" placeholder="Enter portal password"
+            autocomplete="current-password">
         </div>
 
         <button class="btn btn-primary btn-block" id="btn-erp-submit">
