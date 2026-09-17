@@ -143,11 +143,12 @@ class SchedulerService:
                     db.commit()
                     logger.info(f"[Scheduler] Successfully auto-submitted '{coursework.title}'")
                 except Exception as e:
-                    schedule.status = "FAILED"
+                    if coursework.status != "MANUAL_ACTION_REQUIRED":
+                        coursework.status = "FAILED"
+                    schedule.status = "MANUAL_ACTION_REQUIRED" if coursework.status == "MANUAL_ACTION_REQUIRED" else "FAILED"
                     schedule.failure_reason = str(e)
-                    coursework.status = "FAILED"
                     db.commit()
-                    logger.error(f"[Scheduler] Auto-submission failed for '{coursework.title}': {e}")
+                    logger.error(f"[Scheduler] Auto-submission status update for '{coursework.title}': {e}")
         finally:
             db.close()
 

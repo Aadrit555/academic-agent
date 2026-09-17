@@ -118,3 +118,49 @@ def test_schedule_calculation_and_persistence(db_session, ready_assignment_fixtu
     # Check scheduled_time is approximately deadline - 4 hours
     assert abs((schedule.scheduled_time - expected_scheduled).total_seconds()) < 60
 
+def test_submission_manual_action_required_on_403(db_session, ready_assignment_fixture, monkeypatch):
+    import requests
+    user, cw, assignment, _ = ready_assignment_fixture
+    # Switch integration to live mode
+    integ = db_session.query(ClassroomIntegration).filter_by(user_id=user.id).first()
+    integ.is_demo_mode = False
+    integ.access_token = "live_google_test_token"
+    cw.alternate_link = "https://classroom.google.com/c/123/a/456/details"
+    db_session.commit()
+
+    monkeypatch.setattr(
+        "backend.app.drive.drive_service.DriveService.upload_file",
+        lambda path, token, is_demo=False: ("1Drv-12345", "test_merge.c")
+    )
+
+    class Mock403Response:
+        status_code = 403
+        def json(self):
+            return {"error": {"code": 403, "message": "The caller does not have permission for modifyAttachments."}}
+        def raise_for_status(self):
+            raise requests.exceptions.HTTPError("403 Forbidden", response=self)
+
+    class MockSubListResponse:
+        status_code = 200
+        def json(self):
+            return {"studentSubmissions": [{"id": "sub-123"}]}
+        def raise_for_status(self):
+            pass
+
+    def mock_get(url, *args, **kwargs):
+        if "studentSubmissions?userId=me" in url:
+            return MockSubListResponse()
+        return Mock403Response()
+
+    def mock_post(url, *args, **kwargs):
+        Mock403Response().raise_for_status()
+
+    monkeypatch.setattr("requests.get", mock_get)
+    monkeypatch.setattr("requests.post", mock_post)
+
+    with pytest.raises(RuntimeError) as exc_info:
+        SubmissionService.execute_submission(db_session, user, cw)
+
+    assert "manual student confirmation" in str(exc_info.value)
+    assert cw.status == "MANUAL_ACTION_REQUIRED"
+

@@ -110,6 +110,30 @@ class SubmissionService:
             db.refresh(sub_record)
             return sub_record
 
+        except requests.exceptions.HTTPError as he:
+            status_code = he.response.status_code if he.response is not None else 500
+            err_msg = str(he)
+            if he.response is not None:
+                try:
+                    err_json = he.response.json()
+                    err_msg = err_json.get("error", {}).get("message", str(he))
+                except Exception:
+                    pass
+
+            if status_code == 403 or "ATTACHMENT_NOT_OWNED" in err_msg or "PERMISSION_DENIED" in err_msg or "permission" in err_msg.lower():
+                coursework.status = "MANUAL_ACTION_REQUIRED"
+                db.commit()
+                link = coursework.alternate_link or "Google Classroom"
+                raise RuntimeError(
+                    f"Classroom requires manual student confirmation: {err_msg}. "
+                    f"Deliverable '{assignment.file_name}' is compiled, verified, and uploaded to Drive. "
+                    f"Please complete turn-in directly in Classroom: {link}"
+                ) from he
+            else:
+                coursework.status = "FAILED"
+                db.commit()
+                raise RuntimeError(f"Classroom submission failed (HTTP {status_code}): {err_msg}") from he
+
         except Exception as e:
             coursework.status = "FAILED"
             db.commit()

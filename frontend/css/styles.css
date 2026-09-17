@@ -437,6 +437,12 @@ body {
   border: 1px solid rgba(245, 158, 11, 0.3);
 }
 
+.status-manual_action_required {
+  background: rgba(245, 158, 11, 0.18);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
 /* Buttons */
 .btn {
   display: inline-flex;

@@ -180,7 +180,10 @@ class AuthService:
             return integration.access_token, True
             
         now = utcnow()
-        needs_refresh = (not integration.token_expires_at) or (integration.token_expires_at <= now + timedelta(seconds=60))
+        expires_at = integration.token_expires_at
+        if expires_at is not None and expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+        needs_refresh = (not expires_at) or (expires_at <= now + timedelta(seconds=60))
         if needs_refresh and integration.refresh_token:
             try:
                 payload = {

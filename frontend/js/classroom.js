@@ -155,7 +155,7 @@ const ClassroomModule = {
           <div style="flex: 1; min-width: 0;">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
               <h4 style="font-size: 14px; font-weight: 600; color: #fff;">${escapeHtml(a.title)}</h4>
-              <span class="status-pill status-${a.status.toLowerCase()}">${a.status.replace("_", " ")}</span>
+              <span class="status-pill status-${a.status.toLowerCase()}">${a.status.replace(/_/g, " ")}</span>
             </div>
             <p style="color: var(--text-secondary); font-size: 12px; margin: 4px 0 8px; line-height: 1.4;">${escapeHtml(a.description || "Open to inspect specification and generate deliverables.")}</p>
             <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
