@@ -70,7 +70,10 @@ class RateLimiterMiddleware(BaseHTTPMiddleware):
             "/api/assignment/submit-now"
         )
         is_sensitive = any(path.startswith(sp) for sp in sensitive_paths)
-        limit = settings.RATE_LIMIT_SENSITIVE_PER_MINUTE if is_sensitive else settings.RATE_LIMIT_GENERAL_PER_MINUTE
+        if client_ip in ("127.0.0.1", "::1", "localhost"):
+            limit = 240
+        else:
+            limit = settings.RATE_LIMIT_SENSITIVE_PER_MINUTE if is_sensitive else settings.RATE_LIMIT_GENERAL_PER_MINUTE
 
         key = f"{client_ip}:{'sensitive' if is_sensitive else 'general'}"
         

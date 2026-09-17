@@ -443,6 +443,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         Toast.error(`Login Failed: ${e.message}`);
       }
     });
+
+    const authPwInput = document.getElementById("auth-password-input");
+    if (authPwInput) {
+      authPwInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") loginBtn.click();
+      });
+    }
   }
 
   const regBtn = document.getElementById("btn-register-submit");

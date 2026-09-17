@@ -252,23 +252,26 @@ const IntegrationsModule = {
     }
   },
 
-  async connectDirectERP() {
-    const idInput = document.getElementById("erp-direct-id-input");
-    const pwInput = document.getElementById("erp-direct-password-input");
+  async connectDirectERP(isModal = false) {
+    const idInput = document.getElementById(isModal ? "erp-modal-id-input" : "erp-direct-id-input");
+    const pwInput = document.getElementById(isModal ? "erp-modal-password-input" : "erp-direct-password-input");
+    const btn = document.getElementById(isModal ? "btn-connect-modal-erp" : "btn-connect-direct-erp");
 
     const erpId = idInput ? idInput.value.trim().toUpperCase() : "";
     const password = pwInput ? pwInput.value.trim() : "";
 
     if (!erpId) {
       Toast.warning("Please enter your SRM AP Registration Number (e.g. AP23110010042).");
+      if (idInput) idInput.focus();
       return;
     }
     if (!password) {
       Toast.warning("Please enter your SRM AP ERP portal password.");
+      if (pwInput) pwInput.focus();
       return;
     }
 
-    const btn = document.getElementById("btn-connect-direct-erp");
+    const origBtnText = btn ? btn.textContent : "CONNECT SRM ERP";
     if (btn) {
       btn.innerHTML = `<span style="display:inline-block; margin-right:6px;">⏳</span> Authenticating & Solving Captcha...`;
       btn.disabled = true;
@@ -306,7 +309,7 @@ const IntegrationsModule = {
       Toast.error(`ERP Connection Failed: ${e.message}`);
     } finally {
       if (btn) {
-        btn.textContent = "CONNECT SRM ERP";
+        btn.textContent = origBtnText;
         btn.disabled = false;
       }
     }
@@ -420,15 +423,34 @@ document.addEventListener("DOMContentLoaded", () => {
     directGoogleBtn.addEventListener("click", () => IntegrationsModule.launchGoogleAuth());
   }
 
-  // Direct SRM AP ERP connect button
+  // Direct SRM AP ERP connect button (Tab view)
   const directErpBtn = document.getElementById("btn-connect-direct-erp");
   if (directErpBtn) {
-    directErpBtn.addEventListener("click", () => IntegrationsModule.connectDirectERP());
+    directErpBtn.addEventListener("click", () => IntegrationsModule.connectDirectERP(false));
+  }
+
+  // Direct SRM AP ERP connect button (Modal view)
+  const modalErpBtn = document.getElementById("btn-connect-modal-erp");
+  if (modalErpBtn) {
+    modalErpBtn.addEventListener("click", () => IntegrationsModule.connectDirectERP(true));
+  }
+
+  // Enter key press to submit ERP password
+  const directPwInput = document.getElementById("erp-direct-password-input");
+  if (directPwInput) {
+    directPwInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") IntegrationsModule.connectDirectERP(false);
+    });
+  }
+  const modalPwInput = document.getElementById("erp-modal-password-input");
+  if (modalPwInput) {
+    modalPwInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") IntegrationsModule.connectDirectERP(true);
+    });
   }
 
   // Toggle ERP password visibility
   const togglePwBtn = document.getElementById("erp-toggle-password-btn");
-  const directPwInput = document.getElementById("erp-direct-password-input");
   if (togglePwBtn && directPwInput) {
     togglePwBtn.addEventListener("click", () => {
       const isPw = directPwInput.type === "password";

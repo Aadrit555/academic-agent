@@ -28,14 +28,14 @@
     <div class="header-status-group">
       <!-- SRM AP ERP Status Chip -->
       <div class="auth-chip" id="classroom-auth-status" title="SRM AP eVarsity Status"
-        onclick="openModal('integrations-modal')">
+        onclick="navigateToAddonTab('erp')">
         <span class="chip-dot" style="background:#10b981;"></span>
         <span id="google-user-email">Checking ERP...</span>
       </div>
 
       <!-- Google Classroom Status Chip -->
       <div class="auth-chip" id="header-google-status" title="Google Classroom Status"
-        onclick="openModal('integrations-modal')">
+        onclick="navigateToAddonTab('classroom')">
         <span class="chip-dot"></span>
         <span id="google-status-text">Google Classroom</span>
       </div>
@@ -43,6 +43,9 @@
 
     <!-- Action Buttons -->
     <div class="header-actions">
+      <button class="btn btn-primary btn-sm" onclick="navigateToAddonTab('erp')" id="header-connect-erp-btn" title="Open SRM AP ERP Portal">
+        <span>🏛️ SRM AP ERP</span>
+      </button>
       <button class="btn btn-secondary btn-sm" id="open-integrations-btn" title="Manage Integrations">
         <span>Integrations Hub</span>
       </button>
@@ -595,12 +598,28 @@
         <button class="modal-close" onclick="closeModal('auth-modal')">&times;</button>
       </div>
       <div class="modal-body">
+        <div style="background: rgba(37, 99, 235, 0.12); border: 1px solid rgba(37, 99, 235, 0.35); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 16px; text-align: center;">
+          <div style="font-weight: 700; color: #93c5fd; font-size: 13px; margin-bottom: 4px;">Looking to login to your University ERP?</div>
+          <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; line-height: 1.4;">
+            Directly authenticate with your SRM AP Registration Number &amp; Password to sync timetable and attendance.
+          </div>
+          <button type="button" class="btn btn-primary btn-sm" onclick="closeModal('auth-modal'); navigateToAddonTab('erp');" style="width: 100%; font-weight: 700;">
+            Go to SRM AP ERP Login &rarr;
+          </button>
+        </div>
+
+        <div style="display: flex; align-items: center; margin: 12px 0 16px; color: var(--text-muted); font-size: 10px; font-weight: 700; letter-spacing: 0.5px;">
+          <div style="flex: 1; height: 1px; background: var(--border);"></div>
+          <span style="padding: 0 8px;">OR LOCAL APP ACCOUNT</span>
+          <div style="flex: 1; height: 1px; background: var(--border);"></div>
+        </div>
+
         <div id="auth-user-status" style="margin-bottom: 12px; font-size: 13px; color: var(--text-secondary);">
           Sign in or register your student account.
         </div>
         <div class="form-group">
-          <label class="form-label">Email:</label>
-          <input type="email" id="auth-email-input" placeholder="student@srmap.edu.in" class="form-input">
+          <label class="form-label">Email or SRM Reg Number:</label>
+          <input type="text" id="auth-email-input" placeholder="e.g. AP23110010042 or student@srmap.edu.in" class="form-input">
         </div>
         <div class="form-group">
           <label class="form-label">Password:</label>

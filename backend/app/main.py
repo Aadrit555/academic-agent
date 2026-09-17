@@ -9,10 +9,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, RedirectResponse, JSONResponse
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 
 from backend.app.config import settings
 from backend.app.database import get_db, init_db
-from backend.app.models import User, Course, TimetableEntry, Coursework, Document, GeneratedAssignment, AssignmentValidation, SubmissionSchedule, Submission
+from backend.app.models import User, Course, TimetableEntry, Coursework, Document, GeneratedAssignment, AssignmentValidation, SubmissionSchedule, Submission, ERPIntegration
 from backend.app.schemas import (
     HomeSummaryResponse, UserResponse, UserRegister, UserLogin, TokenResponse,
     CourseResponse, TimetableEntryResponse, NextClassResponse, CourseworkResponse, 
@@ -186,8 +187,39 @@ def google_auth_callback(code: str, db: Session = Depends(get_db), user: User = 
 
 @app.post("/api/auth/register", response_model=TokenResponse)
 def register_user(req: UserRegister, db: Session = Depends(get_db)):
+    clean_email = req.email.strip().lower()
+    if "@" not in clean_email:
+        clean_email = f"{clean_email}@srmap.edu.in"
+
+    existing_user = db.query(User).filter_by(email=clean_email).first()
+    if existing_user:
+        from backend.app.auth.security import verify_password, hash_password
+        # If user still had default seed password, update password and log in successfully
+        if existing_user.hashed_password and verify_password("Pass@Academic2026!", existing_user.hashed_password, existing_user.salt):
+            pwd_hash, salt = hash_password(req.password)
+            existing_user.hashed_password = pwd_hash
+            existing_user.salt = salt
+            if req.name and req.name.strip():
+                existing_user.name = req.name.strip()
+            db.commit()
+            db.refresh(existing_user)
+            token = create_access_token(user_id=existing_user.id, email=existing_user.email, role=existing_user.role)
+            return TokenResponse(
+                access_token=token,
+                token_type="Bearer",
+                user=UserResponse(
+                    id=existing_user.id,
+                    email=existing_user.email,
+                    name=existing_user.name,
+                    role=existing_user.role,
+                    created_at=existing_user.created_at
+                )
+            )
+        else:
+            raise HTTPException(status_code=400, detail=f"User with email '{clean_email}' already exists. Click 'Sign In' instead.")
+
     try:
-        user = AuthService.register_user(db, email=req.email, name=req.name, password=req.password)
+        user = AuthService.register_user(db, email=clean_email, name=req.name, password=req.password)
         token = create_access_token(user_id=user.id, email=user.email, role=user.role)
         return TokenResponse(
             access_token=token,
@@ -205,13 +237,28 @@ def register_user(req: UserRegister, db: Session = Depends(get_db)):
 
 @app.post("/api/auth/login", response_model=TokenResponse)
 def login_user(req: UserLogin, db: Session = Depends(get_db)):
-    clean_email = req.email.strip().lower()
-    existing_user = db.query(User).filter_by(email=clean_email).first()
+    clean_identifier = req.email.strip().lower()
     
+    # 1. Match by ERP Student Registration Number (e.g. AP23110010042)
+    erp_match = (
+        db.query(ERPIntegration)
+        .filter(func.lower(ERPIntegration.student_id) == clean_identifier)
+        .first()
+    )
+    if erp_match and erp_match.user:
+        existing_user = erp_match.user
+        clean_email = existing_user.email
+    else:
+        if "@" not in clean_identifier:
+            clean_email = f"{clean_identifier}@srmap.edu.in"
+        else:
+            clean_email = clean_identifier
+        existing_user = db.query(User).filter_by(email=clean_email).first()
+
     # Seamless first-time onboarding: auto-registers new student account if not yet registered
     if not existing_user:
         if len(req.password) >= 8:
-            user = AuthService.register_user(db, email=clean_email, name=clean_email.split("@")[0], password=req.password)
+            user = AuthService.register_user(db, email=clean_email, name=clean_email.split("@")[0].upper(), password=req.password)
             token = create_access_token(user_id=user.id, email=user.email, role=user.role)
             return TokenResponse(
                 access_token=token,
@@ -229,7 +276,18 @@ def login_user(req: UserLogin, db: Session = Depends(get_db)):
 
     user = AuthService.authenticate_user(db, email=clean_email, password=req.password)
     if not user:
-        raise HTTPException(status_code=401, detail="Invalid password for this account.")
+        from backend.app.auth.security import verify_password, hash_password
+        # If user still had default seed password, update password and log in successfully
+        if existing_user.hashed_password and verify_password("Pass@Academic2026!", existing_user.hashed_password, existing_user.salt):
+            pwd_hash, salt = hash_password(req.password)
+            existing_user.hashed_password = pwd_hash
+            existing_user.salt = salt
+            db.commit()
+            db.refresh(existing_user)
+            user = existing_user
+        else:
+            raise HTTPException(status_code=401, detail="Invalid password for this account.")
+
     token = create_access_token(user_id=user.id, email=user.email, role=user.role)
     return TokenResponse(
         access_token=token,
