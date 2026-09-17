@@ -137,6 +137,41 @@ class SchedulerService:
                 db.commit()
 
                 try:
+                    # 1. Autonomous deliverable generation if not already created
+                    assignment = (
+                        db.query(GeneratedAssignment)
+                        .filter_by(coursework_id=coursework.id)
+                        .order_by(GeneratedAssignment.id.desc())
+                        .first()
+                    )
+                    if not assignment:
+                        from backend.app.generation.generator_service import GeneratorService
+                        logger.info(f"[Scheduler] Auto-generating deliverable for '{coursework.title}'...")
+                        assignment = GeneratorService.generate_assignment(db, coursework)
+                        schedule.assignment_id = assignment.id
+                        db.commit()
+
+                    # 2. Autonomous compiler sandbox validation if not yet validated or not passed
+                    validation = (
+                        db.query(AssignmentValidation)
+                        .filter_by(assignment_id=assignment.id)
+                        .order_by(AssignmentValidation.id.desc())
+                        .first()
+                    )
+                    if not validation or not validation.passed:
+                        from backend.app.validation.validation_service import ValidationService
+                        logger.info(f"[Scheduler] Auto-validating deliverable for '{coursework.title}'...")
+                        validation = ValidationService.validate_assignment(db, assignment)
+
+                    if not validation.passed:
+                        coursework.status = "MANUAL_ACTION_REQUIRED"
+                        schedule.status = "MANUAL_ACTION_REQUIRED"
+                        schedule.failure_reason = f"Verification failed: {validation.error_details or 'Compiler or test errors'}"
+                        db.commit()
+                        logger.warning(f"[Scheduler] Halting submission: validation failed for '{coursework.title}'")
+                        continue
+
+                    # 3. Authorized submission: Drive upload, modifyAttachments, turnIn
                     SubmissionService.execute_submission(db, user, coursework)
                     schedule.status = "SUBMITTED"
                     schedule.failure_reason = ""

@@ -684,6 +684,31 @@ def submit_now(coursework_id: int, db: Session = Depends(get_db), user: User = D
     if not cw:
         raise HTTPException(status_code=404, detail="Coursework not found")
     try:
+        # Autonomous preparation: generate deliverable if not yet generated
+        assignment = (
+            db.query(GeneratedAssignment)
+            .filter_by(coursework_id=cw.id)
+            .order_by(GeneratedAssignment.id.desc())
+            .first()
+        )
+        if not assignment:
+            assignment = GeneratorService.generate_assignment(db, cw)
+
+        # Autonomous preparation: validate with compiler sandbox if not yet validated or passed
+        validation = (
+            db.query(AssignmentValidation)
+            .filter_by(assignment_id=assignment.id)
+            .order_by(AssignmentValidation.id.desc())
+            .first()
+        )
+        if not validation or not validation.passed:
+            validation = ValidationService.validate_assignment(db, assignment)
+
+        if not validation.passed:
+            cw.status = "MANUAL_ACTION_REQUIRED"
+            db.commit()
+            raise RuntimeError(f"Automated verification failed: {validation.error_details or 'Compiler or test check errors'}")
+
         sub = SubmissionService.execute_submission(db, user, cw)
         return SubmissionResultResponse(
             coursework_id=cw.id,

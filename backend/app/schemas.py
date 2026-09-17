@@ -96,6 +96,7 @@ class CourseworkResponse(BaseModel):
     alternate_link: Optional[str] = ""
     status: str
     submission_id: Optional[str] = ""
+    materials_json: Optional[str] = "[]"
     created_at: datetime
     model_config = ConfigDict(from_attributes=True)
 

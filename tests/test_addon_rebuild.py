@@ -3,7 +3,7 @@ import pytest
 from fastapi.testclient import TestClient
 from datetime import datetime, timezone, timedelta
 from backend.app.main import app
-from backend.app.database import Base, engine, SessionLocal
+from backend.app.database import Base, engine, SessionLocal, init_db
 from backend.app.models import User, Course, Coursework, TimetableEntry, GeneratedAssignment, SubmissionSchedule
 from backend.app.auth.security import create_access_token
 
@@ -11,7 +11,7 @@ client = TestClient(app)
 
 @pytest.fixture(autouse=True)
 def setup_addon_test_db():
-    Base.metadata.create_all(bind=engine)
+    init_db()
     db = SessionLocal()
     
     # Ensure test user

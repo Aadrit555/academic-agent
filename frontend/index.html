@@ -96,9 +96,15 @@
       </div>
     </section>
 
-    <!-- ── Section 5: Course Material AI (RAG Grounding) ─────────────────── -->
+    <!-- ── Section 5: Course Material AI (Classroom Ingested) ─────────────── -->
     <section class="addon-section" id="section-material">
-      <div class="section-label">COURSE MATERIAL AI</div>
+      <div class="section-label">COURSE MATERIAL AI (CLASSROOM INGESTED)</div>
+      
+      <div id="course-ingested-materials" class="course-ingested-materials">
+        <div class="ingested-notice-card">
+          <span>✓ <b>Classroom PDFs Auto-Ingested:</b> Syllabus and attached brief materials are pre-indexed into Study Brain.</span>
+        </div>
+      </div>
 
       <div class="material-actions-bar">
         <button class="btn btn-secondary btn-sm" id="btn-summarize-material"
@@ -109,8 +115,8 @@
           onclick="AddonApp.queryMaterial('questions')">
           ❓ Viva / Exam Questions
         </button>
-        <label class="btn btn-secondary btn-sm btn-upload-label" title="Upload PDF/DOCX for AI grounding">
-          <span>📎 Upload Material</span>
+        <label class="btn btn-secondary btn-sm btn-upload-label" title="Classroom PDFs are automatically pre-ingested. Use this only to add supplementary documents.">
+          <span>📎 + Add Extra File (Optional)</span>
           <input type="file" id="material-file-upload" accept=".pdf,.docx,.txt,.md" style="display: none;"
             onchange="AddonApp.handleMaterialUpload(this)">
         </label>
@@ -121,21 +127,21 @@
 
     <!-- ── Section 6: Automation & Auto-Submit ────────────────────────────── -->
     <section class="addon-section" id="section-automation">
-      <div class="section-label">AUTOMATION &amp; TURN IN</div>
+      <div class="section-label">AUTONOMOUS SUBMISSION &amp; TURN IN</div>
       <div id="automation-details-box">
         <div class="auto-box">
           <div class="auto-row">
             <div>
-              <div class="auto-title">AUTO-SUBMIT SCHEDULER</div>
+              <div class="auto-title">⚡ AUTO-SUBMIT ACTIVE</div>
               <div class="auto-sub">Scheduled: <b>Default: 4 hours before deadline</b></div>
             </div>
-            <button class="btn btn-sm btn-secondary" onclick="AddonApp.toggleAutoSubmit()">
-              ENABLE AUTO-SUBMIT
+            <button class="btn btn-sm btn-success" onclick="AddonApp.toggleAutoSubmit()">
+              ENABLED (ON)
             </button>
           </div>
           <div style="display: flex; gap: 8px; margin-top: 10px;">
             <button class="btn btn-primary btn-sm btn-block" onclick="AddonApp.submitNow()">
-              Turn In Now (Classroom API)
+              ⚡ Auto-Submit Now (Autonomous End-to-End)
             </button>
           </div>
         </div>

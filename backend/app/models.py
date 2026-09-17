@@ -94,6 +94,7 @@ class Coursework(Base):
     max_points = Column(Float, default=100.0)
     alternate_link = Column(String(500), default="")
     submission_id = Column(String(100), default="") # Google studentSubmission ID
+    materials_json = Column(Text, default="[]") # JSON string of attached Classroom materials/PDFs
     
     # State machine: NOT_STARTED, GENERATING, GENERATED, VALIDATING, READY, SCHEDULED, SUBMITTING, SUBMITTED, FAILED, CANCELLED
     status = Column(String(50), default="NOT_STARTED", index=True)

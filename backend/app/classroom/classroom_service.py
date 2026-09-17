@@ -1,15 +1,50 @@
+import json
+import logging
 import requests
 from datetime import datetime, date, timedelta, timezone
 from sqlalchemy.orm import Session
-from backend.app.models import User, Course, Coursework, ClassroomIntegration
+from backend.app.models import User, Course, Coursework, ClassroomIntegration, Document
 from backend.app.auth.auth_service import AuthService
+from backend.app.documents.document_service import DocumentService
+from backend.app.drive.drive_service import DriveService
 
 API_BASE = "https://classroom.googleapis.com/v1"
+logger = logging.getLogger("academic_agent.classroom")
 
 def utcnow():
     return datetime.now(timezone.utc)
 
 class ClassroomService:
+    @classmethod
+    def _auto_ingest_classroom_drive_file(
+        cls,
+        db: Session,
+        user: User,
+        course_id: int,
+        drive_id: str,
+        file_title: str,
+        token: str
+    ) -> bool:
+        """Downloads classroom drive file and ingests it into Study Brain Document/RAG system if not already present."""
+        if not drive_id or not token or token == "demo_google_classroom_token":
+            return False
+
+        clean_title = file_title.strip() if file_title else f"classroom_file_{drive_id}.pdf"
+        # Avoid duplicate ingestion for this course
+        existing = db.query(Document).filter_by(course_id=course_id, filename=clean_title).first()
+        if existing:
+            return True
+
+        try:
+            file_bytes, final_name = DriveService.download_file(drive_id, token, clean_title)
+            if file_bytes and len(file_bytes) > 0:
+                DocumentService.ingest_document(db, user, course_id, final_name, file_bytes)
+                logger.info(f"Auto-ingested Classroom file '{final_name}' into Study Brain for course {course_id}")
+                return True
+        except Exception as e:
+            logger.warning(f"Could not auto-ingest classroom drive file {drive_id} ({file_title}): {e}")
+        return False
+
     @classmethod
     def sync_classroom_data(cls, db: Session, user: User) -> list[Coursework]:
         token, is_demo = AuthService.get_valid_token(db, user)
@@ -45,6 +80,26 @@ class ClassroomService:
                 db.commit()
                 db.refresh(course)
 
+            # Auto-ingest course-level materials (courseWorkMaterials) from Classroom
+            try:
+                cm_resp = requests.get(
+                    f"{API_BASE}/courses/{cid}/courseWorkMaterials",
+                    headers=headers,
+                    params={"pageSize": 50},
+                    timeout=15
+                )
+                if cm_resp.status_code == 200:
+                    cm_list = cm_resp.json().get("courseWorkMaterial", [])
+                    for cm in cm_list:
+                        for m in cm.get("materials", []):
+                            df = m.get("driveFile", {}).get("driveFile", {})
+                            if df and df.get("id"):
+                                cls._auto_ingest_classroom_drive_file(
+                                    db, user, course.id, df.get("id"), df.get("title", ""), token
+                                )
+            except Exception as e:
+                logger.debug(f"CourseWorkMaterials fetch skipped for course {cid}: {e}")
+
             # 2. Fetch coursework for this course
             wr = requests.get(f"{API_BASE}/courses/{cid}/courseWork", headers=headers, params={"pageSize": 50}, timeout=20)
             if wr.status_code != 200:
@@ -57,6 +112,33 @@ class ClassroomService:
                 desc = w.get("description", "")
                 pts = float(w.get("maxPoints") or 100.0)
                 link = w.get("alternateLink", "")
+
+                # Parse and auto-ingest attached materials (PDFs, drive files, links)
+                raw_materials = w.get("materials", [])
+                materials_list = []
+                for m in raw_materials:
+                    df = m.get("driveFile", {}).get("driveFile", {})
+                    if df:
+                        drive_id = df.get("id")
+                        mat_title = df.get("title", "Attached Document")
+                        alt_link = df.get("alternateLink", "")
+                        ingested = cls._auto_ingest_classroom_drive_file(
+                            db, user, course.id, drive_id, mat_title, token
+                        )
+                        materials_list.append({
+                            "id": drive_id,
+                            "title": mat_title,
+                            "alternateLink": alt_link,
+                            "type": "driveFile",
+                            "ingested": ingested
+                        })
+                    elif m.get("link"):
+                        lnk = m.get("link", {})
+                        materials_list.append({
+                            "url": lnk.get("url", ""),
+                            "title": lnk.get("title", "External Link"),
+                            "type": "link"
+                        })
 
                 # Due date / time
                 due_obj = w.get("dueDate") or {}
@@ -100,6 +182,7 @@ class ClassroomService:
                         max_points=pts,
                         alternate_link=link,
                         submission_id=sub_id,
+                        materials_json=json.dumps(materials_list),
                         status=sub_state
                     )
                     db.add(cw)
@@ -109,10 +192,22 @@ class ClassroomService:
                     cw.due_date = due_date_str
                     cw.due_time = due_time_str
                     cw.submission_id = sub_id
+                    cw.materials_json = json.dumps(materials_list)
                     if cw.status == "NOT_STARTED" and sub_state == "SUBMITTED":
                         cw.status = "SUBMITTED"
                 db.commit()
                 db.refresh(cw)
+
+                # Default autonomous auto-submission scheduling for active assignments
+                if cw.status != "SUBMITTED":
+                    from backend.app.scheduler.scheduler_service import SchedulerService
+                    SchedulerService.create_or_update_schedule(
+                        db, cw, offset_hours=4.0, auto_submit_enabled=True
+                    )
+                    cw.status = "SCHEDULED"
+                    db.commit()
+                    db.refresh(cw)
+
                 synced_coursework.append(cw)
 
         # Update last synced time
@@ -122,6 +217,7 @@ class ClassroomService:
             db.commit()
 
         return synced_coursework
+
 
     @classmethod
     def create_addon_attachment(

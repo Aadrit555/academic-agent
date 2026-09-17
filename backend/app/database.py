@@ -50,6 +50,11 @@ def init_db():
                 conn.execute(text("ALTER TABLE erp_integrations ADD COLUMN profile_data TEXT DEFAULT '{}'"))
             if "timetable_data" not in erp_cols:
                 conn.execute(text("ALTER TABLE erp_integrations ADD COLUMN timetable_data TEXT DEFAULT '[]'"))
+
+        if "coursework" in inspector.get_table_names():
+            cw_cols = [col["name"] for col in inspector.get_columns("coursework")]
+            if "materials_json" not in cw_cols:
+                conn.execute(text("ALTER TABLE coursework ADD COLUMN materials_json TEXT DEFAULT '[]'"))
         
         conn.commit()
 

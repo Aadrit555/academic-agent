@@ -244,17 +244,23 @@ class GeneratorService:
         file_name = reqs["name"]
         language = reqs["language"]
 
-        # Fetch relevant course context from Study Brain
+        # Fetch relevant course context from Study Brain (using ingested classroom PDFs & documents)
         course = coursework.course
         course_chunks = []
         if coursework.course_id:
-            chunks = (
-                db.query(DocumentChunk)
-                .filter_by(course_id=coursework.course_id)
-                .limit(4)
-                .all()
-            )
-            course_chunks = [c.content for c in chunks]
+            try:
+                from backend.app.rag.rag_service import RAGService
+                search_query = f"{coursework.title} {coursework.description or ''}".strip()
+                matched = RAGService.search_chunks(db, coursework.course_id, query=search_query, top_k=5)
+                course_chunks = [chunk.content for chunk, _ in matched]
+            except Exception:
+                chunks = (
+                    db.query(DocumentChunk)
+                    .filter_by(course_id=coursework.course_id)
+                    .limit(4)
+                    .all()
+                )
+                course_chunks = [c.content for c in chunks]
 
         context_prompt = "\n\n".join(course_chunks) if course_chunks else "Standard syllabus specification."
 
