@@ -132,9 +132,17 @@ def test_camera_scan_frame_endpoint(client):
     res = client.post("/api/attendance/scan-frame", json={"code": "A235646"})
     assert res.status_code == 200
     data = res.json()
+    assert data["detected"] is True
     assert data["code"] == "A235646"
     assert "subject" in data
     assert "classroom" in data
+
+def test_camera_scan_frame_empty(client):
+    res = client.post("/api/attendance/scan-frame", json={"code": "", "frame_data": ""})
+    assert res.status_code == 200
+    data = res.json()
+    assert data["detected"] is False
+    assert data["code"] is None
 
 def test_addon_endpoint(client):
     res = client.get("/addon")

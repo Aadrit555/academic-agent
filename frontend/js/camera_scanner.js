@@ -56,23 +56,36 @@ const CameraScannerModule = {
     const ctx = canvas.getContext("2d");
     const video = document.getElementById("scanner-video");
 
-    // Throttled frame loop (every 500ms = 2 fps) to prevent CPU degradation
+    // Throttled frame sampling loop (every 1000ms) to scan camera frames via backend optical engine
     this.scanTimer = setInterval(async () => {
       if (!this.isScanning || !video || video.readyState !== 4) return;
 
-      canvas.width = 320;
-      canvas.height = 240;
+      canvas.width = 480;
+      canvas.height = 360;
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const frameData = canvas.toDataURL("image/jpeg", 0.65);
 
-      // In browser without full OCR model loaded, test pattern or QR/text simulation
-      // Real OCR pattern check on frame center
-    }, 500);
+      try {
+        const res = await api("/attendance/scan-frame", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ frame_data: frameData })
+        });
+        if (res && res.detected && res.code) {
+          this.triggerCodeDetection(res.code, res);
+        }
+      } catch (err) {
+        // Silent frame skip
+      }
+    }, 1000);
   },
 
-  // Simulates or triggers detection when code is in camera view
-  async triggerCodeDetection(code = "A235646") {
-    if (this.detectedCode === code) return;
-    this.detectedCode = code;
+  // Triggers verification and UI state when code is scanned or manually entered
+  async triggerCodeDetection(code, preloadedRes = null) {
+    if (!code) return;
+    const cleanCode = code.trim().toUpperCase();
+    if (this.detectedCode === cleanCode) return;
+    this.detectedCode = cleanCode;
     this.isScanning = false;
     clearInterval(this.scanTimer);
 
@@ -87,24 +100,28 @@ const CameraScannerModule = {
       container.classList.add("detected");
     }
 
-    statusText.textContent = "Attendance code recognized!";
-
     try {
-      // Query backend to correlate with active timetable context
-      const res = await api("/attendance/scan-frame", {
+      const res = preloadedRes || await api("/attendance/scan-frame", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: code })
+        body: JSON.stringify({ code: cleanCode })
       });
 
+      if (!res.detected) {
+        if (statusText) statusText.textContent = res.message || "Code not recognized.";
+        Toast.warning(res.message || "Invalid or unverified attendance code.");
+        return;
+      }
+
       this.matchedClass = res;
+      if (statusText) statusText.textContent = "Attendance code recognized!";
       if (detectedBox && codeEl && classEl) {
         codeEl.textContent = res.code;
         classEl.textContent = `${res.subject} · Room ${res.classroom}`;
         detectedBox.style.display = "block";
       }
 
-      Toast.info(`Camera Lens recognized code: ${res.code}`);
+      Toast.info(`Attendance code verified: ${res.code}`);
     } catch (e) {
       Toast.error(`Scan verification error: ${e.message}`);
     }
@@ -231,8 +248,23 @@ document.addEventListener("DOMContentLoaded", () => {
   const stopBtn = document.getElementById("btn-stop-camera-scan");
   if (stopBtn) stopBtn.addEventListener("click", () => CameraScannerModule.stopCamera());
 
-  const testBtn = document.getElementById("btn-simulate-lens-scan");
-  if (testBtn) testBtn.addEventListener("click", () => CameraScannerModule.triggerCodeDetection("A235646"));
+  const submitManualBtn = document.getElementById("btn-submit-manual-code");
+  const manualInput = document.getElementById("manual-attendance-code-input");
+  if (submitManualBtn && manualInput) {
+    submitManualBtn.addEventListener("click", () => {
+      const val = manualInput.value.trim().toUpperCase();
+      if (!val) {
+        Toast.warning("Please enter an attendance code.");
+        return;
+      }
+      CameraScannerModule.triggerCodeDetection(val);
+    });
+    manualInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        submitManualBtn.click();
+      }
+    });
+  }
 
   const confirmBtn = document.getElementById("confirm-attendance-btn");
   if (confirmBtn) confirmBtn.addEventListener("click", () => CameraScannerModule.confirmAttendance());

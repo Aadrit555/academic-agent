@@ -149,11 +149,9 @@
               <span id="home-next-time" style="font-family: var(--font-mono); font-size: 11px; color: #94a3b8;">10:00 -
                 11:00</span>
             </div>
-            <h3 id="home-next-subject" style="color: #fff; font-size: 15px; font-weight: 700; margin: 4px 0;">Data
-              Structures</h3>
+            <h3 id="home-next-subject" style="color: #fff; font-size: 15px; font-weight: 700; margin: 4px 0;">Loading schedule...</h3>
             <div style="font-size: 12px; color: #cbd5e1;">
-              Scheduled Room: <b id="home-next-room" style="color: #60a5fa; font-family: var(--font-mono);">Room
-                AB-204</b>
+              Scheduled Room: <b id="home-next-room" style="color: #60a5fa; font-family: var(--font-mono);">--</b>
             </div>
           </div>
 
@@ -386,11 +384,16 @@
 
           <!-- Camera Scanner Controls -->
           <div style="display: flex; gap: 6px;">
-            <button class="btn btn-primary btn-sm" id="btn-start-camera-scan" style="flex: 1;">Open Camera
-              Viewfinder</button>
+            <button class="btn btn-primary btn-sm" id="btn-start-camera-scan" style="flex: 1;">Open Camera Viewfinder</button>
             <button class="btn btn-secondary btn-sm" id="btn-stop-camera-scan">Stop</button>
-            <button class="btn btn-secondary btn-sm" id="btn-simulate-lens-scan"
-              title="Simulate optical detection of attendance code">Test Lens Scan</button>
+          </div>
+
+          <!-- Direct Manual Attendance Code Input -->
+          <div style="margin-top: 8px; display: flex; gap: 6px;">
+            <input type="text" id="manual-attendance-code-input" placeholder="Or enter attendance code (e.g. A235646)"
+              autocomplete="off" spellcheck="false"
+              style="flex: 1; background: #111827; border: 1px solid var(--border); color: #fff; padding: 7px 10px; border-radius: var(--radius-sm); font-size: 12px; font-family: var(--font-mono); text-transform: uppercase;">
+            <button class="btn btn-secondary btn-sm" id="btn-submit-manual-code">Submit Code</button>
           </div>
 
           <!-- Detected Attendance Code Card -->
@@ -398,15 +401,14 @@
             style="display: none; border-color: #10b981; background: rgba(16, 185, 129, 0.05);">
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <div>
-                <span style="font-size: 10px; font-weight: 700; color: #10b981; text-transform: uppercase;">CODE
-                  RECOGNIZED</span>
+                <span style="font-size: 10px; font-weight: 700; color: #10b981; text-transform: uppercase;">CODE RECOGNIZED</span>
                 <div id="detected-code-value"
-                  style="font-family: var(--font-mono); font-size: 18px; font-weight: 800; color: #fff;">A235646</div>
+                  style="font-family: var(--font-mono); font-size: 18px; font-weight: 800; color: #fff;">--</div>
               </div>
               <span class="status-pill status-ready">MATCHED</span>
             </div>
             <div id="detected-class-context" style="font-size: 12px; color: #cbd5e1; margin: 6px 0 10px;">
-              Data Structures · Room AB-204
+              --
             </div>
             <button class="btn btn-success btn-sm" id="confirm-attendance-btn" style="width: 100%;">
               Confirm &amp; Mark Attendance

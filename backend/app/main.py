@@ -603,26 +603,44 @@ def get_recent_attendance(db: Session = Depends(get_db), user: User = Depends(cu
 
 @app.post("/api/attendance/scan-frame")
 def scan_attendance_frame(payload: dict, db: Session = Depends(get_db), user: User = Depends(current_user)):
-    """Validates camera viewfinder code detection and correlates with active timetable context."""
-    raw_code = payload.get("code", "").strip().upper()
+    """Validates camera viewfinder frame (QR/text) or direct code input and correlates with active timetable context."""
+    raw_code = payload.get("code", "").strip().upper() if payload.get("code") else ""
+    
+    if not raw_code and payload.get("frame_data"):
+        frame_str = payload.get("frame_data", "")
+        if "base64," in frame_str:
+            frame_str = frame_str.split("base64,")[1]
+        try:
+            import base64
+            import numpy as np
+            import cv2
+            img_bytes = base64.b64decode(frame_str)
+            nparr = np.frombuffer(img_bytes, np.uint8)
+            img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            if img is not None:
+                detector = cv2.QRCodeDetector()
+                data, bbox, _ = detector.detectAndDecode(img)
+                if data:
+                    raw_code = data.strip().upper()
+        except Exception as ex:
+            logger.debug(f"[Camera Scanner] Frame decode error: {ex}")
+
     if not raw_code:
-        frame_data = payload.get("frame_data", "")
-        # Detect classroom code pattern (e.g. A235646) from frame string
-        match = re.search(r"[A-Z0-9]{6,10}", frame_data.upper())
-        if match:
-            raw_code = match.group(0)
-        else:
-            raw_code = "A235646" # Default test code if empty frame
-            
+        return {
+            "detected": False,
+            "code": None,
+            "message": "No attendance code or QR pattern recognized in frame. Position code clearly or enter manually."
+        }
+
     next_class_info = TimetableService.get_next_class(db, user)
-    subject = next_class_info.subject if next_class_info.has_class else "Data Structures"
-    classroom = next_class_info.classroom if next_class_info.has_class else "AB-204"
+    subject = next_class_info.subject if next_class_info.has_class else "Active Academic Session"
+    classroom = next_class_info.classroom if next_class_info.has_class else "Classroom"
     return {
         "detected": True,
         "code": raw_code,
         "subject": subject,
         "classroom": classroom,
-        "confidence": 0.99,
+        "confidence": 0.98,
         "message": f"Verified attendance code '{raw_code}' for {subject} ({classroom})."
     }
 
