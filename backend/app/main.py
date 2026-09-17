@@ -20,7 +20,7 @@ from backend.app.schemas import (
     DocumentResponse, StudyBrainRequest, StudyBrainResponse, GenerateAssignmentRequest, 
     GeneratedAssignmentResponse, AssignmentSpecificationResponse, ValidationResponse, 
     ScheduleSubmissionRequest, SubmissionScheduleResponse, SubmitNowRequest, 
-    SubmissionResultResponse, AttendanceMarkRequest, AttendanceResponse,
+    SubmissionResultResponse,
     ERPLiveConnectRequest, ERPConnectSessionRequest, ERPImportScheduleRequest, GoogleCredentialsConfigRequest
 )
 from backend.app.auth.security import create_access_token, verify_access_token
@@ -34,7 +34,6 @@ from backend.app.generation.generator_service import GeneratorService
 from backend.app.validation.validation_service import ValidationService
 from backend.app.submission.submission_service import SubmissionService
 from backend.app.scheduler.scheduler_service import SchedulerService
-from backend.app.attendance.attendance_service import AttendanceService
 from backend.app.erp.erp_service import ERPService
 
 logging.basicConfig(level=logging.INFO)
@@ -153,8 +152,6 @@ def get_home_summary(db: Session = Depends(get_db), user: User = Depends(current
             "scheduled_submissions": scheduled_count,
             "total_courses": db.query(Course).filter_by(user_id=user.id).count()
         },
-        attendance_ready=next_class.has_class and (next_class.is_ongoing or next_class.is_approaching),
-        current_subject=next_class.subject if next_class.has_class else None,
         user_name=user.name or "Student",
         user_email=user.email or ""
     )
@@ -633,68 +630,6 @@ def list_schedules(db: Session = Depends(get_db), user: User = Depends(current_u
         })
     return results
 
-# ── Fast Attendance Action Endpoints ─────────────────────────────────────────
-@app.post("/api/attendance/mark", response_model=AttendanceResponse)
-def mark_attendance(req: AttendanceMarkRequest, db: Session = Depends(get_db), user: User = Depends(current_user)):
-    try:
-        rec = AttendanceService.mark_attendance(db, user, req.attendance_code, req.subject, req.course_id)
-        return AttendanceResponse(
-            id=rec.id,
-            subject=rec.subject,
-            attendance_code=rec.attendance_code,
-            marked_at=rec.marked_at,
-            status=rec.status,
-            message=f"Attendance code '{rec.attendance_code}' recorded for {rec.subject}."
-        )
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-@app.get("/api/attendance/recent")
-def get_recent_attendance(db: Session = Depends(get_db), user: User = Depends(current_user)):
-    return AttendanceService.get_recent_records(db, user)
-
-@app.post("/api/attendance/scan-frame")
-def scan_attendance_frame(payload: dict, db: Session = Depends(get_db), user: User = Depends(current_user)):
-    """Validates camera viewfinder frame (QR/text) or direct code input and correlates with active timetable context."""
-    raw_code = payload.get("code", "").strip().upper() if payload.get("code") else ""
-    
-    if not raw_code and payload.get("frame_data"):
-        frame_str = payload.get("frame_data", "")
-        if "base64," in frame_str:
-            frame_str = frame_str.split("base64,")[1]
-        try:
-            import base64
-            import numpy as np
-            import cv2
-            img_bytes = base64.b64decode(frame_str)
-            nparr = np.frombuffer(img_bytes, np.uint8)
-            img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-            if img is not None:
-                detector = cv2.QRCodeDetector()
-                data, bbox, _ = detector.detectAndDecode(img)
-                if data:
-                    raw_code = data.strip().upper()
-        except Exception as ex:
-            logger.debug(f"[Camera Scanner] Frame decode error: {ex}")
-
-    if not raw_code:
-        return {
-            "detected": False,
-            "code": None,
-            "message": "No attendance code or QR pattern recognized in frame. Position code clearly or enter manually."
-        }
-
-    next_class_info = TimetableService.get_next_class(db, user)
-    subject = next_class_info.subject if next_class_info.has_class else "Active Academic Session"
-    classroom = next_class_info.classroom if next_class_info.has_class else "Classroom"
-    return {
-        "detected": True,
-        "code": raw_code,
-        "subject": subject,
-        "classroom": classroom,
-        "confidence": 0.98,
-        "message": f"Verified attendance code '{raw_code}' for {subject} ({classroom})."
-    }
 
 # ── SRM AP ERP / eVarsity Direct Integration Endpoints ──────────────────────
 @app.get("/api/erp/status")

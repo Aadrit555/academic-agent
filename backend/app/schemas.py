@@ -149,6 +149,8 @@ class AssignmentSpecificationResponse(BaseModel):
     required_outputs: List[str] = []
     compiler_flags: Optional[str] = ""
     submission_constraints: List[str] = []
+    packaging_requirements: Optional[str] = ""
+    submission_requirements: List[str] = []
 
 class GenerateAssignmentRequest(BaseModel):
     coursework_id: int
@@ -178,15 +180,14 @@ class ValidationResponse(BaseModel):
     passed: bool
     status: str
     checklist: List[ValidationCheckItem]
-    compiler_output: Optional[str] = ""
-    test_output: Optional[str] = ""
-    error_details: Optional[str] = ""
-    validated_at: datetime
+    stdout: Optional[str] = ""
+    stderr: Optional[str] = ""
+    model_config = ConfigDict(from_attributes=True)
 
 # Submission Scheduling Schemas
 class ScheduleSubmissionRequest(BaseModel):
     coursework_id: int
-    offset_hours: Optional[float] = 4.0
+    offset_hours: Optional[float] = 4.0 # Default: 4 hours before deadline
     auto_submit_enabled: Optional[bool] = True
 
 class SubmissionScheduleResponse(BaseModel):
@@ -214,29 +215,12 @@ class SubmissionResultResponse(BaseModel):
     turned_in_at: datetime
     message: str
 
-# Attendance Schemas
-class AttendanceMarkRequest(BaseModel):
-    subject: Optional[str] = ""
-    course_id: Optional[int] = None
-    attendance_code: str
-
-class AttendanceResponse(BaseModel):
-    id: int
-    subject: str
-    attendance_code: str
-    marked_at: datetime
-    status: str
-    message: str
-    model_config = ConfigDict(from_attributes=True)
-
-# Home Summary
+# Home / Add-on Summary
 class HomeSummaryResponse(BaseModel):
     next_class: NextClassResponse
     current_class: Optional[NextClassResponse] = None
     assignments: List[CourseworkResponse]
     stats: Dict[str, Any]
-    attendance_ready: bool
-    current_subject: Optional[str] = None
     user_name: Optional[str] = "Student"
     user_email: Optional[str] = ""
 

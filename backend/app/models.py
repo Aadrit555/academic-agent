@@ -24,7 +24,6 @@ class User(Base):
     timetable_entries = relationship("TimetableEntry", back_populates="user", cascade="all, delete-orphan")
     classroom_integration = relationship("ClassroomIntegration", back_populates="user", uselist=False, cascade="all, delete-orphan")
     documents = relationship("Document", back_populates="user", cascade="all, delete-orphan")
-    attendance_records = relationship("AttendanceRecord", back_populates="user", cascade="all, delete-orphan")
     erp_integration = relationship("ERPIntegration", back_populates="user", uselist=False, cascade="all, delete-orphan")
 
 
@@ -207,18 +206,6 @@ class Submission(Base):
     coursework = relationship("Coursework", back_populates="submissions")
 
 
-class AttendanceRecord(Base):
-    __tablename__ = "attendance_records"
-
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    course_id = Column(Integer, ForeignKey("courses.id"), nullable=True)
-    subject = Column(String(255), nullable=False)
-    attendance_code = Column(String(50), nullable=False)
-    marked_at = Column(DateTime, default=utcnow)
-    status = Column(String(50), default="MARKED") # "MARKED", "FAILED"
-
-    user = relationship("User", back_populates="attendance_records")
 
 
 class ERPIntegration(Base):

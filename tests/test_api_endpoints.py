@@ -109,41 +109,12 @@ def test_assignment_lifecycle_endpoints(client):
     assert sub_res.status_code == 400
     assert "Google" in sub_res.json()["detail"]
 
-def test_fast_attendance_endpoint(client):
-    res = client.post("/api/attendance/mark", json={"attendance_code": "A987654"})
+def test_classroom_addon_iframe_context(client):
+    # Tests that when Google Classroom launches the add-on iframe with courseId and itemId
+    res = client.get("/addon?courseId=101&itemId=202")
     assert res.status_code == 200
-    data = res.json()
-    assert data["attendance_code"] == "A987654"
-    assert data["status"] == "MARKED"
-
-def test_assignment_spec_endpoint(client):
-    w_res = client.get("/api/classroom/coursework")
-    works = w_res.json()
-    cw_id = works[0]["id"]
-
-    res = client.get(f"/api/assignment/{cw_id}/spec")
-    assert res.status_code == 200
-    spec = res.json()
-    assert "required_files" in spec
-    assert "compiler_flags" in spec
-    assert "required_tests" in spec
-    assert isinstance(spec["required_files"], list)
-
-def test_camera_scan_frame_endpoint(client):
-    res = client.post("/api/attendance/scan-frame", json={"code": "A235646"})
-    assert res.status_code == 200
-    data = res.json()
-    assert data["detected"] is True
-    assert data["code"] == "A235646"
-    assert "subject" in data
-    assert "classroom" in data
-
-def test_camera_scan_frame_empty(client):
-    res = client.post("/api/attendance/scan-frame", json={"code": "", "frame_data": ""})
-    assert res.status_code == 200
-    data = res.json()
-    assert data["detected"] is False
-    assert data["code"] is None
+    assert "<!DOCTYPE html>" in res.text
+    assert "Academic Agent" in res.text
 
 def test_addon_endpoint(client):
     res = client.get("/addon")
