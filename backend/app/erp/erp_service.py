@@ -248,7 +248,7 @@ class ERPService:
                 c_code = pe.get("course_code", "")
                 c_name = pe.get("course_name", c_code)
                 faculty = pe.get("faculty", "")
-                room = pe.get("classroom", "AB-204")
+                room = pe.get("classroom") or "TBD"
 
                 course = db.query(Course).filter_by(user_id=user.id, code=c_code).first()
                 if not course and c_name:
@@ -343,7 +343,7 @@ class ERPService:
                 "end_time": e.end_time,
                 "course_code": getattr(e.course, "code", "") if e.course else e.subject[:8],
                 "course_name": e.subject,
-                "classroom": e.classroom or "AB-204",
+                "classroom": e.classroom or "TBD",
                 "faculty": e.faculty or ""
             })
         return result
@@ -386,7 +386,7 @@ class ERPService:
                             "day_of_week": int(item.get("day_of_week", item.get("day", 0))),
                             "start_time": str(item.get("start_time", item.get("start", "09:00"))),
                             "end_time": str(item.get("end_time", item.get("end", "10:00"))),
-                            "classroom": str(item.get("classroom", item.get("room", "AB-204")))
+                            "classroom": str(item.get("classroom", item.get("room", "TBD")))
                         })
             except json.JSONDecodeError:
                 pass
@@ -401,7 +401,7 @@ class ERPService:
                     start_t = parts[1]
                     end_t = parts[2]
                     subject = parts[3]
-                    room = parts[4] if len(parts) > 4 else "AB-204"
+                    room = parts[4] if len(parts) > 4 else "TBD"
                     if day_part == "day" or "start" in start_t.lower() or "subject" in subject.lower():
                         continue
                     parsed_entries.append({

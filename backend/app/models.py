@@ -56,7 +56,7 @@ class TimetableEntry(Base):
     day_of_week = Column(Integer, nullable=False) # 0=Monday, 1=Tuesday, ..., 6=Sunday
     start_time = Column(String(10), nullable=False) # "10:00"
     end_time = Column(String(10), nullable=False) # "11:00"
-    classroom = Column(String(100), default="AB-204") # e.g. "AB-204", "X-201", "C-1011"
+    classroom = Column(String(100), default="TBD") # e.g. "C-504", "X-201", "C-1011"
     faculty = Column(String(255), default="") # e.g. "Dr. John Doe"
     created_at = Column(DateTime, default=utcnow)
 

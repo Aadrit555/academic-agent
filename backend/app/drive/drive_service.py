@@ -16,10 +16,8 @@ class DriveService:
 
         file_name = os.path.basename(file_path)
 
-        if is_demo or access_token == "demo_google_classroom_token":
-            # Return realistic simulated Drive File ID
-            simulated_id = f"1Drv-{uuid.uuid4().hex[:12]}"
-            return simulated_id, file_name
+        if not access_token or is_demo or access_token == "demo_google_classroom_token":
+            raise RuntimeError("A valid authenticated Google account is required to upload deliverables to Google Drive.")
 
         mime_type, _ = mimetypes.guess_type(file_path)
         if not mime_type:

@@ -28,15 +28,24 @@ def ready_assignment_fixture(db_session):
     db_session.add(user)
     db_session.commit()
 
-    # Connect demo Classroom
-    AuthService.connect_demo_mode(db_session, user)
+    # Create real integration record with valid token
+    integration = ClassroomIntegration(
+        user_id=user.id,
+        access_token="test_valid_token",
+        refresh_token="test_refresh",
+        token_expires_at=utcnow() + timedelta(days=30),
+        email=user.email,
+        is_demo_mode=False
+    )
+    db_session.add(integration)
+    db_session.commit()
 
     course = Course(user_id=user.id, code="CS201", name="Data Structures")
     cw = Coursework(
         user_id=user.id,
         course_id=course.id,
-        classroom_course_id="demo-course-1",
-        coursework_id="demo-work-1",
+        classroom_course_id="test-course-1",
+        coursework_id="test-work-1",
         title="DAA Lab 4: Merge Sort",
         due_date=(utcnow() + timedelta(days=1)).strftime("%Y-%m-%d"),
         due_time="23:59:00",
@@ -71,8 +80,34 @@ def ready_assignment_fixture(db_session):
     db_session.commit()
     return user, cw, assignment, validation
 
-def test_successful_submission_flow(db_session, ready_assignment_fixture):
+def _mock_google_api(monkeypatch):
+    monkeypatch.setattr(
+        "backend.app.drive.drive_service.DriveService.upload_file",
+        lambda path, token, is_demo=False: ("1Drv-test123", "test_merge.c")
+    )
+    class MockApiResponse:
+        def __init__(self, data, status_code=200):
+            self._data = data
+            self.status_code = status_code
+        def json(self):
+            return self._data
+        def raise_for_status(self):
+            pass
+
+    def mock_get(url, *args, **kwargs):
+        if "studentSubmissions?userId=me" in url:
+            return MockApiResponse({"studentSubmissions": [{"id": "sub-123"}]})
+        return MockApiResponse({"state": "TURNED_IN"})
+
+    def mock_post(url, *args, **kwargs):
+        return MockApiResponse({"state": "TURNED_IN"})
+
+    monkeypatch.setattr("requests.get", mock_get)
+    monkeypatch.setattr("requests.post", mock_post)
+
+def test_successful_submission_flow(db_session, ready_assignment_fixture, monkeypatch):
     user, cw, _, _ = ready_assignment_fixture
+    _mock_google_api(monkeypatch)
 
     sub = SubmissionService.execute_submission(db_session, user, cw)
     assert sub.id is not None
@@ -93,8 +128,9 @@ def test_blocked_submission_when_validation_not_passed(db_session, ready_assignm
     assert "has not passed" in str(exc_info.value)
     assert cw.status != "SUBMITTED"
 
-def test_blocked_duplicate_submission(db_session, ready_assignment_fixture):
+def test_blocked_duplicate_submission(db_session, ready_assignment_fixture, monkeypatch):
     user, cw, _, _ = ready_assignment_fixture
+    _mock_google_api(monkeypatch)
     # Submit first time
     SubmissionService.execute_submission(db_session, user, cw)
     assert cw.status == "SUBMITTED"

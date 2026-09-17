@@ -53,7 +53,8 @@ class TimetableEntryBase(BaseModel):
     day_of_week: int # 0=Monday, ..., 6=Sunday
     start_time: str # "10:00"
     end_time: str # "11:00"
-    classroom: Optional[str] = "AB-204"
+    classroom: Optional[str] = "TBD"
+    faculty: Optional[str] = ""
     course_id: Optional[int] = None
 
 class TimetableEntryCreate(TimetableEntryBase):
@@ -73,6 +74,9 @@ class NextClassResponse(BaseModel):
     start_time: Optional[str] = None
     end_time: Optional[str] = None
     classroom: Optional[str] = None
+    faculty: Optional[str] = None
+    day_of_week: Optional[int] = None
+    day_name: Optional[str] = None
     time_remaining_minutes: Optional[int] = None
     course_id: Optional[int] = None
 

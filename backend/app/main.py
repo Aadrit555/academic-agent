@@ -44,11 +44,10 @@ async def lifespan(app: FastAPI):
     # Startup
     logger.info("Initializing Academic Agent Database and Background Scheduler...")
     init_db()
-    # Seed default user and timetable
+    # Initialize default user session if needed
     db = next(get_db())
     try:
         user = get_or_create_default_user(db)
-        TimetableService.seed_default_timetable(db, user)
     finally:
         db.close()
     SchedulerService.start()
@@ -185,17 +184,10 @@ def google_auth_callback(code: str, db: Session = Depends(get_db), user: User = 
     except Exception as e:
         return RedirectResponse(url=f"/?auth_error={str(e)}")
 
-@app.post("/api/auth/connect-demo")
-def connect_demo_auth(db: Session = Depends(get_db), user: User = Depends(current_user)):
-    AuthService.connect_demo_mode(db, user)
-    ClassroomService.sync_classroom_data(db, user)
-    return {"message": "Demo Google Classroom environment connected successfully.", "connected": True}
-
 @app.post("/api/auth/register", response_model=TokenResponse)
 def register_user(req: UserRegister, db: Session = Depends(get_db)):
     try:
         user = AuthService.register_user(db, email=req.email, name=req.name, password=req.password)
-        TimetableService.seed_default_timetable(db, user)
         token = create_access_token(user_id=user.id, email=user.email, role=user.role)
         return TokenResponse(
             access_token=token,
@@ -220,7 +212,6 @@ def login_user(req: UserLogin, db: Session = Depends(get_db)):
     if not existing_user:
         if len(req.password) >= 8:
             user = AuthService.register_user(db, email=clean_email, name=clean_email.split("@")[0], password=req.password)
-            TimetableService.seed_default_timetable(db, user)
             token = create_access_token(user_id=user.id, email=user.email, role=user.role)
             return TokenResponse(
                 access_token=token,
@@ -545,15 +536,18 @@ def submit_now(coursework_id: int, db: Session = Depends(get_db), user: User = D
     cw = db.query(Coursework).filter_by(id=coursework_id, user_id=user.id).first()
     if not cw:
         raise HTTPException(status_code=404, detail="Coursework not found")
-    sub = SubmissionService.execute_submission(db, user, cw)
-    return SubmissionResultResponse(
-        coursework_id=cw.id,
-        submission_id=sub.classroom_submission_id,
-        state=sub.verified_state,
-        drive_file_id=sub.drive_file_id,
-        turned_in_at=sub.turned_in_at,
-        message="Assignment turned in successfully to Google Classroom."
-    )
+    try:
+        sub = SubmissionService.execute_submission(db, user, cw)
+        return SubmissionResultResponse(
+            coursework_id=cw.id,
+            submission_id=sub.classroom_submission_id,
+            state=sub.verified_state,
+            drive_file_id=sub.drive_file_id,
+            turned_in_at=sub.turned_in_at,
+            message="Assignment turned in successfully to Google Classroom."
+        )
+    except (ValueError, RuntimeError) as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 @app.get("/api/schedules")
 def list_schedules(db: Session = Depends(get_db), user: User = Depends(current_user)):
@@ -750,64 +744,29 @@ def configure_google_credentials(req: GoogleCredentialsConfigRequest, db: Sessio
         "auth_url": AuthService.get_auth_url()
     }
 
-# ── Expo Demonstration Seeder ────────────────────────────────────────────────
-@app.post("/api/demo/setup")
-def setup_expo_demonstration(db: Session = Depends(get_db), user: User = Depends(current_user)):
-    """Seeds the full 12-step demo environment: Classroom, Timetable, Course Materials, Assignment."""
-    AuthService.connect_demo_mode(db, user)
-    ClassroomService.sync_classroom_data(db, user)
-    TimetableService.seed_default_timetable(db, user)
-
-    # Seed sample course documents (Unit-2.pdf and Lab-Manual.pdf)
-    ds_course = db.query(Course).filter_by(user_id=user.id, name="Data Structures").first()
-    algo_course = db.query(Course).filter_by(user_id=user.id, name="Algorithms Lab").first()
-
-    if ds_course:
-        unit2_text = (
-            "Data Structures & Algorithms: Unit 2: Divide and Conquer Sorting & Balanced Trees\n\n"
-            "1. Merge Sort Algorithm:\n"
-            "Merge Sort is an asymptotically optimal divide-and-conquer comparison sorting algorithm. "
-            "It divides an array into two halves, recursively sorts both halves using mergeSort(), and "
-            "then merges the sorted halves using merge() in O(n) linear time.\n"
-            "Recurrence relation: T(n) = 2T(n/2) + O(n). By Master Theorem Case 2, T(n) = Theta(n log n).\n"
-            "Space Complexity: Auxiliary space is O(n) for temporary merging buffers.\n\n"
-            "2. AVL Trees:\n"
-            "An AVL tree is a self-balancing binary search tree where the difference between heights "
-            "of left and right subtrees for any node cannot be more than one (Balance Factor = {-1, 0, 1}).\n"
-            "When an insertion causes an imbalance:\n"
-            "- Left-Left (LL): Resolved by single Right Rotation.\n"
-            "- Right-Right (RR): Resolved by single Left Rotation.\n"
-            "- Left-Right (LR): Resolved by Left Rotation on child followed by Right Rotation on parent.\n"
-            "- Right-Left (RL): Resolved by Right Rotation on child followed by Left Rotation on parent.\n"
-            "Lookup, insertion, and deletion all take strictly O(log n) time."
-        )
-        existing_doc = db.query(Document).filter_by(course_id=ds_course.id, filename="Unit-2.pdf").first()
-        if not existing_doc:
-            DocumentService.ingest_document(db, user, ds_course.id, "Unit-2.pdf", unit2_text.encode("utf-8"))
-
-    if algo_course:
-        lab_manual_text = (
-            "Department of Computer Science & Engineering\n"
-            "Algorithms Laboratory Manual: Academic Year 2026\n\n"
-            "Experiment 4: Implementation of Divide-and-Conquer Merge Sort in C\n"
-            "Objective: Write a modular C program to sort an array using Merge Sort.\n"
-            "Standard function signatures:\n"
-            "void merge(int arr[], int l, int m, int r);\n"
-            "void mergeSort(int arr[], int l, int r);\n"
-            "Compilation flags: gcc -Wall -Wextra\n"
-            "Verification criteria: The code must sort ascending arrays correctly with no compiler warnings."
-        )
-        existing_lab = db.query(Document).filter_by(course_id=algo_course.id, filename="Lab-Manual.pdf").first()
-        if not existing_lab:
-            DocumentService.ingest_document(db, user, algo_course.id, "Lab-Manual.pdf", lab_manual_text.encode("utf-8"))
-
+# ── System Health & Add-on Manifest ──────────────────────────────────────────
+@app.get("/api/health")
+def system_health():
     return {
-        "message": "Expo demonstration environment initialized with Classroom, Timetable, Course Materials, and Assignments.",
-        "success": True
+        "status": "healthy",
+        "app": settings.APP_NAME,
+        "version": settings.APP_VERSION,
+        "mode": "live_production"
     }
 
 # ── Static Pages & Assets ───────────────────────────────────────────────────
 frontend_dir = Path(__file__).resolve().parent.parent.parent / "frontend"
+
+@app.get("/manifest.json")
+def serve_manifest():
+    manifest_path = frontend_dir / "manifest.json"
+    if manifest_path.exists():
+        return FileResponse(str(manifest_path), media_type="application/json")
+    return JSONResponse(content={
+        "timeZone": "Asia/Kolkata",
+        "addOns": {"common": {"name": "Academic Agent"}}
+    })
+
 if frontend_dir.exists():
     app.mount("/css", StaticFiles(directory=str(frontend_dir / "css")), name="css")
     app.mount("/js", StaticFiles(directory=str(frontend_dir / "js")), name="js")

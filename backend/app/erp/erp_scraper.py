@@ -288,7 +288,7 @@ class ERPScraper:
                         courses_map[code] = {
                             "name": title,
                             "faculty": faculty,
-                            "default_room": rooms.split(",")[0].strip() if rooms else "AB-204"
+                            "default_room": rooms.split(",")[0].strip() if rooms else "TBD"
                         }
 
         # 2. Parse Weekly Grid rows (Monday - Friday / Saturday)
@@ -351,7 +351,7 @@ class ERPScraper:
                 course_info = courses_map.get(code, {})
                 c_name = title_attr or course_info.get("name") or code
                 faculty = course_info.get("faculty") or ""
-                room = parsed["room"] or course_info.get("default_room") or "AB-204"
+                room = parsed["room"] or course_info.get("default_room") or "TBD"
 
                 start_t, end_t = active_slots[slot_i]
 

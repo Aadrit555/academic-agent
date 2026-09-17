@@ -85,7 +85,7 @@ class TimetableService:
                 "course_code": getattr(e.course, "code", "") if e.course else e.subject[:8],
                 "start_time": e.start_time,
                 "end_time": e.end_time,
-                "classroom": e.classroom or "AB-204",
+                "classroom": e.classroom or "TBD",
                 "faculty": e.faculty or "",
                 "status": status,
                 "day_name": DAYS_MAP[current_weekday]
@@ -125,7 +125,7 @@ class TimetableService:
                         "course_code": getattr(earliest.course, "code", "") if earliest.course else earliest.subject[:8],
                         "start_time": earliest.start_time,
                         "end_time": earliest.end_time,
-                        "classroom": earliest.classroom or "AB-204",
+                        "classroom": earliest.classroom or "TBD",
                         "faculty": earliest.faculty or "",
                         "status": "upcoming",
                         "day_name": day_label,

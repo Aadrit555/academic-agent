@@ -32,67 +32,51 @@ class SubmissionService:
             raise RuntimeError("Submission blocked: Assignment deliverable has not passed code/document validation.")
 
         # 4. Check Google Auth
-        token, is_demo = AuthService.get_valid_token(db, user)
+        token, _ = AuthService.get_valid_token(db, user)
         if not token:
-            raise RuntimeError("Google authorization expired or not connected. Please reconnect Google Classroom.")
+            raise RuntimeError("Google authorization expired or not connected. Please connect Google Classroom with valid OAuth credentials.")
 
         coursework.status = "SUBMITTING"
         db.commit()
 
         try:
             # 5. Upload file to Drive
-            drive_file_id, file_name = DriveService.upload_file(assignment.file_path, token, is_demo=is_demo)
+            drive_file_id, file_name = DriveService.upload_file(assignment.file_path, token)
 
-            if is_demo:
-                # Execute simulated submission workflow
-                submission_id = coursework.submission_id or f"sub-demo-{coursework.id}"
-                verified_state = "TURNED_IN"
-                response_payload = {
-                    "submission_id": submission_id,
-                    "drive_file_id": drive_file_id,
-                    "file_name": file_name,
-                    "state": verified_state,
-                    "course_id": coursework.classroom_course_id,
-                    "coursework_id": coursework.coursework_id,
-                    "turned_in_at": utcnow().isoformat(),
-                    "status_code": 200,
-                    "note": "Submission verified and accepted by Google Classroom."
-                }
-            else:
-                # Live Google Classroom API
-                headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
-                cid = coursework.classroom_course_id
-                wid = coursework.coursework_id
+            # Live Google Classroom API
+            headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+            cid = coursework.classroom_course_id
+            wid = coursework.coursework_id
 
-                # Get student submission ID if not already cached
-                submission_id = coursework.submission_id
-                if not submission_id:
-                    sr = requests.get(f"{API_BASE}/courses/{cid}/courseWork/{wid}/studentSubmissions?userId=me", headers=headers, timeout=15)
-                    sr.raise_for_status()
-                    subs = sr.json().get("studentSubmissions", [])
-                    if not subs:
-                        raise RuntimeError(f"No student submission slot found in Classroom for course {cid}, coursework {wid}.")
-                    submission_id = subs[0]["id"]
-                    coursework.submission_id = submission_id
+            # Get student submission ID if not already cached
+            submission_id = coursework.submission_id
+            if not submission_id:
+                sr = requests.get(f"{API_BASE}/courses/{cid}/courseWork/{wid}/studentSubmissions?userId=me", headers=headers, timeout=15)
+                sr.raise_for_status()
+                subs = sr.json().get("studentSubmissions", [])
+                if not subs:
+                    raise RuntimeError(f"No student submission slot found in Classroom for course {cid}, coursework {wid}.")
+                submission_id = subs[0]["id"]
+                coursework.submission_id = submission_id
 
-                # Attach drive file
-                attach_url = f"{API_BASE}/courses/{cid}/courseWork/{wid}/studentSubmissions/{submission_id}:modifyAttachments"
-                attach_body = {"addAttachments": [{"driveFile": {"id": drive_file_id}}]}
-                ar = requests.post(attach_url, json=attach_body, headers=headers, timeout=20)
-                ar.raise_for_status()
+            # Attach drive file
+            attach_url = f"{API_BASE}/courses/{cid}/courseWork/{wid}/studentSubmissions/{submission_id}:modifyAttachments"
+            attach_body = {"addAttachments": [{"driveFile": {"id": drive_file_id}}]}
+            ar = requests.post(attach_url, json=attach_body, headers=headers, timeout=20)
+            ar.raise_for_status()
 
-                # Turn in
-                turnin_url = f"{API_BASE}/courses/{cid}/courseWork/{wid}/studentSubmissions/{submission_id}:turnIn"
-                tr = requests.post(turnin_url, json={}, headers=headers, timeout=20)
-                tr.raise_for_status()
-                response_payload = tr.json()
+            # Turn in
+            turnin_url = f"{API_BASE}/courses/{cid}/courseWork/{wid}/studentSubmissions/{submission_id}:turnIn"
+            tr = requests.post(turnin_url, json={}, headers=headers, timeout=20)
+            tr.raise_for_status()
+            response_payload = tr.json()
 
-                # Verify state
-                verify_url = f"{API_BASE}/courses/{cid}/courseWork/{wid}/studentSubmissions/{submission_id}"
-                vr = requests.get(verify_url, headers=headers, timeout=15)
-                vr.raise_for_status()
-                verified_data = vr.json()
-                verified_state = verified_data.get("state", "TURNED_IN")
+            # Verify state
+            verify_url = f"{API_BASE}/courses/{cid}/courseWork/{wid}/studentSubmissions/{submission_id}"
+            vr = requests.get(verify_url, headers=headers, timeout=15)
+            vr.raise_for_status()
+            verified_data = vr.json()
+            verified_state = verified_data.get("state", "TURNED_IN")
 
             # Record in DB
             sub_record = Submission(

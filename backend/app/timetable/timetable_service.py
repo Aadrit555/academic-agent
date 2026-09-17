@@ -33,35 +33,13 @@ class TimetableService:
         dt = now_dt or datetime.now()
         current_day = dt.weekday()
         current_time_str = dt.strftime("%H:%M")
+        day_names = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
         today_classes = cls.get_today_entries(db, user, dt)
-        if not today_classes:
-            # Check upcoming days this week
-            for day_offset in range(1, 7):
-                check_day = (current_day + day_offset) % 7
-                upcoming = (
-                    db.query(TimetableEntry)
-                    .filter_by(user_id=user.id, day_of_week=check_day)
-                    .order_by(TimetableEntry.start_time)
-                    .first()
-                )
-                if upcoming:
-                    return NextClassResponse(
-                        has_class=True,
-                        is_ongoing=False,
-                        is_approaching=False,
-                        subject=upcoming.subject,
-                        start_time=upcoming.start_time,
-                        end_time=upcoming.end_time,
-                        classroom=upcoming.classroom,
-                        course_id=upcoming.course_id
-                    )
-            return NextClassResponse(has_class=False)
 
-        # 1. Check if any class is ongoing right now
+        # 1. Check if any class is ongoing right now today
         for entry in today_classes:
             if entry.start_time <= current_time_str <= entry.end_time:
-                # Class is currently in session!
                 end_hour, end_min = map(int, entry.end_time.split(":"))
                 now_hour, now_min = dt.hour, dt.minute
                 rem = (end_hour * 60 + end_min) - (now_hour * 60 + now_min)
@@ -73,6 +51,9 @@ class TimetableService:
                     start_time=entry.start_time,
                     end_time=entry.end_time,
                     classroom=entry.classroom,
+                    faculty=entry.faculty or "",
+                    day_of_week=entry.day_of_week,
+                    day_name=day_names[entry.day_of_week],
                     time_remaining_minutes=max(0, rem),
                     course_id=entry.course_id
                 )
@@ -92,11 +73,14 @@ class TimetableService:
                     start_time=entry.start_time,
                     end_time=entry.end_time,
                     classroom=entry.classroom,
+                    faculty=entry.faculty or "",
+                    day_of_week=entry.day_of_week,
+                    day_name=day_names[entry.day_of_week],
                     time_remaining_minutes=diff_minutes,
                     course_id=entry.course_id
                 )
 
-        # 3. All classes finished today -> pick next available day
+        # 3. Check upcoming days this week (next 6 days)
         for day_offset in range(1, 7):
             check_day = (current_day + day_offset) % 7
             upcoming = (
@@ -114,33 +98,28 @@ class TimetableService:
                     start_time=upcoming.start_time,
                     end_time=upcoming.end_time,
                     classroom=upcoming.classroom,
+                    faculty=upcoming.faculty or "",
+                    day_of_week=upcoming.day_of_week,
+                    day_name=day_names[upcoming.day_of_week],
+                    time_remaining_minutes=None,
                     course_id=upcoming.course_id
                 )
 
-        # Fallback to the first class today if recurring
-        first_today = today_classes[0]
-        return NextClassResponse(
-            has_class=True,
-            is_ongoing=False,
-            is_approaching=False,
-            subject=first_today.subject,
-            start_time=first_today.start_time,
-            end_time=first_today.end_time,
-            classroom=first_today.classroom,
-            course_id=first_today.course_id
-        )
+        return NextClassResponse(has_class=False)
 
     @classmethod
     def import_entries(cls, db: Session, user: User, entries: list[dict]):
-        """Replaces or appends timetable entries."""
+        """Replaces or appends timetable entries from real schedule input."""
         for e in entries:
-            subject = e.get("subject", "").strip()
+            subject = e.get("subject") or e.get("course_name") or ""
+            subject = subject.strip()
             if not subject:
                 continue
             day = int(e.get("day_of_week", 0))
-            start_t = e.get("start_time", "10:00").strip()
-            end_t = e.get("end_time", "11:00").strip()
-            room = e.get("classroom", "AB-204").strip()
+            start_t = e.get("start_time", "09:00").strip()
+            end_t = e.get("end_time", "09:50").strip()
+            room = (e.get("classroom") or "TBD").strip()
+            faculty = (e.get("faculty") or "").strip()
 
             course = db.query(Course).filter_by(user_id=user.id, name=subject).first()
             course_id = course.id if course else None
@@ -152,43 +131,9 @@ class TimetableService:
                 day_of_week=day,
                 start_time=start_t,
                 end_time=end_t,
-                classroom=room
+                classroom=room,
+                faculty=faculty
             )
             db.add(entry)
         db.commit()
-
-    @classmethod
-    def seed_default_timetable(cls, db: Session, user: User):
-        existing = db.query(TimetableEntry).filter_by(user_id=user.id).first()
-        if existing:
-            return
-            
-        current_day = datetime.now().weekday()
-        # Seed realistic schedule across Monday-Friday
-        entries = [
-            # Monday
-            {"subject": "Data Structures", "day_of_week": 0, "start_time": "10:00", "end_time": "11:00", "classroom": "AB-204"},
-            {"subject": "Discrete Mathematics", "day_of_week": 0, "start_time": "12:00", "end_time": "13:00", "classroom": "AB-302"},
-            {"subject": "Algorithms Lab", "day_of_week": 0, "start_time": "14:00", "end_time": "16:00", "classroom": "LAB-7"},
-            # Tuesday: CSE 207 in X-201
-            {"subject": "Digital Electronics", "day_of_week": 1, "start_time": "09:00", "end_time": "09:50", "classroom": "X-201"},
-            {"subject": "Data Structures", "day_of_week": 1, "start_time": "11:00", "end_time": "12:00", "classroom": "C-801"},
-            # Wednesday
-            {"subject": "Algorithms Lab", "day_of_week": 2, "start_time": "10:00", "end_time": "12:00", "classroom": "LAB-7"},
-            {"subject": "Discrete Mathematics", "day_of_week": 2, "start_time": "14:00", "end_time": "15:00", "classroom": "AB-302"},
-            # Thursday: CSE 207 in C-1011
-            {"subject": "Digital Electronics", "day_of_week": 3, "start_time": "09:00", "end_time": "09:50", "classroom": "C-1011"},
-            {"subject": "Data Structures", "day_of_week": 3, "start_time": "10:00", "end_time": "11:00", "classroom": "AB-204"},
-            # Friday: CSE 207 in C-504
-            {"subject": "Discrete Mathematics", "day_of_week": 4, "start_time": "11:00", "end_time": "12:00", "classroom": "AB-302"},
-            {"subject": "Digital Electronics", "day_of_week": 4, "start_time": "14:00", "end_time": "15:00", "classroom": "C-504"},
-        ]
-        
-        # Ensure current day also has guaranteed upcoming class for live demo
-        has_today = any(e["day_of_week"] == current_day for e in entries)
-        if not has_today:
-            entries.append({"subject": "Data Structures", "day_of_week": current_day, "start_time": "10:00", "end_time": "11:00", "classroom": "AB-204"})
-            entries.append({"subject": "Digital Electronics", "day_of_week": current_day, "start_time": "14:00", "end_time": "15:00", "classroom": "C-1011"})
-            
-        cls.import_entries(db, user, entries)
 

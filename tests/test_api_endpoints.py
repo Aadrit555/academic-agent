@@ -10,11 +10,14 @@ def client():
     with TestClient(app) as c:
         yield c
 
-def test_expo_demo_setup_endpoint(client):
-    res = client.post("/api/demo/setup")
-    assert res.status_code == 200
-    data = res.json()
-    assert data["success"] is True
+def test_health_and_manifest_endpoints(client):
+    h_res = client.get("/api/health")
+    assert h_res.status_code == 200
+    assert h_res.json()["status"] == "healthy"
+
+    m_res = client.get("/manifest.json")
+    assert m_res.status_code == 200
+    assert "addOns" in m_res.json()
 
 def test_home_summary_endpoint(client):
     res = client.get("/api/home")
@@ -101,12 +104,10 @@ def test_assignment_lifecycle_endpoints(client):
     assert sched_res.status_code == 200
     assert sched_res.json()["status"] == "SCHEDULED"
 
-    # 6. Submit Now (immediate execution)
+    # 6. Submit Now requires valid Google OAuth authorization
     sub_res = client.post(f"/api/assignment/{cw_id}/submit-now")
-    assert sub_res.status_code == 200
-    sub_data = sub_res.json()
-    assert sub_data["state"] == "TURNED_IN"
-    assert sub_data["drive_file_id"].startswith("1Drv-")
+    assert sub_res.status_code == 400
+    assert "Google" in sub_res.json()["detail"]
 
 def test_fast_attendance_endpoint(client):
     res = client.post("/api/attendance/mark", json={"attendance_code": "A987654"})

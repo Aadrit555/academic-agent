@@ -1,0 +1,14 @@
+{
+  "timeZone": "Asia/Kolkata",
+  "dependencies": {},
+  "addOns": {
+    "common": {
+      "name": "Academic Agent",
+      "logoUrl": "http://localhost:8000/favicon.svg",
+      "layoutProperties": {
+        "primaryColor": "#2563eb",
+        "secondaryColor": "#10b981"
+      }
+    }
+  }
+}

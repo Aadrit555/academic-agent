@@ -85,8 +85,7 @@ class AuthService:
         redirect = redirect_uri or settings.GOOGLE_REDIRECT_URI
         client_id = settings.GOOGLE_CLIENT_ID
         if not client_id:
-            # If Google credentials are not set, return simulated demo auth URL
-            return f"{settings.APP_BASE_URL}/api/auth/demo-connect"
+            raise ValueError("Google Client ID is not configured. Please enter your Google Cloud OAuth credentials.")
             
         import urllib.parse
         params = {
@@ -150,34 +149,11 @@ class AuthService:
         return integration
 
     @classmethod
-    def connect_demo_mode(cls, db: Session, user: User) -> ClassroomIntegration:
-        """Connects simulated demo Google Classroom environment for instant evaluation."""
-        integration = db.query(ClassroomIntegration).filter_by(user_id=user.id).first()
-        if not integration:
-            integration = ClassroomIntegration(user_id=user.id)
-            db.add(integration)
-            
-        integration.access_token = "demo_google_classroom_token"
-        integration.refresh_token = "demo_refresh_token"
-        integration.token_expires_at = utcnow() + timedelta(days=365)
-        integration.email = user.email or "student@university.edu"
-        integration.is_demo_mode = True
-        integration.connected_at = utcnow()
-        integration.last_synced_at = utcnow()
-        
-        db.commit()
-        db.refresh(integration)
-        return integration
-
-    @classmethod
     def get_valid_token(cls, db: Session, user: User) -> tuple[str | None, bool]:
-        """Returns (access_token, is_demo_mode). Handles token refresh automatically."""
+        """Returns (access_token, False). Handles token refresh automatically for real Google tokens."""
         integration = db.query(ClassroomIntegration).filter_by(user_id=user.id).first()
-        if not integration:
+        if not integration or integration.is_demo_mode or integration.access_token == "demo_google_classroom_token":
             return None, False
-            
-        if integration.is_demo_mode:
-            return integration.access_token, True
             
         now = utcnow()
         expires_at = integration.token_expires_at
@@ -204,4 +180,5 @@ class AuthService:
                 return None, False
                 
         return integration.access_token, False
+
 
