@@ -6,19 +6,71 @@ from sqlalchemy.orm import Session
 from backend.app.config import settings
 from backend.app.models import User, ClassroomIntegration
 
+from backend.app.auth.security import hash_password, verify_password, sanitize_input
+
 def utcnow():
     return datetime.now(timezone.utc)
 
 def get_or_create_default_user(db: Session) -> User:
     user = db.query(User).first()
     if not user:
-        user = User(email="student@university.edu", name="Aadrit")
+        pwd_hash, salt = hash_password("Pass@Academic2026!")
+        user = User(
+            email="student@university.edu",
+            name="Aadrit",
+            hashed_password=pwd_hash,
+            salt=salt,
+            role="student",
+            is_active=True
+        )
         db.add(user)
         db.commit()
         db.refresh(user)
+    elif not user.hashed_password:
+        pwd_hash, salt = hash_password("Pass@Academic2026!")
+        user.hashed_password = pwd_hash
+        user.salt = salt
+        db.commit()
     return user
 
 class AuthService:
+    @classmethod
+    def register_user(cls, db: Session, email: str, name: str, password: str, role: str = "student") -> User:
+        clean_email = sanitize_input(email).lower()
+        clean_name = sanitize_input(name)
+        if not clean_email or "@" not in clean_email:
+            raise ValueError("A valid email address is required.")
+        if len(password) < 8:
+            raise ValueError("Password must be at least 8 characters long.")
+
+        existing = db.query(User).filter_by(email=clean_email).first()
+        if existing:
+            raise ValueError(f"User with email '{clean_email}' already exists.")
+
+        pwd_hash, salt = hash_password(password)
+        user = User(
+            email=clean_email,
+            name=clean_name,
+            hashed_password=pwd_hash,
+            salt=salt,
+            role=role,
+            is_active=True
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        return user
+
+    @classmethod
+    def authenticate_user(cls, db: Session, email: str, password: str) -> Optional[User]:
+        clean_email = sanitize_input(email).lower()
+        user = db.query(User).filter_by(email=clean_email).first()
+        if not user or not user.is_active or not user.hashed_password:
+            return None
+        if not verify_password(password, user.hashed_password, user.salt):
+            return None
+        return user
+
     SCOPES = [
         "https://www.googleapis.com/auth/classroom.courses.readonly",
         "https://www.googleapis.com/auth/classroom.coursework.me",
@@ -149,3 +201,4 @@ class AuthService:
                 return None, False
                 
         return integration.access_token, False
+

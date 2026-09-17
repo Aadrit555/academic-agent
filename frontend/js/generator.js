@@ -1,6 +1,7 @@
-// Assignment Generator Module
+// Assignment Specification, Generator & Code Studio Module
 const GeneratorModule = {
   selectedCourseworkId: null,
+  activeSpec: null,
 
   async loadGenerator() {
     try {
@@ -48,7 +49,7 @@ const GeneratorModule = {
   },
 
   async updateAssignmentInfo() {
-    const infoEl = document.getElementById("selected-assignment-details");
+    const specBox = document.getElementById("assignment-spec-container");
     const codeViewer = document.getElementById("code-viewer-panel");
     const headerEl = document.getElementById("deliverable-header");
     const downloadBtn = document.getElementById("download-deliverable-btn");
@@ -56,41 +57,82 @@ const GeneratorModule = {
     const cw = AppState.coursework.find(c => c.id === this.selectedCourseworkId);
     if (!cw) return;
 
-    infoEl.innerHTML = `
-      <div style="margin-bottom: 6px;"><b>Course:</b> ${escapeHtml(cw.course_name)}</div>
-      <div style="margin-bottom: 6px;"><b>Deadline:</b> ${cw.due_date || "N/A"} ${cw.due_time || ""}</div>
-      <div style="margin-bottom: 8px;"><b>Status:</b> <span class="status-pill status-${cw.status.toLowerCase()}">${cw.status}</span></div>
-      <div style="color: var(--text-secondary); font-size: 12px;">${escapeHtml(cw.description || "")}</div>
-    `;
+    // 1. Fetch and render dynamic Assignment Specification
+    try {
+      const spec = await api(`/assignment/${cw.id}/spec`);
+      this.activeSpec = spec;
+      if (specBox) {
+        specBox.innerHTML = `
+          <div class="spec-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span class="spec-badge">SPECIFICATION DETECTED</span>
+              <span class="status-pill status-${cw.status.toLowerCase()}">${cw.status}</span>
+            </div>
+            <h3 style="font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 4px;">${escapeHtml(spec.title)}</h3>
+            <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 8px;">
+              ${escapeHtml(spec.course)} · Due: ${spec.deadline}
+            </div>
 
-    // Try to load existing deliverable
+            <div class="spec-section">
+              <div class="spec-label">REQUIRED DELIVERABLES:</div>
+              <div class="spec-tags">
+                ${spec.required_files.map(f => `<span class="spec-tag">${escapeHtml(f)}</span>`).join("")}
+              </div>
+            </div>
+
+            ${spec.compiler_flags ? `
+              <div class="spec-section">
+                <div class="spec-label">COMPILER CONSTRAINTS:</div>
+                <div style="font-family: monospace; font-size: 11px; color: #60a5fa;">${escapeHtml(spec.compiler_flags)}</div>
+              </div>
+            ` : ''}
+
+            ${spec.required_tests.length ? `
+              <div class="spec-section">
+                <div class="spec-label">VERIFICATION CHECKS:</div>
+                <ul style="padding-left: 16px; font-size: 11px; color: var(--text-secondary);">
+                  ${spec.required_tests.map(t => `<li>${escapeHtml(t)}</li>`).join("")}
+                </ul>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }
+    } catch (err) {
+      console.warn("Spec fetch error:", err);
+    }
+
+    // 2. Try to load existing deliverable
     try {
       const deliv = await api(`/assignment/${cw.id}/deliverable`);
-      headerEl.textContent = `Deliverable: ${deliv.file_name} (${deliv.language.toUpperCase()})`;
-      codeViewer.textContent = deliv.code_or_content;
-      downloadBtn.style.display = "inline-flex";
-      downloadBtn.onclick = () => {
-        window.location.href = `/api/assignment/${cw.id}/download`;
-      };
-      // Also load validation report if available
+      if (headerEl) headerEl.textContent = `${deliv.file_name} (${deliv.language.toUpperCase()})`;
+      if (codeViewer) codeViewer.textContent = deliv.code_or_content;
+      if (downloadBtn) {
+        downloadBtn.style.display = "inline-flex";
+        downloadBtn.onclick = () => {
+          window.location.href = `/api/assignment/${cw.id}/download`;
+        };
+      }
       ValidationModule.loadValidation(cw.id);
     } catch {
-      headerEl.textContent = "Deliverable Preview";
-      codeViewer.textContent = "// No deliverable generated yet. Click 'Generate Assignment Deliverable' to begin.";
-      downloadBtn.style.display = "none";
+      if (headerEl) headerEl.textContent = "Deliverable Studio";
+      if (codeViewer) codeViewer.textContent = "// Click 'Generate Assignment Deliverable' to synthesize required files from course context.";
+      if (downloadBtn) downloadBtn.style.display = "none";
       ValidationModule.resetReport();
     }
   },
 
   async triggerGeneration() {
     if (!this.selectedCourseworkId) {
-      alert("Please select an assignment first.");
+      Toast.warning("Please select an assignment first.");
       return;
     }
 
     const btn = document.getElementById("btn-trigger-generate");
-    btn.textContent = "Generating Deliverable...";
-    btn.disabled = true;
+    if (btn) {
+      btn.textContent = "Synthesizing Deliverable...";
+      btn.disabled = true;
+    }
 
     try {
       const res = await api("/assignment/generate", {
@@ -99,17 +141,19 @@ const GeneratorModule = {
         body: JSON.stringify({ coursework_id: this.selectedCourseworkId })
       });
 
-      alert(`✓ Deliverable '${res.file_name}' successfully generated from course context!`);
+      Toast.success(`Deliverable '${res.file_name}' generated from course context!`);
       await this.updateAssignmentInfo();
       loadHomeSummary();
 
-      // Automatically run validation
+      // Automatically trigger validation pipeline
       await ValidationModule.runValidation(this.selectedCourseworkId);
     } catch (e) {
-      alert(`Generation Failed: ${e.message}`);
+      Toast.error(`Generation Failed: ${e.message}`);
     } finally {
-      btn.textContent = "⚡ Generate Assignment Deliverable";
-      btn.disabled = false;
+      if (btn) {
+        btn.textContent = "Generate Deliverable";
+        btn.disabled = false;
+      }
     }
   }
 };
@@ -117,4 +161,17 @@ const GeneratorModule = {
 document.addEventListener("DOMContentLoaded", () => {
   const genBtn = document.getElementById("btn-trigger-generate");
   if (genBtn) genBtn.addEventListener("click", () => GeneratorModule.triggerGeneration());
+
+  const autoBtn = document.getElementById("btn-trigger-automate");
+  if (autoBtn) {
+    autoBtn.addEventListener("click", () => {
+      const cwId = GeneratorModule.selectedCourseworkId;
+      if (!cwId) {
+        Toast.warning("Please select an assignment first.");
+        return;
+      }
+      const cw = AppState.coursework.find(c => c.id === cwId);
+      openScheduleModal(cwId, cw ? cw.title : "Assignment");
+    });
+  }
 });

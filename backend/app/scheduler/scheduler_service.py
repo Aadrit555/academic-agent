@@ -150,3 +150,4 @@ class SchedulerService:
                     logger.error(f"[Scheduler] Auto-submission failed for '{coursework.title}': {e}")
         finally:
             db.close()
+

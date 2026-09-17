@@ -1,4 +1,4 @@
-// Google Classroom Module
+// Google Classroom Stream & Coursework Module
 const ClassroomModule = {
   currentFilterCourseId: null,
 
@@ -12,169 +12,198 @@ const ClassroomModule = {
       AppState.courses = courses;
       AppState.coursework = coursework;
 
-      this.renderCourseTabs(courses);
-      this.renderCoursework(coursework);
+      this.renderCourseSelector(courses);
+      this.renderClassroomStream(coursework);
+      this.renderClassworkTab(coursework);
+      this.renderUpcomingDeadlines(coursework);
     } catch (e) {
-      console.error("Failed to load classroom:", e);
+      console.error("Failed to load classroom stream:", e);
     }
   },
 
   async syncClassroom() {
+    const btn = document.getElementById("sync-classroom-btn");
+    if (btn) {
+      btn.textContent = "Syncing with Google...";
+      btn.disabled = true;
+    }
+
     try {
       const res = await api("/classroom/sync", { method: "POST" });
-      alert(`✓ ${res.message}`);
+      Toast.success(res.message);
       await this.loadClassroom();
       await loadHomeSummary();
     } catch (e) {
-      alert(`Classroom Sync Error: ${e.message}`);
+      Toast.error(`Classroom Sync Error: ${e.message}`);
+    } finally {
+      if (btn) {
+        btn.textContent = "Sync Classroom";
+        btn.disabled = false;
+      }
     }
   },
 
-  renderCourseTabs(courses) {
-    const container = document.getElementById("classroom-courses-tabs");
-    if (!container) return;
+  renderCourseSelector(courses) {
+    const select = document.getElementById("classroom-course-select");
+    const headerTitle = document.getElementById("classroom-active-course-title");
+    if (!select) return;
 
-    let html = `
-      <button class="btn ${this.currentFilterCourseId === null ? 'btn-primary' : 'btn-secondary'}" 
-              onclick="ClassroomModule.filterByCourse(null)">
-        All Courses (${AppState.coursework.length})
-      </button>
-    `;
+    if (!courses || courses.length === 0) {
+      select.innerHTML = `<option value="">No enrolled courses</option>`;
+      if (headerTitle) headerTitle.textContent = "Google Classroom";
+      return;
+    }
 
-    courses.forEach(c => {
-      const isSelected = this.currentFilterCourseId === c.id;
-      html += `
-        <button class="btn ${isSelected ? 'btn-primary' : 'btn-secondary'}" 
-                onclick="ClassroomModule.filterByCourse(${c.id})">
-          ${escapeHtml(c.name)}
-        </button>
-      `;
-    });
+    select.innerHTML = courses.map(c => `
+      <option value="${c.id}">${escapeHtml(c.code ? `${c.code} - ${c.name}` : c.name)}</option>
+    `).join("");
 
-    container.innerHTML = html;
+    if (!this.currentFilterCourseId || !courses.find(c => c.id === this.currentFilterCourseId)) {
+      this.currentFilterCourseId = courses[0].id;
+    }
+    select.value = this.currentFilterCourseId;
+
+    const activeCourse = courses.find(c => c.id === this.currentFilterCourseId);
+    this.updateCourseBanner(activeCourse);
+
+    select.onchange = () => {
+      this.currentFilterCourseId = parseInt(select.value);
+      const chosen = courses.find(c => c.id === this.currentFilterCourseId);
+      this.updateCourseBanner(chosen);
+      this.filterByCourse(this.currentFilterCourseId);
+    };
+  },
+
+  updateCourseBanner(course) {
+    if (!course) return;
+    const headerTitle = document.getElementById("classroom-active-course-title");
+    const bannerTitle = document.getElementById("course-banner-title");
+    const bannerSub = document.getElementById("course-banner-sub");
+    const metaSemester = document.getElementById("course-meta-semester");
+    const metaSection = document.getElementById("course-meta-section");
+    const metaInst = document.getElementById("course-meta-inst");
+
+    if (headerTitle) headerTitle.textContent = course.name;
+    if (bannerTitle) bannerTitle.textContent = `${course.name} (${course.code})`;
+
+    let info = course.instructor ? `Faculty: ${course.instructor}` : "Academic Course";
+    if (bannerSub) bannerSub.textContent = info;
+
+    const prof = (AppState.erpStatus && AppState.erpStatus.profile) || {};
+    if (metaSemester) metaSemester.textContent = prof.semester || "III SEMESTER";
+    if (metaSection) metaSection.textContent = prof.section ? `SECTION ${prof.section.replace(/'/g, '')}` : "SECTION K";
+    if (metaInst) metaInst.textContent = "SRM UNIVERSITY AP";
   },
 
   filterByCourse(courseId) {
     this.currentFilterCourseId = courseId;
-    this.renderCourseTabs(AppState.courses);
-    const filtered = courseId 
+    const activeCourse = AppState.courses.find(c => c.id === courseId);
+    if (activeCourse) this.updateCourseBanner(activeCourse);
+
+    const filtered = courseId
       ? AppState.coursework.filter(w => w.course_id === courseId)
       : AppState.coursework;
-    this.renderCoursework(filtered);
+    this.renderClassroomStream(filtered);
+    this.renderClassworkTab(filtered);
+    this.renderUpcomingDeadlines(filtered);
   },
 
-  renderCoursework(items) {
-    const container = document.getElementById("classroom-coursework-container");
+  renderUpcomingDeadlines(items) {
+    const container = document.getElementById("classroom-upcoming-deadlines-list");
+    if (!container) return;
+
+    if (!items || items.length === 0) {
+      container.innerHTML = `<div style="font-size: 12px; color: var(--text-muted);">No upcoming deadlines.</div>`;
+      return;
+    }
+
+    const sorted = [...items].sort((a, b) => (a.due_date || "").localeCompare(b.due_date || ""));
+    container.innerHTML = sorted.slice(0, 3).map(a => `
+      <div style="padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 12px;">
+        <div style="color: #fff; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(a.title)}</div>
+        <div style="color: var(--text-muted); font-size: 11px;">Due: ${a.due_date || "Tomorrow"}</div>
+      </div>
+    `).join("");
+  },
+
+  renderClassroomStream(items) {
+    const container = document.getElementById("classroom-stream-feed");
     if (!container) return;
 
     if (!items || items.length === 0) {
       container.innerHTML = `
-        <div style="grid-column: 1 / -1; padding: 48px; text-align: center; background: var(--bg-card); border-radius: var(--radius-md); border: 1px dashed var(--border);">
-          <p style="color: var(--text-secondary); margin-bottom: 16px;">No coursework found for this filter.</p>
-          <button class="btn btn-primary" onclick="ClassroomModule.syncClassroom()">Sync from Google Classroom</button>
+        <div style="padding: 32px; text-align: center; border: 1px dashed var(--border); border-radius: var(--radius-sm); color: var(--text-secondary);">
+          <p>No coursework published for this course yet.</p>
+          <button class="btn btn-secondary btn-sm" style="margin-top: 10px;" onclick="ClassroomModule.syncClassroom()">Sync Classroom</button>
         </div>
       `;
       return;
     }
 
-    const statusClasses = {
-      NOT_STARTED: "status-not_started",
-      GENERATING: "status-generating",
-      GENERATED: "status-generated",
-      VALIDATING: "status-validating",
-      READY: "status-ready",
-      SCHEDULED: "status-scheduled",
-      SUBMITTING: "status-submitting",
-      SUBMITTED: "status-submitted",
-      FAILED: "status-failed",
-    };
-
     container.innerHTML = items.map(a => {
-      const sClass = statusClasses[a.status] || "status-not_started";
       const isSubmitted = a.status === "SUBMITTED";
-      const isReady = a.status === "READY";
-      const isScheduled = a.status === "SCHEDULED";
-
       return `
-        <div class="assignment-card">
-          <div>
-            <div class="assignment-top">
-              <span class="assignment-course">${escapeHtml(a.course_name || "Academic Course")}</span>
-              <span class="status-pill ${sClass}">${a.status.replace("_", " ")}</span>
-            </div>
-            <h3 class="assignment-title">${escapeHtml(a.title)}</h3>
-            <p class="assignment-desc">${escapeHtml(a.description || "No description provided.")}</p>
-            <div class="assignment-due" style="margin-bottom: 14px;">
-              <span>📅 Due: <b>${a.due_date || "No deadline"} ${a.due_time ? "· " + a.due_time.substring(0, 5) : ""}</b></span>
-            </div>
-
-            ${a.schedule ? `
-              <div style="background: rgba(6, 182, 212, 0.1); border: 1px solid rgba(6, 182, 212, 0.3); border-radius: 4px; padding: 8px 10px; font-size: 12px; color: #67e8f9; margin-bottom: 12px;">
-                ⏰ Auto-Submit: <b>ON</b> (${a.schedule.offset_hours}h before deadline)
-              </div>
-            ` : ''}
+        <div class="stream-assignment-card" onclick="openAssignmentInAddon(${a.id})">
+          <div class="stream-card-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+            </svg>
           </div>
-
-          <div class="assignment-actions">
-            <button class="btn btn-secondary" style="font-size: 12px;" onclick="openGeneratorForAssignment(${a.id})">
-              ⚡ Open Lab
-            </button>
-            ${!isSubmitted ? `
-              <button class="btn btn-primary" style="font-size: 12px;" onclick="openScheduleModal(${a.id}, '${escapeHtml(a.title)}')">
-                ${isScheduled ? 'Manage Schedule' : 'Schedule Submit'}
-              </button>
-            ` : `
-              <span class="status-pill status-submitted" style="font-size: 12px;">✓ Verified in Classroom</span>
-            `}
+          <div style="flex: 1; min-width: 0;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+              <h4 style="font-size: 14px; font-weight: 600; color: #fff;">${escapeHtml(a.title)}</h4>
+              <span class="status-pill status-${a.status.toLowerCase()}">${a.status.replace("_", " ")}</span>
+            </div>
+            <p style="color: var(--text-secondary); font-size: 12px; margin: 4px 0 8px; line-height: 1.4;">${escapeHtml(a.description || "Open to inspect specification and generate deliverables.")}</p>
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
+              <span>Due: <b style="color: #94a3b8;">${a.due_date || "Tomorrow"} ${a.due_time || ""}</b></span>
+              <span style="color: #3b82f6; font-weight: 500;">Open in Academic Agent &rarr;</span>
+            </div>
           </div>
         </div>
       `;
     }).join("");
+  },
+
+  renderClassworkTab(items) {
+    const container = document.getElementById("classroom-classwork-tab-content");
+    if (!container) return;
+    this.renderClassroomStream(items);
   }
 };
 
-// Global openers
-function openGeneratorForAssignment(courseworkId) {
-  navigateTo("generator");
-  GeneratorModule.selectAssignment(courseworkId);
-}
-
-let activeSchedulingCourseworkId = null;
-
-function openScheduleModal(courseworkId, title) {
-  activeSchedulingCourseworkId = courseworkId;
-  document.getElementById("schedule-modal-title").textContent = `Auto-Submit: ${title}`;
-  document.getElementById("schedule-assignment-desc").textContent = `Configure automatic Google Classroom turn-in before deadline.`;
-  openModal("schedule-modal");
-}
-
 document.addEventListener("DOMContentLoaded", () => {
-  const syncBtn = document.getElementById("sync-classroom-now-btn");
+  const syncBtn = document.getElementById("sync-classroom-btn");
   if (syncBtn) syncBtn.addEventListener("click", () => ClassroomModule.syncClassroom());
 
-  const confirmSchedBtn = document.getElementById("confirm-schedule-btn");
-  if (confirmSchedBtn) {
-    confirmSchedBtn.addEventListener("click", async () => {
-      if (!activeSchedulingCourseworkId) return;
-      const offset = parseFloat(document.getElementById("schedule-offset-select").value);
-      try {
-        const res = await api(`/assignment/${activeSchedulingCourseworkId}/schedule`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            coursework_id: activeSchedulingCourseworkId,
-            offset_hours: offset,
-            auto_submit_enabled: true
-          })
-        });
-        closeModal("schedule-modal");
-        alert(`✓ Auto-submit scheduled! Deliverable will be submitted ${offset} hours before the deadline.`);
-        loadHomeSummary();
-        ClassroomModule.loadClassroom();
-        SchedulerModule.loadSchedules();
-      } catch (e) {
-        alert(`Scheduling Error: ${e.message}`);
+  // Classroom Top Tabs Switching
+  document.querySelectorAll(".gc-tab").forEach(tab => {
+    tab.addEventListener("click", () => {
+      document.querySelectorAll(".gc-tab").forEach(t => t.classList.remove("active"));
+      tab.classList.add("active");
+      const tabName = tab.getAttribute("data-gc-tab");
+      const streamFeed = document.getElementById("classroom-stream-feed");
+      const sidebarBox = document.querySelector(".gc-sidebar-box");
+      if (tabName === "stream") {
+        if (sidebarBox) sidebarBox.style.display = "block";
+        if (streamFeed) streamFeed.style.display = "flex";
+      } else if (tabName === "classwork") {
+        if (sidebarBox) sidebarBox.style.display = "none";
+        if (streamFeed) streamFeed.style.display = "flex";
+      } else {
+        if (sidebarBox) sidebarBox.style.display = "none";
+        if (streamFeed) {
+          streamFeed.innerHTML = `
+            <div style="padding: 32px; text-align: center; border: 1px dashed var(--border); border-radius: var(--radius-sm); color: var(--text-secondary);">
+              <h3 style="color: #fff; font-size: 14px; margin-bottom: 6px;">${tab.textContent}</h3>
+              <p style="font-size: 12px;">Synced from institutional Google Workspace domain.</p>
+            </div>
+          `;
+        }
       }
     });
-  }
+  });
 });

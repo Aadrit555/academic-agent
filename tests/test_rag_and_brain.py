@@ -91,3 +91,4 @@ def test_study_brain_actions(db_session, setup_courses):
     exp_res = RAGService.process_study_action(db_session, course_ds.id, "explanation", query="AVL Rotations")
     assert exp_res.action == "explanation"
     assert len(exp_res.content) > 20
+

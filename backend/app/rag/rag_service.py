@@ -41,10 +41,42 @@ class RAGService:
         course_id: int, 
         action: str, 
         query: str = "", 
-        document_id: int = None
+        document_id: int = None,
+        user: Optional[Any] = None
     ) -> StudyBrainResponse:
         course = db.query(Course).filter_by(id=course_id).first()
         course_name = course.name if course else "Course"
+
+        # Check for ERP schedule or attendance inquiries
+        erp_context_parts = []
+        if user:
+            from backend.app.erp.erp_service import ERPService
+            q_low = (query or "").lower()
+            if any(k in q_low for k in ["class", "room", "timetable", "schedule", "attendance", "bunk", "miss", "today"]):
+                try:
+                    next_info = ERPService.get_next_class(db, user)
+                    if next_info.get("has_schedule"):
+                        ongoing = next_info.get("ongoing_class")
+                        upcoming = next_info.get("upcoming_class")
+                        if ongoing:
+                            erp_context_parts.append(f"CURRENT ONGOING CLASS: {ongoing['subject']} in {ongoing['classroom']} (Ends {ongoing['end_time']}, {ongoing['countdown']})")
+                        if upcoming:
+                            erp_context_parts.append(f"NEXT UPCOMING CLASS: {upcoming['subject']} in {upcoming['classroom']} at {upcoming['start_time']} ({upcoming['countdown']})")
+                        
+                        today_classes = next_info.get("today_classes", [])
+                        if today_classes:
+                            today_summary = ", ".join([f"{c['start_time']}: {c['subject']} ({c['classroom']})" for c in today_classes])
+                            erp_context_parts.append(f"TODAY'S SCHEDULE: {today_summary}")
+
+                    att_records = ERPService.get_attendance(db, user)
+                    if att_records:
+                        att_summary = "; ".join([
+                            f"{r.get('subject', r.get('course_code'))}: {r.get('percentage')}% ({r.get('margin_message', '')})"
+                            for r in att_records[:6]
+                        ])
+                        erp_context_parts.append(f"LIVE ATTENDANCE RECORDS: {att_summary}")
+                except Exception:
+                    pass
 
         # Fetch relevant chunks
         if document_id:
@@ -60,7 +92,7 @@ class RAGService:
             results = cls.search_chunks(db, course_id, search_term, top_k=6)
 
         citations = []
-        context_parts = []
+        context_parts = list(erp_context_parts)
         seen_citations = set()
 
         for chunk, doc in results:
@@ -81,7 +113,7 @@ class RAGService:
             title = f"Structured Summary: {course_name}"
             if not context_text:
                 content = (
-                    f"### Key Concepts Overview — {course_name}\n\n"
+                    f"### Key Concepts Overview: {course_name}\n\n"
                     "1. **Core Data Structures & Complexity**: Analysis of divide-and-conquer algorithms, logarithmic splits, and recurrence relations.\n"
                     "2. **Merge Sort Algorithm**: Optimal $O(n \\log n)$ sorting with stable order preservation.\n"
                     "3. **Balanced Trees**: AVL tree invariant where balance factor $\\in \\{-1, 0, 1\\}$, requiring Single (LL, RR) or Double (LR, RL) rotations."

@@ -97,3 +97,52 @@ def test_next_class_ongoing_context(db_session, test_user):
     assert res.is_ongoing is True
     assert res.is_approaching is False
     assert res.time_remaining_minutes == 35 # 11:00 - 10:25 = 35 minutes left
+
+def test_subject_distinct_rooms_per_day(db_session, test_user):
+    # Digital Electronics (CSE 207) has different normal rooms on different days:
+    # Tue -> X-201, Thu -> C-1011, Fri -> C-504
+    tue_entry = TimetableEntry(
+        user_id=test_user.id,
+        subject="Digital Electronics",
+        day_of_week=1, # Tuesday
+        start_time="09:00",
+        end_time="09:50",
+        classroom="X-201"
+    )
+    thu_entry = TimetableEntry(
+        user_id=test_user.id,
+        subject="Digital Electronics",
+        day_of_week=3, # Thursday
+        start_time="09:00",
+        end_time="09:50",
+        classroom="C-1011"
+    )
+    fri_entry = TimetableEntry(
+        user_id=test_user.id,
+        subject="Digital Electronics",
+        day_of_week=4, # Friday
+        start_time="14:00",
+        end_time="15:00",
+        classroom="C-504"
+    )
+    db_session.add_all([tue_entry, thu_entry, fri_entry])
+    db_session.commit()
+
+    # Query on Tuesday at 08:50
+    tue_now = datetime(2026, 9, 22, 8, 50)
+    next_tue = TimetableService.get_next_class(db_session, test_user, tue_now)
+    assert next_tue.subject == "Digital Electronics"
+    assert next_tue.classroom == "X-201"
+
+    # Query on Thursday at 08:50
+    thu_now = datetime(2026, 9, 24, 8, 50)
+    next_thu = TimetableService.get_next_class(db_session, test_user, thu_now)
+    assert next_thu.subject == "Digital Electronics"
+    assert next_thu.classroom == "C-1011"
+
+    # Query on Friday at 13:50
+    fri_now = datetime(2026, 9, 25, 13, 50)
+    next_fri = TimetableService.get_next_class(db_session, test_user, fri_now)
+    assert next_fri.subject == "Digital Electronics"
+    assert next_fri.classroom == "C-504"
+

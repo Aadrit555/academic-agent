@@ -8,8 +8,8 @@ const SchedulerModule = {
       const schedules = await api("/schedules");
       if (!schedules || schedules.length === 0) {
         container.innerHTML = `
-          <div style="padding: 32px; text-align: center; color: var(--text-secondary);">
-            No scheduled auto-submissions yet. You can enable auto-submit on any validated assignment.
+          <div style="padding: 24px; text-align: center; color: var(--text-secondary); font-size: 13px;">
+            No scheduled auto-submissions active. Click 'Schedule Auto-Submit' on any validated assignment.
           </div>
         `;
         return;
@@ -24,68 +24,98 @@ const SchedulerModule = {
       };
 
       container.innerHTML = `
-        <table style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: left;">
+        <table class="schedules-table">
           <thead>
-            <tr style="border-bottom: 1px solid var(--border); color: var(--text-secondary);">
-              <th style="padding: 10px 12px;">ASSIGNMENT</th>
-              <th style="padding: 10px 12px;">COURSE</th>
-              <th style="padding: 10px 12px;">DEADLINE</th>
-              <th style="padding: 10px 12px;">OFFSET</th>
-              <th style="padding: 10px 12px;">SCHEDULED SUBMIT TIME</th>
-              <th style="padding: 10px 12px;">STATUS</th>
-              <th style="padding: 10px 12px; text-align: right;">ACTION</th>
+            <tr>
+              <th>ASSIGNMENT</th>
+              <th>COURSE</th>
+              <th>DEADLINE</th>
+              <th>OFFSET</th>
+              <th>SCHEDULED TIME</th>
+              <th>STATUS</th>
+              <th style="text-align: right;">ACTION</th>
             </tr>
           </thead>
           <tbody>
             ${schedules.map(s => {
-              const sClass = statusClasses[s.status] || "status-scheduled";
-              const isSubmitted = s.status === "SUBMITTED";
-              return `
-                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                  <td style="padding: 12px; font-weight: 600; color: #fff;">${escapeHtml(s.title)}</td>
-                  <td style="padding: 12px; color: #818cf8;">${escapeHtml(s.course_name)}</td>
-                  <td style="padding: 12px; font-family: monospace;">${new Date(s.deadline).toLocaleString()}</td>
-                  <td style="padding: 12px;">${s.offset_hours} hrs before</td>
-                  <td style="padding: 12px; font-family: monospace; color: #60a5fa;"><b>${new Date(s.scheduled_time).toLocaleString()}</b></td>
-                  <td style="padding: 12px;"><span class="status-pill ${sClass}">${s.status}</span></td>
-                  <td style="padding: 12px; text-align: right;">
+        const sClass = statusClasses[s.status] || "status-scheduled";
+        const isSubmitted = s.status === "SUBMITTED";
+        return `
+                <tr>
+                  <td style="font-weight: 600; color: #fff;">${escapeHtml(s.title)}</td>
+                  <td style="color: #94a3b8;">${escapeHtml(s.course_name)}</td>
+                  <td style="font-family: monospace;">${new Date(s.deadline).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
+                  <td>${s.offset_hours}h before</td>
+                  <td style="font-family: monospace; color: #60a5fa;"><b>${new Date(s.scheduled_time).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</b></td>
+                  <td><span class="status-pill ${sClass}">${s.status}</span></td>
+                  <td style="text-align: right;">
                     ${!isSubmitted ? `
-                      <button class="btn btn-secondary" style="font-size: 11px; padding: 4px 10px;" onclick="SchedulerModule.submitNow(${s.coursework_id})">
+                      <button class="btn btn-secondary btn-sm" onclick="SchedulerModule.submitNow(${s.coursework_id})">
                         Submit Now
                       </button>
                     ` : `
-                      <span style="color: #34d399; font-weight: 600;">✓ Verified</span>
+                      <span style="color: #34d399; font-weight: 600; font-size: 12px;">Verified</span>
                     `}
                   </td>
                 </tr>
               `;
-            }).join("")}
+      }).join("")}
           </tbody>
         </table>
       `;
     } catch (e) {
-      container.innerHTML = `<div style="color: #fb7185;">Error loading schedules: ${e.message}</div>`;
+      container.innerHTML = `<div style="color: #f87171; font-size: 12px;">Error loading schedules: ${e.message}</div>`;
     }
   },
 
   async submitNow(courseworkId) {
-    if (!confirm("Are you sure you want to trigger authorized Google Classroom submission immediately?")) {
-      return;
-    }
-
     try {
       const res = await api(`/assignment/${courseworkId}/submit-now`, { method: "POST" });
-      alert(`✓ ${res.message} (Submission State: ${res.state})`);
+      Toast.success(`${res.message} (Submission State: ${res.state})`);
       await this.loadSchedules();
       loadHomeSummary();
       ClassroomModule.loadClassroom();
     } catch (e) {
-      alert(`Submission Error: ${e.message}`);
+      Toast.error(`Submission Error: ${e.message}`);
     }
   }
 };
 
+let activeSchedulingCourseworkId = null;
+
+function openScheduleModal(courseworkId, title) {
+  activeSchedulingCourseworkId = courseworkId;
+  const titleEl = document.getElementById("schedule-modal-title");
+  if (titleEl) titleEl.textContent = `Auto-Submit: ${title}`;
+  openModal("schedule-modal");
+}
+
 document.addEventListener("DOMContentLoaded", () => {
-  const refBtn = document.getElementById("refresh-schedules-btn");
-  if (refBtn) refBtn.addEventListener("click", () => SchedulerModule.loadSchedules());
+  const confirmSchedBtn = document.getElementById("confirm-schedule-btn");
+  if (confirmSchedBtn) {
+    confirmSchedBtn.addEventListener("click", async () => {
+      if (!activeSchedulingCourseworkId) return;
+      const offsetInput = document.getElementById("schedule-offset-select");
+      const offset = offsetInput ? parseFloat(offsetInput.value) : 4.0;
+
+      try {
+        const res = await api(`/assignment/${activeSchedulingCourseworkId}/schedule`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            coursework_id: activeSchedulingCourseworkId,
+            offset_hours: offset,
+            auto_submit_enabled: true
+          })
+        });
+        closeModal("schedule-modal");
+        Toast.success(`Auto-submit scheduled: Deliverable will be submitted ${offset} hours before the deadline.`);
+        loadHomeSummary();
+        ClassroomModule.loadClassroom();
+        SchedulerModule.loadSchedules();
+      } catch (e) {
+        Toast.error(`Scheduling Error: ${e.message}`);
+      }
+    });
+  }
 });

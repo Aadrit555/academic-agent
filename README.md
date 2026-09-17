@@ -75,20 +75,27 @@ $$\mathbf{UNDERSTAND} \longrightarrow \mathbf{PLAN} \longrightarrow \mathbf{GENE
   $$\text{Verify Open} \longrightarrow \text{Verify Validation} \longrightarrow \text{Drive Multipart Upload} \longrightarrow \text{Classroom modifyAttachments} \longrightarrow \text{Classroom turnIn} \longrightarrow \text{Verify State}$$
 - **Audit Trail**: Every submission records Drive File ID, Classroom Submission ID, and timestamp.
 
-### 7. 🎬 Interactive 12-Step Guided Expo Demonstration
-- Run the complete end-to-end story with one click from the sidebar (`Run 12-Step Expo Demo`):
-  1. Connect Google Classroom
-  2. Import Academic Timetable
-  3. Upload Course Materials (`Unit-2.pdf`, `Lab-Manual.pdf`)
-  4. Detect Classroom Assignment (`DAA LAB 4: Implement Merge Sort in C`)
-  5. Generate Assignment Deliverable
-  6. Run Code Compilation & Validation Pipeline
-  7. Enable Auto-Submit 4 Hours Before Deadline
-  8. View Persistent Background Schedule
-  9. Ask Study Brain: "Summarize Unit 2"
-  10. Ask Study Brain: "Generate 10 Important Questions"
-  11. Display Next Class Context Widget
-  12. Execute Fast Attendance Action
+### 7. 🏛️ Direct SRM AP ERP / eVarsity Live Integration
+- **Direct Live Authentication**: Securely authenticates against `student.srmap.edu.in` using the student's registration number and password.
+- **Local In-Memory ONNX CRNN Captcha Solver**: Solves portal alphanumerical image challenges locally in <10ms without external API dependencies.
+- **Dynamic Timetable Engine**: Synchronizes all weekly timetable slots, handling variable room numbers per subject per day (e.g. `CSE 207` in `X-201` on Tuesday, `C-1011` on Thursday, `C-504` on Friday).
+- **Subject-Wise Safe Bunk Calculator**: Continuously computes whether attendance is \(\ge 75\%\), calculating safe bunks remaining or consecutive classes required to restore eligibility.
+- **Next Class Live Countdown**: Computes current ongoing or upcoming class and room location in real-time.
+- **Zero Plaintext Storage**: Student ERP passwords and session cookies are encrypted at rest using AES-128 CBC via Fernet encryption keys.
+
+### 8. 📷 Lens-Style Camera Attendance Scanner
+- **Optical Attendance Verification**: Real-time camera viewfinder with viewfinder target matching current timetable period codes.
+- **One-Tap Verification**: Verifies attendance code against schedule and records entry directly.
+
+### 9. 🔒 Enterprise Security & OWASP Hardening
+- **Zero Secret Leaks**: Strict `.gitignore` protecting credentials, SQLite databases, and environment secrets.
+- **Cryptographic Password Storage**: PBKDF2-HMAC-SHA256 with unique 16-byte random salts.
+- **AES Fernet Encryption**: All integration secrets and portal passwords encrypted at rest.
+- **Sliding-Window Rate Limiting**: In-memory rate limiting preventing brute-force login and API flooding.
+- **Strict Security Headers**: CSP, X-Frame-Options (`SAMEORIGIN`), X-Content-Type-Options (`nosniff`), Referrer-Policy, and Permissions-Policy.
+- **Input Sanitization & XSS Mitigation**: Automated string and payload sanitization across all request inputs.
+- **IDOR Protection**: All course, coursework, timetable, and document operations enforce user boundary checks.
+- **Production Static Pages**: Custom 404 error page, Terms & Conditions, and Privacy Policy included.
 
 ---
 
@@ -103,23 +110,40 @@ academic_agent/
 │       ├── database.py              # SQLite & SQLAlchemy session setup
 │       ├── models.py                # Relational data schema
 │       ├── schemas.py               # Pydantic v2 schemas
-│       ├── auth/auth_service.py     # OAuth 2.0 & demo credentials
-│       ├── classroom/classroom_service.py # Google Classroom API integration
-│       ├── drive/drive_service.py   # Direct Google Drive v3 multipart upload
-│       ├── submission/submission_service.py # Classroom modifyAttachments & turnIn
-│       ├── scheduler/scheduler_service.py   # Persistent background auto-submit engine
-│       ├── timetable/timetable_service.py   # Timetable engine & next class calculation
-│       ├── documents/document_service.py    # Multi-format ingestion (PDF, DOCX, TXT, MD)
-│       ├── rag/rag_service.py       # Course-scoped chunking, search, QA
-│       ├── ai/ai_service.py         # Multi-tier AI (Gemini, Groq, offline fallback)
-│       ├── generation/generator_service.py  # Code (.c, .py) & Document (.docx, .pdf) generation
-│       ├── validation/validation_service.py # Isolated gcc/javac/python compiler & tests
-│       └── attendance/attendance_service.py # Fast attendance action
-├── frontend/                        # Modern responsive Single Page Application
-│   ├── index.html                   # Shell layout
-│   ├── css/styles.css               # Design system
-│   └── js/                          # Modular controllers & Expo Demo runner
-├── tests/                           # Comprehensive pytest test suite
+│       ├── auth/                    # OAuth 2.0, JWT, Fernet encryption, password hashing
+│       ├── erp/                     # SRM AP eVarsity integration
+│       │   ├── captcha_solver.py    # Local ONNX CRNN captcha solver (<10ms)
+│       │   ├── erp_client.py        # Browser-mimicking HTTP client
+│       │   ├── erp_scraper.py       # Profile, courses, attendance, & timetable scraper
+│       │   ├── timetable_service.py # Countdown, ongoing, & upcoming class calculator
+│       │   └── models/              # ONNX runtime model files
+│       ├── classroom/               # Google Classroom API integration
+│       ├── drive/                   # Direct Google Drive v3 multipart upload
+│       ├── submission/              # Classroom modifyAttachments & turnIn
+│       ├── scheduler/               # Persistent background auto-submit engine
+│       ├── documents/               # Multi-format ingestion (PDF, DOCX, TXT, MD)
+│       ├── rag/                     # Course-scoped chunking, search, QA
+│       ├── ai/                      # Multi-tier AI (Gemini, Groq, heuristic fallback)
+│       ├── generation/              # Code (.c, .py) & Document (.docx, .pdf) generation
+│       ├── validation/              # Isolated gcc/javac/python compiler & tests
+│       └── middleware/              # Rate limiting & OWASP security headers
+├── frontend/                        # Responsive Classroom-first Single Page Application
+│   ├── index.html                   # Master Classroom surface & Companion Add-on
+│   ├── 404.html                     # Custom 404 page
+│   ├── privacy.html                 # Privacy policy
+│   ├── terms.html                   # Terms & conditions
+│   ├── favicon.svg                  # Brand favicon
+│   ├── css/styles.css               # Clean, non-vibecoded professional design system
+│   └── js/                          # Modular controllers & API client
+├── tests/                           # 53 automated tests (100% passing)
+│   ├── test_erp_live.py             # SRM AP ERP, captcha solver, attendance & timetable tests
+│   ├── test_security.py             # Security audit, auth, IDOR, XSS, rate limiting tests
+│   ├── test_api_endpoints.py        # REST API endpoint tests
+│   ├── test_generation.py           # Deliverable generation tests
+│   ├── test_validation.py           # GCC compiler & validator tests
+│   ├── test_submission_flow.py      # Scheduled submission engine tests
+│   ├── test_timetable.py            # Timetable and room allocation tests
+│   └── test_rag_and_brain.py        # RAG and study brain tests
 └── uploads/                         # Course materials and generated deliverables
 ```
 
@@ -138,23 +162,16 @@ pip install -r requirements.txt
 ```
 
 ### 2. Configure Environment (Optional)
-Create a `.env` file (or set environment variables) for live Google Cloud and AI features:
-```env
-# Google Cloud OAuth 2.0 (For live Classroom & Drive)
-GOOGLE_CLASSROOM_CLIENT_ID=your-client-id.apps.googleusercontent.com
-GOOGLE_CLASSROOM_CLIENT_SECRET=your-client-secret
-GOOGLE_REDIRECT_URI=http://localhost:8000/api/auth/google/callback
-
-# AI Provider Keys (Optional: works with built-in heuristic engine if unset)
-GEMINI_API_KEY=your-gemini-api-key
-GROQ_API_KEY=your-groq-api-key
+Copy `.env.example` to `.env` for production deployments:
+```bash
+cp .env.example .env
 ```
 
 ### 3. Run Automated Tests
 ```bash
-python -m pytest -v tests/
+python -m pytest tests/ -v
 ```
-*Expected: 25 passed tests covering timetable, RAG, code generation, GCC validation, Drive uploads, submission state machine, and API endpoints.*
+*53 passed tests verifying ERP connectivity, CRNN captcha inference, security headers, IDOR, XSS sanitization, RAG, and GCC validation.*
 
 ### 4. Start the Application
 ```bash
@@ -169,7 +186,9 @@ Open your browser at **`http://localhost:8000`**.
 
 Academic Agent reuses and adapts implementations from:
 - **IntelliPlan** ([https://github.com/UAnirudh/IntelliPlan](https://github.com/UAnirudh/IntelliPlan)) — MIT License
+- **Srmap-Api** ([https://github.com/StoreVia/Srmap-Api](https://github.com/StoreVia/Srmap-Api)) — MIT License
 - **claude-classroom-submit** ([https://github.com/yolo-labz/claude-classroom-submit](https://github.com/yolo-labz/claude-classroom-submit)) — MIT License
 - **PaperBrain** ([https://github.com/Apyhtml20/PaperBrain](https://github.com/Apyhtml20/PaperBrain)) — MIT License
 
 See [`ATTRIBUTION.md`](ATTRIBUTION.md) and [`LICENSE`](LICENSE) for complete copyright notices.
+

@@ -125,3 +125,4 @@ def test_python_code_validation(db_session):
     val = ValidationService.validate_assignment(db_session, assignment)
     assert val.passed is True
     assert cw.status == "READY"
+

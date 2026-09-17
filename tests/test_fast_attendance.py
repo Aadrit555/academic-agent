@@ -36,3 +36,4 @@ def test_attendance_empty_code_rejected(db_session):
 
     with pytest.raises(ValueError):
         AttendanceService.mark_attendance(db_session, user, attendance_code="   ")
+

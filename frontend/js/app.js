@@ -1,289 +1,89 @@
-// Academic Agent — Core App State and Router
+// Academic Agent: Classroom-First Core Application
 const AppState = {
-  currentView: "home",
-  auth: { connected: false, email: null, is_demo_mode: false },
+  activeView: "home", // home, assignments, study, next-class, attendance
   courses: [],
   coursework: [],
+  selectedCourseworkId: null,
   activeCourseId: null,
-  activeCourseworkId: null,
+  currentUser: null,
+  isAddonExpanded: false
 };
 
-// Global API helper
+// Modern, Non-intrusive Toast Notification System
+const Toast = {
+  container: null,
+  init() {
+    if (!this.container) {
+      this.container = document.createElement("div");
+      this.container.className = "toast-container";
+      document.body.appendChild(this.container);
+    }
+  },
+  show(message, type = "info", duration = 4000) {
+    this.init();
+    const item = document.createElement("div");
+    item.className = `toast-item toast-${type}`;
+    item.innerHTML = `
+      <span class="toast-dot toast-dot-${type}"></span>
+      <div class="toast-message">${escapeHtml(message)}</div>
+      <button class="toast-close" title="Dismiss">&times;</button>
+    `;
+    item.querySelector(".toast-close").onclick = () => item.remove();
+    this.container.appendChild(item);
+    setTimeout(() => {
+      item.classList.add("fade-out");
+      setTimeout(() => item.remove(), 250);
+    }, duration);
+  },
+  success(msg) { this.show(msg, "success"); },
+  error(msg) { this.show(msg, "error", 5500); },
+  info(msg) { this.show(msg, "info"); },
+  warning(msg) { this.show(msg, "warning"); }
+};
+
+// API Fetch Helper with JWT Token Injection and Auto 401 Recovery
 async function api(path, options = {}) {
-  const url = path.startsWith("http") ? path : `/api${path}`;
-  const resp = await fetch(url, options);
-  if (!resp.ok) {
-    const errorData = await resp.json().catch(() => ({ detail: resp.statusText }));
-    throw new Error(errorData.detail || `Request failed with HTTP ${resp.status}`);
+  let token = localStorage.getItem("academic_agent_jwt");
+  const headers = Object.assign({}, options.headers || {});
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
   }
-  return resp.json();
-}
-
-// Modal helper functions
-function openModal(modalId) {
-  const m = document.getElementById(modalId);
-  if (m) m.classList.add("active");
-}
-
-function closeModal(modalId) {
-  const m = document.getElementById(modalId);
-  if (m) m.classList.remove("active");
-}
-
-// Router & View Switching
-function navigateTo(viewName) {
-  AppState.currentView = viewName;
-
-  // Update Nav links
-  document.querySelectorAll(".nav-item").forEach(item => {
-    if (item.getAttribute("data-view") === viewName) {
-      item.classList.add("active");
-    } else {
-      item.classList.remove("active");
-    }
+  let response = await fetch(`/api${path}`, {
+    ...options,
+    headers: headers
   });
 
-  // Switch containers
-  document.querySelectorAll(".page-container").forEach(c => {
-    c.classList.remove("active");
-  });
-
-  const target = document.getElementById(`view-${viewName}`);
-  if (target) {
-    target.classList.add("active");
-  }
-
-  // Update Title
-  const titles = {
-    home: "Agent Hub",
-    timetable: "Timetable & Next Class Context",
-    classroom: "Google Classroom Integration",
-    "study-brain": "AI Study Brain & Course Materials",
-    generator: "Validation & Assignment Generator",
-    schedules: "Auto-Submission Schedules Monitor"
-  };
-  const titleEl = document.getElementById("current-view-title");
-  if (titleEl) titleEl.textContent = titles[viewName] || "Academic Agent";
-
-  // Trigger view-specific data refresh
-  if (viewName === "home") loadHomeSummary();
-  if (viewName === "timetable") TimetableModule.loadTimetable();
-  if (viewName === "classroom") ClassroomModule.loadClassroom();
-  if (viewName === "study-brain") StudyBrainModule.loadStudyBrain();
-  if (viewName === "generator") GeneratorModule.loadGenerator();
-  if (viewName === "schedules") SchedulerModule.loadSchedules();
-}
-
-// Initialize Application
-document.addEventListener("DOMContentLoaded", () => {
-  // Setup navigation
-  document.querySelectorAll(".nav-item").forEach(item => {
-    item.addEventListener("click", () => {
-      const view = item.getAttribute("data-view");
-      if (view) navigateTo(view);
+  // If 401 occurs because of an expired or invalid token in local storage, purge it and retry
+  if (response.status === 401 && token) {
+    localStorage.removeItem("academic_agent_jwt");
+    delete headers["Authorization"];
+    response = await fetch(`/api${path}`, {
+      ...options,
+      headers: headers
     });
-  });
-
-  // Connect Google button
-  document.getElementById("connect-classroom-btn").addEventListener("click", async () => {
-    try {
-      const res = await api("/auth/google/url");
-      window.location.href = res.url;
-    } catch (e) {
-      alert(`OAuth Error: ${e.message}`);
-    }
-  });
-
-  // Instant Demo button
-  document.getElementById("demo-mode-toggle-btn").addEventListener("click", async () => {
-    try {
-      await api("/auth/connect-demo", { method: "POST" });
-      await checkAuthStatus();
-      await loadHomeSummary();
-      alert("✓ Demo Google Classroom connected! Sample courses and coursework have been synced.");
-    } catch (e) {
-      alert(`Error connecting demo: ${e.message}`);
-    }
-  });
-
-  // Fast Attendance button on Home
-  document.getElementById("mark-attendance-btn").addEventListener("click", async () => {
-    const code = document.getElementById("quick-attendance-code").value.trim();
-    if (!code) {
-      alert("Please enter an attendance code (e.g. A235646).");
-      return;
-    }
-    try {
-      const res = await api("/attendance/mark", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ attendance_code: code })
-      });
-      alert(`✓ ${res.message}`);
-      document.getElementById("quick-attendance-code").value = "";
-    } catch (e) {
-      alert(`Attendance Error: ${e.message}`);
-    }
-  });
-
-  // Refresh assignments button on Home
-  document.getElementById("refresh-assignments-btn").addEventListener("click", async () => {
-    try {
-      await api("/classroom/sync", { method: "POST" });
-      await loadHomeSummary();
-    } catch (e) {
-      alert(`Sync Error: ${e.message}`);
-    }
-  });
-
-  // Start 12-Step Expo Demo button
-  document.getElementById("start-expo-demo-btn").addEventListener("click", () => {
-    ExpoDemoModule.startDemo();
-  });
-
-  // Initial loads
-  checkAuthStatus();
-  loadHomeSummary();
-});
-
-// Check Auth Status
-async function checkAuthStatus() {
-  try {
-    const status = await api("/auth/status");
-    AppState.auth = status;
-    const badge = document.getElementById("auth-status-badge");
-    const text = document.getElementById("auth-status-text");
-
-    if (status.connected) {
-      badge.className = "auth-badge";
-      text.textContent = status.is_demo_mode 
-        ? "Classroom: Connected (Demo Mode)" 
-        : `Classroom: Connected (${status.email})`;
-      document.getElementById("connect-classroom-btn").textContent = "Disconnect";
-      document.getElementById("connect-classroom-btn").onclick = async () => {
-        await api("/auth/disconnect", { method: "POST" });
-        await checkAuthStatus();
-        await loadHomeSummary();
-      };
-    } else {
-      badge.className = "auth-badge disconnected";
-      text.textContent = "Google Classroom: Disconnected";
-      document.getElementById("connect-classroom-btn").textContent = "Connect Google";
-    }
-  } catch (e) {
-    console.warn("Auth check failed:", e);
-  }
-}
-
-// Load Home Dashboard Summary
-async function loadHomeSummary() {
-  try {
-    const data = await api("/home");
-
-    // 1. Next Class Widget
-    const nc = data.next_class;
-    const heroCard = document.getElementById("hero-next-class");
-    if (nc.has_class) {
-      document.getElementById("hero-subject-name").textContent = nc.subject;
-      document.getElementById("hero-class-time").textContent = `${nc.start_time} – ${nc.end_time}`;
-      document.getElementById("hero-class-room").textContent = `${nc.classroom} (Academic Block)`;
-      document.getElementById("hero-room-badge").textContent = `ROOM ${nc.classroom}`;
-
-      const tagBadge = document.getElementById("hero-class-status-badge");
-      const ctxText = document.getElementById("hero-time-context");
-
-      if (nc.is_ongoing) {
-        tagBadge.textContent = "CURRENT CLASS (IN SESSION)";
-        tagBadge.className = "hero-tag-badge";
-        tagBadge.style.background = "rgba(16, 185, 129, 0.3)";
-        tagBadge.style.color = "#34d399";
-        ctxText.textContent = `${nc.time_remaining_minutes} min remaining`;
-      } else if (nc.is_approaching) {
-        tagBadge.textContent = "APPROACHING CLASS";
-        tagBadge.className = "hero-tag-badge";
-        tagBadge.style.background = "rgba(245, 158, 11, 0.3)";
-        tagBadge.style.color = "#fbbf24";
-        ctxText.textContent = `Starts in ${nc.time_remaining_minutes} min!`;
-      } else {
-        tagBadge.textContent = "NEXT CLASS";
-        ctxText.textContent = "Upcoming today";
-      }
-    } else {
-      document.getElementById("hero-subject-name").textContent = "No Scheduled Classes Today";
-      document.getElementById("hero-class-time").textContent = "Free Period / Study Time";
-      document.getElementById("hero-class-room").textContent = "Campus";
-      document.getElementById("hero-room-badge").textContent = "REST DAY";
-    }
-
-    // 2. Stats
-    document.getElementById("stat-materials").textContent = data.stats.materials_count || 0;
-    document.getElementById("stat-ready").textContent = data.stats.ready_assignments || 0;
-    document.getElementById("stat-scheduled").textContent = data.stats.scheduled_submissions || 0;
-    document.getElementById("stat-courses").textContent = data.stats.total_courses || 0;
-
-    // 3. Assignments Pipeline
-    renderHomeAssignments(data.assignments);
-  } catch (e) {
-    console.error("Failed to load home summary:", e);
-  }
-}
-
-function renderHomeAssignments(assignments) {
-  const container = document.getElementById("home-assignments-container");
-  if (!container) return;
-
-  if (!assignments || assignments.length === 0) {
-    container.innerHTML = `
-      <div style="grid-column: 1 / -1; padding: 32px; text-align: center; background: var(--bg-card); border-radius: var(--radius-md); border: 1px dashed var(--border);">
-        <p style="color: var(--text-secondary); margin-bottom: 12px;">No Google Classroom assignments found.</p>
-        <button class="btn btn-primary" onclick="ClassroomModule.syncClassroom()">Sync Classroom</button>
-      </div>
-    `;
-    return;
   }
 
-  container.innerHTML = assignments.map(a => {
-    const statusClasses = {
-      NOT_STARTED: "status-not_started",
-      GENERATING: "status-generating",
-      GENERATED: "status-generated",
-      VALIDATING: "status-validating",
-      READY: "status-ready",
-      SCHEDULED: "status-scheduled",
-      SUBMITTING: "status-submitting",
-      SUBMITTED: "status-submitted",
-      FAILED: "status-failed",
-    };
-    const sClass = statusClasses[a.status] || "status-not_started";
+  if (!response.ok) {
+    let errorDetail = "Network error occurred";
+    try {
+      const errJson = await response.json();
+      errorDetail = errJson.detail || errJson.error || JSON.stringify(errJson);
+    } catch {
+      errorDetail = await response.text() || response.statusText;
+    }
+    throw new Error(errorDetail);
+  }
 
-    return `
-      <div class="assignment-card">
-        <div>
-          <div class="assignment-top">
-            <span class="assignment-course">${escapeHtml(a.course_name || "Academic Course")}</span>
-            <span class="status-pill ${sClass}">${a.status.replace("_", " ")}</span>
-          </div>
-          <h3 class="assignment-title">${escapeHtml(a.title)}</h3>
-          <p class="assignment-desc">${escapeHtml(a.description || "No description provided.")}</p>
-          <div class="assignment-due" style="margin-bottom: 14px;">
-            <span>📅 Due: <b>${a.due_date || "No deadline"} ${a.due_time ? "· " + a.due_time.substring(0, 5) : ""}</b></span>
-          </div>
-        </div>
-
-        <div class="assignment-actions">
-          <button class="btn btn-secondary" style="font-size: 12px;" onclick="openGeneratorForAssignment(${a.id})">
-            ⚡ Generate
-          </button>
-          <button class="btn btn-primary" style="font-size: 12px;" onclick="openScheduleModal(${a.id}, '${escapeHtml(a.title)}')">
-            ⏰ Auto Submit
-          </button>
-        </div>
-      </div>
-    `;
-  }).join("");
+  // Handle binary blob responses
+  const contentType = response.headers.get("content-type");
+  if (contentType && contentType.includes("application/octet-stream")) {
+    return response.blob();
+  }
+  return response.json();
 }
 
 function escapeHtml(str) {
+  if (!str) return "";
   return String(str)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -291,3 +91,355 @@ function escapeHtml(str) {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 }
+
+// 5-Tab Navigation Router for Academic Agent Add-on
+function navigateToAddonTab(tabId) {
+  AppState.activeView = tabId;
+
+  // Update navigation items
+  document.querySelectorAll(".addon-nav-tab").forEach(tab => {
+    tab.classList.toggle("active", tab.getAttribute("data-tab") === tabId);
+  });
+
+  // Switch view containers
+  document.querySelectorAll(".addon-view-panel").forEach(panel => {
+    panel.classList.toggle("active", panel.id === `addon-view-${tabId}`);
+  });
+
+  // Load view-specific dynamic data
+  if (tabId === "home") {
+    loadHomeSummary();
+  } else if (tabId === "assignments") {
+    GeneratorModule.loadGenerator();
+  } else if (tabId === "study") {
+    StudyBrainModule.loadStudyBrain();
+  } else if (tabId === "next-class") {
+    TimetableModule.loadTimetable();
+  } else if (tabId === "attendance") {
+    CameraScannerModule.loadRecentAttendance();
+    if (typeof CameraScannerModule.loadERPAttendance === "function") {
+      CameraScannerModule.loadERPAttendance();
+    }
+  }
+}
+
+// Classroom Mode Toggle (Sidebar Companion vs Studio Expansion)
+function toggleAddonExpansion() {
+  AppState.isAddonExpanded = !AppState.isAddonExpanded;
+  const layout = document.getElementById("classroom-workspace-layout");
+  const btn = document.getElementById("toggle-addon-expansion-btn");
+  if (layout) {
+    layout.classList.toggle("expanded-studio", AppState.isAddonExpanded);
+  }
+  if (btn) {
+    btn.textContent = AppState.isAddonExpanded ? "Companion View" : "Expand Studio";
+  }
+}
+
+// Load Home Context in Add-on Panel
+async function loadHomeSummary() {
+  try {
+    const data = await api("/home");
+
+    // Next class card
+    const nextSubject = document.getElementById("home-next-subject");
+    const nextRoom = document.getElementById("home-next-room");
+    const nextTime = document.getElementById("home-next-time");
+    const classBadge = document.getElementById("home-class-status-badge");
+
+    if (data.next_class && data.next_class.has_class) {
+      if (nextSubject) nextSubject.textContent = data.next_class.subject;
+      if (nextRoom) nextRoom.textContent = `Room ${data.next_class.classroom}`;
+      if (nextTime) nextTime.textContent = `${data.next_class.start_time} - ${data.next_class.end_time}`;
+      if (classBadge) {
+        if (data.next_class.is_ongoing) {
+          classBadge.textContent = "IN SESSION NOW";
+          classBadge.className = "status-pill status-ready";
+        } else {
+          classBadge.textContent = "UPCOMING TODAY";
+          classBadge.className = "status-pill status-scheduled";
+        }
+      }
+    } else {
+      if (nextSubject) nextSubject.textContent = "No Upcoming Classes";
+      if (nextRoom) nextRoom.textContent = "Campus Day Concluded";
+      if (nextTime) nextTime.textContent = "Tomorrow 09:00 AM";
+    }
+
+    // Urgent assignment context
+    const urgentBox = document.getElementById("home-urgent-assignment-card");
+    if (urgentBox && data.assignments && data.assignments.length > 0) {
+      const first = data.assignments[0];
+      urgentBox.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+          <b style="color: #fff; font-size: 13px;">${escapeHtml(first.title)}</b>
+          <span class="status-pill status-${first.status.toLowerCase()}">${first.status}</span>
+        </div>
+        <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 10px;">
+          ${escapeHtml(first.course_name)} · Due ${first.due_date || "Tomorrow"}
+        </div>
+        <button class="btn btn-primary btn-sm" style="width: 100%;" onclick="openAssignmentInAddon(${first.id})">
+          Open in Compiler Lab
+        </button>
+      `;
+    }
+
+    // Fast status summary
+    const readyEl = document.getElementById("home-ready-count");
+    const schedEl = document.getElementById("home-scheduled-count");
+    const docsEl = document.getElementById("home-docs-count");
+    if (readyEl) readyEl.textContent = data.stats.ready_assignments || "0";
+    if (schedEl) schedEl.textContent = data.stats.scheduled_submissions || "0";
+    if (docsEl) docsEl.textContent = data.stats.materials_count || "0";
+  } catch (e) {
+    console.error("Home summary error:", e);
+  }
+}
+
+// Bridge between Classroom Stream and Add-on
+function openAssignmentInAddon(courseworkId) {
+  navigateToAddonTab("assignments");
+  GeneratorModule.selectAssignment(courseworkId);
+}
+
+// Real Student & Classroom Connection Status
+async function checkAuthStatus() {
+  const badge = document.getElementById("classroom-auth-status");
+  const userText = document.getElementById("google-user-email");
+  try {
+    const [authStatus, erpStatus] = await Promise.all([
+      api("/auth/status").catch(() => ({ connected: false })),
+      api("/erp/status").catch(() => ({ is_connected: false }))
+    ]);
+    AppState.currentUser = authStatus;
+    AppState.erpStatus = erpStatus;
+
+    if (erpStatus && erpStatus.is_connected) {
+      if (badge) {
+        badge.className = "auth-chip connected";
+        badge.style.borderColor = "rgba(52, 211, 153, 0.4)";
+        badge.style.background = "rgba(16, 185, 129, 0.12)";
+        badge.innerHTML = `<span class="chip-dot" style="background:#10b981;"></span><span style="font-weight:600; color:#34d399;">${escapeHtml(erpStatus.student_name || 'AADRIT')} · ${escapeHtml(erpStatus.student_id || '')} (Live ERP)</span>`;
+      }
+      if (userText) userText.textContent = `${erpStatus.student_name || 'AADRIT'} (${erpStatus.student_id || authStatus.email})`;
+    } else if (authStatus && authStatus.connected) {
+      if (badge) {
+        badge.className = "auth-chip connected";
+        badge.innerHTML = `<span class="chip-dot"></span><span>${authStatus.is_demo_mode ? 'Google Connected' : 'Google Live'}</span>`;
+      }
+      if (userText) userText.textContent = authStatus.email || "student@srmap.edu.in";
+    } else {
+      if (badge) {
+        badge.className = "auth-chip disconnected";
+        badge.innerHTML = `<span class="chip-dot"></span><span>Offline</span>`;
+      }
+      if (userText) userText.textContent = "Connect Account";
+    }
+
+    // Refresh course banner with real student section & semester
+    if (typeof ClassroomModule !== "undefined" && AppState.courses && AppState.courses.length > 0) {
+      const active = AppState.courses.find(c => c.id === ClassroomModule.currentFilterCourseId) || AppState.courses[0];
+      if (active && typeof ClassroomModule.updateCourseBanner === "function") {
+        ClassroomModule.updateCourseBanner(active);
+      }
+    }
+  } catch (e) {
+    console.warn("checkAuthStatus error:", e);
+    if (badge) {
+      badge.className = "auth-chip disconnected";
+      badge.innerHTML = `<span class="chip-dot"></span><span>Disconnected</span>`;
+    }
+  }
+}
+
+// Command Palette (Ctrl+K)
+const CommandPalette = {
+  isOpen: false,
+  commands: [
+    { name: "Go to Home Context", action: () => navigateToAddonTab("home") },
+    { name: "Open Compiler & Validation Lab", action: () => navigateToAddonTab("assignments") },
+    { name: "Ask Course Study Brain", action: () => navigateToAddonTab("study") },
+    { name: "View Timetable & Next Class", action: () => navigateToAddonTab("next-class") },
+    { name: "Scan Classroom Attendance (Camera)", action: () => navigateToAddonTab("attendance") },
+    { name: "Sync Google Classroom Data", action: () => ClassroomModule.syncClassroom() },
+    { name: "Run 12-Step Test Tour", action: () => ExpoDemoModule.startDemo() },
+    { name: "Toggle Studio Expansion View", action: () => toggleAddonExpansion() },
+    { name: "Connect Real Google Classroom & ERP", action: () => openModal("integrations-modal") },
+    { name: "Account Profile & Token Settings", action: () => openModal("auth-modal") }
+  ],
+
+  init() {
+    window.addEventListener("keydown", (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        this.toggle();
+      } else if (e.key === "Escape" && this.isOpen) {
+        this.close();
+      }
+    });
+
+    const input = document.getElementById("palette-search-input");
+    if (input) {
+      input.addEventListener("input", (e) => this.filter(e.target.value));
+    }
+  },
+
+  toggle() {
+    if (this.isOpen) this.close();
+    else this.open();
+  },
+
+  open() {
+    this.isOpen = true;
+    const modal = document.getElementById("command-palette-modal");
+    const input = document.getElementById("palette-search-input");
+    if (modal) modal.style.display = "flex";
+    if (input) {
+      input.value = "";
+      input.focus();
+    }
+    this.filter("");
+  },
+
+  close() {
+    this.isOpen = false;
+    const modal = document.getElementById("command-palette-modal");
+    if (modal) modal.style.display = "none";
+  },
+
+  filter(query) {
+    const list = document.getElementById("palette-results-list");
+    if (!list) return;
+
+    const q = query.toLowerCase().trim();
+    const matched = this.commands.filter(c => c.name.toLowerCase().includes(q));
+
+    list.innerHTML = matched.map((c, idx) => `
+      <div class="palette-item ${idx === 0 ? 'selected' : ''}" onclick="CommandPalette.execute(${idx})">
+        <span>${escapeHtml(c.name)}</span>
+        <span class="palette-kbd">Select</span>
+      </div>
+    `).join("");
+  },
+
+  execute(index) {
+    const input = document.getElementById("palette-search-input");
+    const q = input ? input.value.toLowerCase().trim() : "";
+    const matched = this.commands.filter(c => c.name.toLowerCase().includes(q));
+    if (matched[index]) {
+      this.close();
+      matched[index].action();
+    }
+  }
+};
+
+// Modal helpers
+function openModal(id) {
+  const el = document.getElementById(id);
+  if (el) el.style.display = "flex";
+}
+
+function closeModal(id) {
+  const el = document.getElementById(id);
+  if (el) el.style.display = "none";
+}
+
+// App Initialization
+document.addEventListener("DOMContentLoaded", async () => {
+  CommandPalette.init();
+
+  // Tab switching inside Add-on
+  document.querySelectorAll(".addon-nav-tab").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const tabId = btn.getAttribute("data-tab");
+      navigateToAddonTab(tabId);
+    });
+  });
+
+  // Toggle Add-on expansion
+  const expBtn = document.getElementById("toggle-addon-expansion-btn");
+  if (expBtn) expBtn.addEventListener("click", () => toggleAddonExpansion());
+
+  // Command palette trigger buttons
+  const palBtn = document.getElementById("open-command-palette-btn");
+  if (palBtn) palBtn.addEventListener("click", () => CommandPalette.open());
+
+  // Demo profile connection
+  const demoBtn = document.getElementById("connect-demo-btn");
+  if (demoBtn) {
+    demoBtn.addEventListener("click", async () => {
+      try {
+        await api("/auth/connect-demo", { method: "POST" });
+        Toast.success("Google Classroom demo account connected.");
+        await checkAuthStatus();
+        await ClassroomModule.loadClassroom();
+        await loadHomeSummary();
+      } catch (e) {
+        Toast.error(`Connection Error: ${e.message}`);
+      }
+    });
+  }
+
+  // Account modal buttons
+  const authModalBtn = document.getElementById("account-modal-btn");
+  if (authModalBtn) authModalBtn.addEventListener("click", () => openModal("auth-modal"));
+
+  const loginBtn = document.getElementById("btn-login-submit");
+  if (loginBtn) {
+    loginBtn.addEventListener("click", async () => {
+      const email = document.getElementById("auth-email-input").value.trim();
+      const password = document.getElementById("auth-password-input").value.trim();
+      if (!email || !password) {
+        Toast.warning("Please enter email and password.");
+        return;
+      }
+      try {
+        const res = await api("/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password })
+        });
+        localStorage.setItem("academic_agent_jwt", res.token);
+        Toast.success("Signed in successfully!");
+        closeModal("auth-modal");
+        await checkAuthStatus();
+        await ClassroomModule.loadClassroom();
+        await loadHomeSummary();
+      } catch (e) {
+        Toast.error(`Login Failed: ${e.message}`);
+      }
+    });
+  }
+
+  const regBtn = document.getElementById("btn-register-submit");
+  if (regBtn) {
+    regBtn.addEventListener("click", async () => {
+      const email = document.getElementById("auth-email-input").value.trim();
+      const password = document.getElementById("auth-password-input").value.trim();
+      if (!email || !password) {
+        Toast.warning("Please enter email and password.");
+        return;
+      }
+      try {
+        const res = await api("/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password })
+        });
+        localStorage.setItem("academic_agent_jwt", res.token);
+        Toast.success("Registered and signed in successfully!");
+        closeModal("auth-modal");
+        await checkAuthStatus();
+        await ClassroomModule.loadClassroom();
+        await loadHomeSummary();
+      } catch (e) {
+        Toast.error(`Registration Failed: ${e.message}`);
+      }
+    });
+  }
+
+  // Initial loads
+  await checkAuthStatus();
+  await ClassroomModule.loadClassroom();
+  await loadHomeSummary();
+});

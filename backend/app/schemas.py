@@ -10,10 +10,25 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     pass
 
+class UserRegister(BaseModel):
+    email: str
+    name: str
+    password: str
+
+class UserLogin(BaseModel):
+    email: str
+    password: str
+
 class UserResponse(UserBase):
     id: int
+    role: str = "student"
     created_at: datetime
     model_config = ConfigDict(from_attributes=True)
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "Bearer"
+    user: UserResponse
 
 # Course Schemas
 class CourseBase(BaseModel):
@@ -113,6 +128,24 @@ class StudyBrainResponse(BaseModel):
     document_name: Optional[str] = None
 
 # Assignment Generation Schemas
+class AssignmentSpecificationResponse(BaseModel):
+    course: str
+    title: str
+    description: str
+    deadline: Optional[str] = None
+    language: str
+    required_files: List[str] = []
+    required_formats: List[str] = []
+    required_programs: List[str] = []
+    required_tests: List[str] = []
+    required_experiments: List[str] = []
+    required_figures: List[str] = []
+    required_tables: List[str] = []
+    required_report: bool = False
+    required_outputs: List[str] = []
+    compiler_flags: Optional[str] = ""
+    submission_constraints: List[str] = []
+
 class GenerateAssignmentRequest(BaseModel):
     coursework_id: int
     custom_instructions: Optional[str] = ""
@@ -200,3 +233,24 @@ class HomeSummaryResponse(BaseModel):
     stats: Dict[str, Any]
     attendance_ready: bool
     current_subject: Optional[str] = None
+    user_name: Optional[str] = "Student"
+    user_email: Optional[str] = ""
+
+# ERP & University Portal Schemas
+class ERPLiveConnectRequest(BaseModel):
+    erp_id: str
+    password: str
+
+class ERPConnectSessionRequest(BaseModel):
+    portal_url: str
+    session_cookie: str
+    student_id: Optional[str] = ""
+
+class ERPImportScheduleRequest(BaseModel):
+    content: str # JSON, CSV, or ICS
+
+class GoogleCredentialsConfigRequest(BaseModel):
+    client_id: str
+    client_secret: str
+    redirect_uri: Optional[str] = "http://localhost:8000/api/auth/google/callback"
+

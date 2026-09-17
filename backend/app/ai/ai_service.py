@@ -235,3 +235,4 @@ class AIService:
             "Based on your course materials and academic requirements, the foundational concepts, "
             "algorithmic structures, and principles have been validated and analyzed."
         )
+

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy - Academic Agent</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+
+<body style="display: block; background-color: #0b0f17; color: #f8fafc; padding: 40px 20px;">
+  <div
+    style="max-width: 800px; margin: 0 auto; background: #111827; border: 1px solid #1f293d; border-radius: 4px; padding: 40px;">
+
+    <div
+      style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1f293d; padding-bottom: 20px; margin-bottom: 28px;">
+      <div>
+        <h1 style="font-size: 22px; font-weight: 700; color: #fff;">Academic Agent Privacy Policy</h1>
+        <p style="font-size: 13px; color: #94a3b8; margin-top: 4px;">Effective Date: September 17, 2026</p>
+      </div>
+      <a href="/" class="btn btn-secondary" style="text-decoration: none;">Return to Dashboard</a>
+    </div>
+
+    <div style="font-size: 14px; line-height: 1.7; color: #cbd5e1; display: flex; flex-direction: column; gap: 20px;">
+      <section>
+        <h2 style="font-size: 16px; font-weight: 600; color: #fff; margin-bottom: 8px;">1. Operational Philosophy &
+          Scope</h2>
+        <p>
+          Academic Agent is an open-source productivity operating layer designed specifically for academic environments.
+          We prioritize student privacy and local-first data ownership. The platform is not an institutional ERP, does
+          not
+          sell student records, and does not conduct tracking or behavioral analytics.
+        </p>
+      </section>
+
+      <section>
+        <h2 style="font-size: 16px; font-weight: 600; color: #fff; margin-bottom: 8px;">2. Information We Process</h2>
+        <ul style="padding-left: 20px; display: flex; flex-direction: column; gap: 6px;">
+          <li><b>Account Credentials:</b> Email address, user name, and salted cryptographic password hashes
+            (PBKDF2-HMAC-SHA256). Passwords are never stored in plaintext.</li>
+          <li><b>Google Classroom Data:</b> Enrolled course names, coursework titles, assignment instructions,
+            deadlines, and submission identifiers retrieved solely through authorized Google OAuth 2.0 scopes.</li>
+          <li><b>Course Materials & Deliverables:</b> PDF, DOCX, TXT, and source code files uploaded by the user or
+            generated on the user's behalf. Files remain within the user's isolated tenancy.</li>
+          <li><b>Timetable Records:</b> Class schedules, timings, and classroom locations supplied directly by the
+            student.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2 style="font-size: 16px; font-weight: 600; color: #fff; margin-bottom: 8px;">3. Google OAuth & Token Handling
+        </h2>
+        <p>
+          When you connect Google Classroom, OAuth access tokens and refresh tokens are stored locally in the secured
+          application database.
+          Tokens are utilized strictly to query course rosters, list coursework, upload assignment files to your Google
+          Drive, and record authorized turn-ins.
+          Tokens are never transmitted to third parties, external tracking networks, or commercial aggregators.
+        </p>
+      </section>
+
+      <section>
+        <h2 style="font-size: 16px; font-weight: 600; color: #fff; margin-bottom: 8px;">4. Security & Data Isolation
+        </h2>
+        <p>
+          Every database record is scoped to the individual user. Multi-tenant authorization checks prevent cross-user
+          data access (IDOR).
+          File operations are strictly path-bounded to eliminate directory traversal risks. Rate-limiting and enterprise
+          security headers (CSP, HSTS, X-Frame-Options)
+          are enforced on all HTTP responses.
+        </p>
+      </section>
+
+      <section>
+        <h2 style="font-size: 16px; font-weight: 600; color: #fff; margin-bottom: 8px;">5. Data Retention & Deletion
+        </h2>
+        <p>
+          You maintain full ownership of your data. Disconnecting Google Classroom purges OAuth credentials immediately.
+          Users may delete course materials, generated assignments, and account records at any time.
+        </p>
+      </section>
+
+      <section>
+        <h2 style="font-size: 16px; font-weight: 600; color: #fff; margin-bottom: 8px;">6. FERPA & Educational Record
+          Compliance</h2>
+        <p>
+          Academic Agent adheres to FERPA (Family Educational Rights and Privacy Act) standards by ensuring student
+          educational records, assignments, and course materials are strictly tenant-isolated and never shared with
+          unauthorized parties.
+        </p>
+      </section>
+
+      <section>
+        <h2 style="font-size: 16px; font-weight: 600; color: #fff; margin-bottom: 8px;">7. Contact & Open Source
+          Auditing</h2>
+        <p>
+          Academic Agent is open-source software. You may inspect the complete security implementation and database
+          models in the repository.
+          For inquiries or security disclosure, submit an issue on the project repository.
+        </p>
+      </section>
+    </div>
+
+    <div style="margin-top: 32px; padding-top: 20px; border-top: 1px solid #1f293d; text-align: center;">
+      <a href="/" style="color: #3b82f6; text-decoration: none; font-size: 13px; font-weight: 500;">Back to Academic
+        Agent</a>
+    </div>
+  </div>
+</body>
+
+</html>

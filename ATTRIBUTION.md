@@ -32,3 +32,4 @@ Academic Agent stands on the shoulders of several outstanding open-source projec
 - **Contributions Used & Adapted**:
   - Sentence-aware boundary chunking with sliding character overlap
   - Document ingestion and context parsing techniques for academic PDFs and DOCX files
+

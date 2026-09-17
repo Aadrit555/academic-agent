@@ -13,6 +13,10 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String(255), unique=True, index=True, nullable=False)
     name = Column(String(255), nullable=False, default="Student")
+    hashed_password = Column(String(255), nullable=False, default="")
+    salt = Column(String(64), nullable=False, default="")
+    role = Column(String(50), nullable=False, default="student") # "student", "admin"
+    is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=utcnow)
 
     # Relationships
@@ -21,6 +25,7 @@ class User(Base):
     classroom_integration = relationship("ClassroomIntegration", back_populates="user", uselist=False, cascade="all, delete-orphan")
     documents = relationship("Document", back_populates="user", cascade="all, delete-orphan")
     attendance_records = relationship("AttendanceRecord", back_populates="user", cascade="all, delete-orphan")
+    erp_integration = relationship("ERPIntegration", back_populates="user", uselist=False, cascade="all, delete-orphan")
 
 
 class Course(Base):
@@ -51,7 +56,8 @@ class TimetableEntry(Base):
     day_of_week = Column(Integer, nullable=False) # 0=Monday, 1=Tuesday, ..., 6=Sunday
     start_time = Column(String(10), nullable=False) # "10:00"
     end_time = Column(String(10), nullable=False) # "11:00"
-    classroom = Column(String(100), default="AB-204") # e.g. "AB-204"
+    classroom = Column(String(100), default="AB-204") # e.g. "AB-204", "X-201", "C-1011"
+    faculty = Column(String(255), default="") # e.g. "Dr. John Doe"
     created_at = Column(DateTime, default=utcnow)
 
     user = relationship("User", back_populates="timetable_entries")
@@ -213,3 +219,25 @@ class AttendanceRecord(Base):
     status = Column(String(50), default="MARKED") # "MARKED", "FAILED"
 
     user = relationship("User", back_populates="attendance_records")
+
+
+class ERPIntegration(Base):
+    __tablename__ = "erp_integrations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
+    portal_type = Column(String(50), default="srmap_evarsity") # Strictly SRM AP eVarsity / Student Corner
+    portal_url = Column(String(255), default="https://student.srmap.edu.in/srmapstudentcorner")
+    session_cookie = Column(Text, default="")
+    is_connected = Column(Boolean, default=False)
+    student_id = Column(String(100), default="")
+    student_name = Column(String(255), default="")
+    encrypted_password = Column(Text, default="") # Encrypted ERP password for background refresh
+    attendance_data = Column(Text, default="[]") # JSON string of subject-wise attendance percentages
+    profile_data = Column(Text, default="{}") # JSON string of student profile (semester, branch, etc.)
+    timetable_data = Column(Text, default="[]") # JSON string of full timetable structure
+    last_synced_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=utcnow)
+
+    user = relationship("User", back_populates="erp_integration")
+

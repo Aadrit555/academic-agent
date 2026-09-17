@@ -103,3 +103,27 @@ def test_generate_docx_assignment(db_session, test_user_and_course):
     assert assignment.file_type == ".docx"
     assert os.path.exists(assignment.file_path)
     assert os.path.getsize(assignment.file_path) > 1000
+
+def test_dynamic_assignment_specification(db_session, test_user_and_course):
+    user, course = test_user_and_course
+    cw = Coursework(
+        user_id=user.id,
+        course_id=course.id,
+        classroom_course_id="c1",
+        coursework_id="w_spec",
+        title="DAA LAB 4: Implement Merge Sort in C",
+        description="Write MergeSort.c using gcc -Wall -Wextra. Include test cases and benchmark CSV."
+    )
+    db_session.add(cw)
+    db_session.commit()
+
+    spec = GeneratorService.extract_assignment_specification(cw)
+    assert spec["title"] == "DAA LAB 4: Implement Merge Sort in C"
+    assert spec["course"] == "Algorithms"
+    assert "MergeSort.c" in spec["required_files"]
+    assert "timing_results.csv" in spec["required_files"]
+    assert "Lab4_Report.docx" in spec["required_files"]
+    assert "gcc -Wall -Wextra" in spec["compiler_flags"]
+    assert len(spec["required_tests"]) >= 2
+    assert any("Edge case" in t for t in spec["required_tests"])
+

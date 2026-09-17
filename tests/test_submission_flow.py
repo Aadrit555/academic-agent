@@ -117,3 +117,4 @@ def test_schedule_calculation_and_persistence(db_session, ready_assignment_fixtu
     expected_scheduled = schedule.deadline_datetime - timedelta(hours=4.0)
     # Check scheduled_time is approximately deadline - 4 hours
     assert abs((schedule.scheduled_time - expected_scheduled).total_seconds()) < 60
+

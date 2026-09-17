@@ -244,3 +244,4 @@ class ClassroomService:
             db.commit()
 
         return synced_coursework
+

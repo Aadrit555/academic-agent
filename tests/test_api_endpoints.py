@@ -114,3 +114,81 @@ def test_fast_attendance_endpoint(client):
     data = res.json()
     assert data["attendance_code"] == "A987654"
     assert data["status"] == "MARKED"
+
+def test_assignment_spec_endpoint(client):
+    w_res = client.get("/api/classroom/coursework")
+    works = w_res.json()
+    cw_id = works[0]["id"]
+
+    res = client.get(f"/api/assignment/{cw_id}/spec")
+    assert res.status_code == 200
+    spec = res.json()
+    assert "required_files" in spec
+    assert "compiler_flags" in spec
+    assert "required_tests" in spec
+    assert isinstance(spec["required_files"], list)
+
+def test_camera_scan_frame_endpoint(client):
+    res = client.post("/api/attendance/scan-frame", json={"code": "A235646"})
+    assert res.status_code == 200
+    data = res.json()
+    assert data["code"] == "A235646"
+    assert "subject" in data
+    assert "classroom" in data
+
+def test_addon_endpoint(client):
+    res = client.get("/addon")
+    assert res.status_code == 200
+    assert "Academic Agent Companion" in res.text or "<!DOCTYPE html>" in res.text
+
+def test_google_credentials_config_endpoint(client):
+    res = client.post("/api/config/google-credentials", json={
+        "client_id": "test-client-id-12345.apps.googleusercontent.com",
+        "client_secret": "test-client-secret-abc",
+        "redirect_uri": "http://localhost:8000/api/auth/google/callback"
+    })
+    assert res.status_code == 200
+    data = res.json()
+    assert "configured successfully" in data["message"]
+    assert "accounts.google.com" in data["auth_url"]
+
+def test_erp_status_and_connect_endpoint(client):
+    # Check initial ERP status
+    status_res = client.get("/api/erp/status")
+    assert status_res.status_code == 200
+
+    # Connect SRM AP ERP session
+    conn_res = client.post("/api/erp/connect-session", json={
+        "portal_url": "https://student.srmap.edu.in/srmapstudentcorner",
+        "session_cookie": "JSESSIONID=TEST_SRMAP_SESSION_ID_12345",
+        "student_id": "AP23110010042"
+    })
+    assert conn_res.status_code == 200
+    assert conn_res.json()["is_connected"] is True
+
+    # Check updated ERP status
+    status_after = client.get("/api/erp/status")
+    assert status_after.status_code == 200
+    after_data = status_after.json()
+    assert after_data["is_connected"] is True
+    assert after_data["student_id"] == "AP23110010042"
+    assert len(after_data["attendance_summary"]) > 0
+
+def test_erp_schedule_import_endpoint(client):
+    csv_schedule = """Day,Start,End,Subject,Room
+Monday,09:00,10:00,Operating Systems,AB-301
+Tuesday,11:00,12:00,Computer Networks,C-102
+Friday,14:00,15:00,Operating Systems,AB-502
+"""
+    res = client.post("/api/erp/import-schedule", json={"content": csv_schedule})
+    assert res.status_code == 200
+    data = res.json()
+    assert data["imported_count"] == 3
+
+    # Verify timetable updated in DB
+    tt_res = client.get("/api/timetable")
+    assert tt_res.status_code == 200
+    entries = tt_res.json()
+    assert any(e["subject"] == "Operating Systems" for e in entries)
+    assert any(e["classroom"] == "AB-502" for e in entries)
+

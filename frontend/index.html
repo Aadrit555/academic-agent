@@ -1,386 +1,730 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Academic Agent — AI Operating Layer for College Work</title>
+  <title>Google Classroom - Academic Agent Companion</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="stylesheet" href="/css/styles.css">
 </head>
+
 <body>
 
-  <!-- Sidebar Navigation -->
-  <aside class="sidebar">
-    <div class="brand">
-      <div class="brand-icon">A</div>
-      <div>
-        <div class="brand-title">ACADEMIC AGENT</div>
-        <div class="brand-badge">PRO v1.0</div>
+  <!-- Google Classroom Top Bar -->
+  <header class="gc-topbar">
+    <div class="gc-brand">
+      <div class="gc-icon-badge" title="Google Classroom">GC</div>
+      <div class="gc-title-group">
+        <h1 class="gc-title" id="classroom-active-course-title">Google Classroom</h1>
+        <select id="classroom-course-select" class="gc-course-select" title="Switch Enrolled Course">
+          <option value="">Loading courses...</option>
+        </select>
       </div>
     </div>
 
-    <nav class="nav-links">
-      <a class="nav-item active" data-view="home">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-        <span>Agent Hub</span>
-      </a>
-      <a class="nav-item" data-view="timetable">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-        <span>Timetable & Next Class</span>
-      </a>
-      <a class="nav-item" data-view="classroom">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
-        <span>Google Classroom</span>
-      </a>
-      <a class="nav-item" data-view="study-brain">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-        <span>AI Study Brain</span>
-      </a>
-      <a class="nav-item" data-view="generator">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
-        <span>Validation & Generator</span>
-      </a>
-      <a class="nav-item" data-view="schedules">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-        <span>Auto-Submission Schedules</span>
-      </a>
+    <nav class="gc-nav-tabs" aria-label="Classroom Navigation">
+      <div class="gc-tab active" data-gc-tab="stream">Stream</div>
+      <div class="gc-tab" data-gc-tab="classwork">Classwork</div>
+      <div class="gc-tab" data-gc-tab="people">People</div>
+      <div class="gc-tab" data-gc-tab="grades">Grades</div>
     </nav>
 
-    <div class="sidebar-footer">
-      <button class="demo-btn-sidebar" id="start-expo-demo-btn">
-        <span>🚀 Run 12-Step Expo Demo</span>
+    <div class="gc-controls">
+      <div class="auth-chip connected" id="classroom-auth-status"
+        style="border-color: rgba(52, 211, 153, 0.4); background: rgba(16, 185, 129, 0.12);">
+        <span class="chip-dot" style="background:#10b981;"></span>
+        <span id="google-user-email" style="font-weight:600; color:#34d399;">AADRIT · AP25110010004 (Live ERP)</span>
+      </div>
+      <button class="btn btn-primary btn-sm" id="open-integrations-btn"
+        title="Manage SRM AP ERP & Google Classroom Integrations">Integrations (ERP & Google)</button>
+      <button class="btn btn-secondary btn-sm" id="account-modal-btn" title="Student Account & Profile">Account</button>
+      <button class="btn btn-secondary btn-sm" id="open-command-palette-btn" title="Command Palette (Ctrl+K)">
+        <span class="palette-kbd">Ctrl+K</span>
       </button>
+      <button class="btn btn-secondary btn-sm" id="toggle-addon-expansion-btn"
+        title="Toggle Studio Expansion View">Expand Studio</button>
+      <!-- Kept for automated compatibility without cluttering live view -->
+      <button class="btn btn-secondary btn-sm" id="connect-demo-btn" style="display:none;" title="Connect Demo">Connect
+        Demo</button>
+      <button class="btn btn-secondary btn-sm" id="start-expo-demo-btn" style="display:none;" title="Run Demo Tour">Run
+        Demo Tour</button>
     </div>
-  </aside>
+  </header>
 
-  <!-- Main Content Area -->
-  <div class="main-wrapper">
-    <!-- Top Header -->
-    <header class="header">
-      <div class="header-left">
-        <h1 class="page-title" id="current-view-title">Agent Hub</h1>
-      </div>
-      <div class="header-right">
-        <div class="auth-badge disconnected" id="auth-status-badge">
-          <span class="status-dot"></span>
-          <span id="auth-status-text">Google Classroom: Disconnected</span>
-        </div>
-        <button class="btn btn-secondary" id="connect-classroom-btn">Connect Google</button>
-        <button class="btn btn-primary" id="demo-mode-toggle-btn">⚡ Instant Demo Mode</button>
-      </div>
-    </header>
+  <!-- Master Classroom Workspace Layout -->
+  <div class="classroom-layout" id="classroom-workspace-layout">
 
-    <!-- VIEW 1: AGENT HUB (HOME) -->
-    <main class="page-container active" id="view-home">
-      <!-- HERO: NEXT CLASS WIDGET -->
-      <section class="hero-card" id="hero-next-class">
-        <div class="hero-header">
-          <div class="hero-tag">
-            <span class="hero-tag-badge" id="hero-class-status-badge">NEXT CLASS</span>
-            <span id="hero-time-context" style="color: #94a3b8; font-size: 13px;">Upcoming today</span>
-          </div>
-          <span class="status-pill status-ready" id="hero-room-badge">ROOM AB-204</span>
+    <!-- Google Classroom Main Surface -->
+    <main class="gc-main-surface" id="gc-main-surface">
+      <!-- Course Banner -->
+      <section class="course-banner" id="course-banner-section">
+        <div>
+          <h2 class="course-banner-title" id="course-banner-title">DESIGN AND ANALYSIS OF ALGORITHMS - CSE 204</h2>
+          <p class="course-banner-sub" id="course-banner-sub">Faculty: Dr. Dipayan Chakraborty, Dr. S R Ngamwal Anal ·
+            Room C 504 / C 801</p>
         </div>
-        <div class="hero-subject" id="hero-subject-name">Data Structures</div>
-        <div class="hero-meta">
-          <div class="hero-meta-item">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-            <span id="hero-class-time">10:00 AM – 11:00 AM</span>
-          </div>
-          <div class="hero-meta-item">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-            <span id="hero-class-room">AB-204 (Academic Block)</span>
-          </div>
-        </div>
-
-        <!-- FAST ATTENDANCE ACTION -->
-        <div class="attendance-box">
-          <div>
-            <div class="attendance-label">FAST ATTENDANCE ACTION</div>
-            <div style="font-size: 12px; color: #64748b;">Mark attendance for the current class in one step</div>
-          </div>
-          <div class="attendance-input-group">
-            <input type="text" class="code-input" id="quick-attendance-code" placeholder="A235646" maxlength="10">
-            <button class="btn btn-success" id="mark-attendance-btn">Mark Attendance</button>
-          </div>
+        <div class="course-meta-tags" id="course-meta-tags">
+          <span class="course-meta-tag" id="course-meta-semester">III SEMESTER</span>
+          <span class="course-meta-tag" id="course-meta-section">SECTION K</span>
+          <span class="course-meta-tag" id="course-meta-inst">SRM UNIVERSITY AP</span>
         </div>
       </section>
 
-      <!-- STATS COUNTERS -->
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-icon" style="background: rgba(99, 102, 241, 0.2); color: #818cf8;">📄</div>
-          <div>
-            <div class="stat-val" id="stat-materials">0</div>
-            <div class="stat-label">Course Materials Indexed</div>
+      <!-- Classroom Stream 2-Column Grid -->
+      <div class="gc-stream-grid">
+        <!-- Left: Upcoming Deadlines Widget -->
+        <aside class="gc-sidebar-box">
+          <div class="gc-box-title">Upcoming Deadlines</div>
+          <div id="classroom-upcoming-deadlines-list">
+            <div style="font-size: 12px; color: var(--text-muted);">Loading coursework deadlines...</div>
           </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon" style="background: rgba(16, 185, 129, 0.2); color: #34d399;">✓</div>
-          <div>
-            <div class="stat-val" id="stat-ready">0</div>
-            <div class="stat-label">Assignments Validated & Ready</div>
+          <div style="margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--border-subtle);">
+            <a href="javascript:void(0)" onclick="navigateToAddonTab('assignments')"
+              style="font-size: 11px; color: #60a5fa; text-decoration: none; font-weight: 500;">
+              View all assignments in Add-on &rarr;
+            </a>
           </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon" style="background: rgba(6, 182, 212, 0.2); color: #22d3ee;">⏰</div>
-          <div>
-            <div class="stat-val" id="stat-scheduled">0</div>
-            <div class="stat-label">Auto-Submissions Scheduled</div>
-          </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24;">📚</div>
-          <div>
-            <div class="stat-val" id="stat-courses">0</div>
-            <div class="stat-label">Enrolled Academic Courses</div>
-          </div>
-        </div>
-      </div>
+        </aside>
 
-      <!-- UPCOMING ASSIGNMENTS & ACTIONS -->
-      <div class="section-title">
-        <span>Google Classroom Assignments Pipeline</span>
-        <button class="btn btn-secondary" id="refresh-assignments-btn">Sync Classroom</button>
-      </div>
+        <!-- Right: Coursework Stream Feed -->
+        <section class="stream-feed">
+          <div
+            style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-sm);">
+            <div>
+              <span style="font-size: 13px; font-weight: 600; color: #fff;">Course Stream</span>
+              <span style="font-size: 11px; color: var(--text-secondary); margin-left: 8px;">Synced with Google
+                Classroom API</span>
+            </div>
+            <button class="btn btn-secondary btn-sm" id="sync-classroom-btn">Sync Classroom</button>
+          </div>
 
-      <div class="assignments-grid" id="home-assignments-container">
-        <!-- Rendered dynamically -->
+          <!-- Classroom coursework feed items -->
+          <div id="classroom-stream-feed">
+            <!-- Dynamically populated by ClassroomModule -->
+          </div>
+
+          <!-- Classwork Tab Placeholder (used when switching topbar tabs) -->
+          <div id="classroom-classwork-tab-content" style="display: none;">
+            <!-- Dynamically populated by ClassroomModule -->
+          </div>
+        </section>
       </div>
     </main>
 
-    <!-- VIEW 2: TIMETABLE -->
-    <main class="page-container" id="view-timetable">
-      <div class="section-title">
-        <span>Weekly Academic Schedule</span>
-        <button class="btn btn-secondary" id="import-timetable-btn">Import Timetable (CSV/JSON)</button>
-      </div>
-      <div class="validation-box" style="margin-top: 0; margin-bottom: 24px;">
-        <h3 style="margin-bottom: 12px; color: #fff;">Today's Classes</h3>
-        <div id="today-timetable-list" style="display: flex; flex-direction: column; gap: 8px;">
-          <!-- Rendered dynamically -->
+    <!-- Academic Agent Embedded Companion Add-on Panel -->
+    <aside class="addon-companion-panel" id="academic-agent-addon-panel">
+      <!-- Add-on Header -->
+      <div class="addon-header">
+        <div class="addon-brand">
+          <span class="addon-brand-badge">COMPANION</span>
+          <span class="addon-title">ACADEMIC AGENT</span>
+        </div>
+        <div style="display: flex; gap: 6px;">
+          <button class="btn btn-secondary btn-sm" onclick="CommandPalette.open()"
+            title="Open Command Palette (Ctrl+K)">
+            <span class="palette-kbd">Ctrl+K</span>
+          </button>
         </div>
       </div>
 
-      <div class="section-title"><span>Full Week Timetable</span></div>
-      <div id="weekly-timetable-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px;">
-        <!-- Rendered dynamically -->
-      </div>
-    </main>
+      <!-- 5 Primary Navigation Tabs strictly -->
+      <nav class="addon-nav-bar" aria-label="Academic Agent Add-on Tabs">
+        <button class="addon-nav-tab active" data-tab="home">Home</button>
+        <button class="addon-nav-tab" data-tab="assignments">Assignments</button>
+        <button class="addon-nav-tab" data-tab="study">Study</button>
+        <button class="addon-nav-tab" data-tab="next-class">Next Class</button>
+        <button class="addon-nav-tab" data-tab="attendance">Attendance</button>
+      </nav>
 
-    <!-- VIEW 3: CLASSROOM -->
-    <main class="page-container" id="view-classroom">
-      <div class="section-title">
-        <span>Google Classroom Courses & Coursework</span>
-        <button class="btn btn-primary" id="sync-classroom-now-btn">Sync from Classroom API</button>
-      </div>
-      <div id="classroom-courses-tabs" style="display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 6px;">
-        <!-- Course filter buttons rendered dynamically -->
-      </div>
-      <div class="assignments-grid" id="classroom-coursework-container">
-        <!-- Assignments rendered dynamically -->
-      </div>
-    </main>
+      <!-- Add-on Tab Contents -->
+      <div class="addon-content">
 
-    <!-- VIEW 4: AI STUDY BRAIN -->
-    <main class="page-container" id="view-study-brain">
-      <div class="section-title">
-        <span>AI Study Brain — Course Materials & Synthesis</span>
-      </div>
-
-      <div style="display: grid; grid-template-columns: 320px 1fr; gap: 24px;">
-        <!-- Left: Upload & Materials Explorer -->
-        <div>
-          <div class="stat-card" style="flex-direction: column; align-items: stretch; margin-bottom: 16px;">
-            <label style="font-size: 13px; font-weight: 600; margin-bottom: 8px;">Select Course:</label>
-            <select id="brain-course-select" style="background: #111827; border: 1px solid var(--border); color: #fff; padding: 8px 12px; border-radius: var(--radius-sm); margin-bottom: 14px;">
-              <!-- Courses populated dynamically -->
-            </select>
-
-            <label style="font-size: 13px; font-weight: 600; margin-bottom: 8px;">Upload Course Material (PDF, DOCX, TXT, MD):</label>
-            <input type="file" id="material-file-input" style="font-size: 12px; color: #94a3b8; margin-bottom: 12px;">
-            <button class="btn btn-primary" id="upload-material-btn" style="width: 100%; justify-content: center;">Upload & Index Document</button>
-          </div>
-
-          <div class="validation-box">
-            <h4 style="color: #fff; margin-bottom: 10px;">Uploaded Materials</h4>
-            <div id="course-materials-list" style="display: flex; flex-direction: column; gap: 8px; font-size: 13px;">
-              <!-- Materials list rendered dynamically -->
+        <!-- TAB 1: HOME CONTEXT VIEW -->
+        <div class="addon-view-panel active" id="addon-view-home">
+          <!-- Next Class Card -->
+          <div class="panel-card" style="background: rgba(37, 99, 235, 0.06); border-color: rgba(59, 130, 246, 0.3);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span class="status-pill status-ready" id="home-class-status-badge">NEXT CLASS</span>
+              <span id="home-next-time" style="font-family: var(--font-mono); font-size: 11px; color: #94a3b8;">10:00 -
+                11:00</span>
+            </div>
+            <h3 id="home-next-subject" style="color: #fff; font-size: 15px; font-weight: 700; margin: 4px 0;">Data
+              Structures</h3>
+            <div style="font-size: 12px; color: #cbd5e1;">
+              Scheduled Room: <b id="home-next-room" style="color: #60a5fa; font-family: var(--font-mono);">Room
+                AB-204</b>
             </div>
           </div>
-        </div>
 
-        <!-- Right: AI Study Actions & Results -->
-        <div>
-          <div style="display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap;">
-            <button class="btn btn-secondary brain-action-btn" data-action="summary">📄 Summarize Material</button>
-            <button class="btn btn-secondary brain-action-btn" data-action="questions">❓ 10 Important Questions</button>
-            <button class="btn btn-secondary brain-action-btn" data-action="explanation">💡 Explain Concept</button>
-            <button class="btn btn-secondary brain-action-btn" data-action="targeted_study">🎯 What to Study First?</button>
+          <!-- Urgent Assignment Context Card -->
+          <div class="panel-card" id="home-urgent-assignment-card">
+            <div style="font-size: 12px; color: var(--text-secondary);">Loading assignment pipeline...</div>
           </div>
 
-          <div style="display: flex; gap: 8px; margin-bottom: 18px;">
-            <input type="text" id="brain-query-input" placeholder="Enter topic or question (e.g. AVL Rotations, Merge Sort Recurrence)" style="flex: 1; background: var(--bg-card); border: 1px solid var(--border); color: #fff; padding: 10px 14px; border-radius: var(--radius-sm);">
-            <button class="btn btn-primary" id="run-brain-query-btn">Ask Study Brain</button>
-          </div>
-
-          <div class="validation-box" id="study-brain-output-box" style="min-height: 280px;">
-            <div id="study-brain-title" style="font-size: 16px; font-weight: 700; color: #93c5fd; margin-bottom: 12px;">Select an action or ask a question above.</div>
-            <div id="study-brain-content" style="font-size: 14px; line-height: 1.6; color: #e2e8f0; white-space: pre-wrap;">Uploaded documents are organized by course and queried using context-aware retrieval with precise page citations.</div>
-            
-            <div id="study-brain-citations" style="margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--border); display: none;">
-              <div style="font-size: 12px; font-weight: 700; color: #64748b; margin-bottom: 8px;">SOURCE CITATIONS:</div>
-              <div id="citations-list" style="display: flex; flex-direction: column; gap: 6px;"></div>
+          <!-- Operational Stats Counters -->
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+            <div class="panel-card" style="text-align: center; padding: 10px 6px;">
+              <div style="font-size: 18px; font-weight: 800; color: #34d399; font-family: var(--font-mono);"
+                id="home-ready-count">0</div>
+              <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; margin-top: 2px;">
+                Deliverables Ready</div>
+            </div>
+            <div class="panel-card" style="text-align: center; padding: 10px 6px;">
+              <div style="font-size: 18px; font-weight: 800; color: #60a5fa; font-family: var(--font-mono);"
+                id="home-scheduled-count">0</div>
+              <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; margin-top: 2px;">
+                Auto-Submits</div>
+            </div>
+            <div class="panel-card" style="text-align: center; padding: 10px 6px;">
+              <div style="font-size: 18px; font-weight: 800; color: #fbbf24; font-family: var(--font-mono);"
+                id="home-docs-count">0</div>
+              <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; margin-top: 2px;">Docs
+                Indexed</div>
             </div>
           </div>
-        </div>
-      </div>
-    </main>
 
-    <!-- VIEW 5: GENERATOR & VALIDATION LAB -->
-    <main class="page-container" id="view-generator">
-      <div class="section-title">
-        <span>Assignment Generation & Validation Pipeline</span>
-      </div>
-
-      <div style="display: grid; grid-template-columns: 340px 1fr; gap: 24px;">
-        <!-- Left: Select Assignment & Trigger -->
-        <div>
-          <div class="validation-box" style="margin-top: 0;">
-            <h4 style="color: #fff; margin-bottom: 12px;">Select Classroom Assignment</h4>
-            <select id="generator-assignment-select" style="width: 100%; background: #111827; border: 1px solid var(--border); color: #fff; padding: 10px; border-radius: var(--radius-sm); margin-bottom: 14px;">
-              <!-- Populated dynamically -->
-            </select>
-
-            <div id="selected-assignment-details" style="font-size: 13px; color: #94a3b8; margin-bottom: 16px;">
-              Select an assignment to view detected deliverable format and requirements.
-            </div>
-
-            <button class="btn btn-primary" id="btn-trigger-generate" style="width: 100%; justify-content: center; margin-bottom: 8px;">
-              ⚡ Generate Assignment Deliverable
+          <!-- Quick Action Buttons -->
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <button class="btn btn-primary" onclick="navigateToAddonTab('assignments')"
+              style="justify-content: space-between;">
+              <span>Open Compiler &amp; Deliverable Studio</span>
+              <span>&rarr;</span>
             </button>
-            <button class="btn btn-success" id="btn-trigger-validate" style="width: 100%; justify-content: center;">
-              ✓ Compile & Validate Code
+            <button class="btn btn-secondary" onclick="navigateToAddonTab('attendance')"
+              style="justify-content: space-between;">
+              <span>Scan Attendance with Camera</span>
+              <span>&rarr;</span>
+            </button>
+            <button class="btn btn-secondary" onclick="navigateToAddonTab('study')"
+              style="justify-content: space-between;">
+              <span>Query Course Study Brain RAG</span>
+              <span>&rarr;</span>
             </button>
           </div>
         </div>
 
-        <!-- Right: Deliverable Viewer & Validation Checklist -->
-        <div>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-            <h4 style="color: #fff;" id="deliverable-header">Deliverable Preview</h4>
-            <button class="btn btn-secondary" id="download-deliverable-btn" style="display: none;">Download File</button>
+        <!-- TAB 2: ASSIGNMENTS & COMPILER STUDIO -->
+        <div class="addon-view-panel" id="addon-view-assignments">
+          <div>
+            <label
+              style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px; display: block;">Select
+              Coursework:</label>
+            <select id="generator-assignment-select"
+              style="width: 100%; background: #111827; border: 1px solid var(--border); color: #fff; padding: 8px 10px; border-radius: var(--radius-sm); font-size: 12px;">
+              <!-- Populated by GeneratorModule -->
+            </select>
           </div>
 
-          <div class="code-viewer" id="code-viewer-panel">
-            // No deliverable generated yet. Click 'Generate Assignment Deliverable' to begin.
+          <!-- AI Dynamic Specification Card -->
+          <div id="assignment-spec-container">
+            <div class="spec-card">
+              <div class="spec-badge">AI SPECIFICATION EXTRACTION</div>
+              <p style="font-size: 12px; color: var(--text-secondary); margin-top: 6px;">Select an assignment to extract
+                deliverables, compiler flags, and test requirements.</p>
+            </div>
           </div>
 
-          <!-- Live Validation Report -->
-          <div class="validation-box" id="validation-report-panel" style="margin-top: 20px;">
-            <div class="validation-header">
-              <span>VALIDATION PIPELINE REPORT</span>
+          <!-- Action Buttons -->
+          <div style="display: flex; gap: 8px;">
+            <button class="btn btn-primary btn-sm" id="btn-trigger-generate" style="flex: 1;">Generate
+              Deliverable</button>
+            <button class="btn btn-success btn-sm" id="btn-trigger-validate" style="flex: 1;">Validate Code</button>
+            <button class="btn btn-secondary btn-sm" id="btn-trigger-automate"
+              title="Configure Automated Turn-In">Auto-Submit</button>
+          </div>
+
+          <!-- Deliverable Studio Code Preview -->
+          <div class="panel-card" style="padding: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span id="deliverable-header" style="font-weight: 700; font-size: 12px; color: #fff;">Deliverable
+                Studio</span>
+              <button class="btn btn-secondary btn-sm" id="download-deliverable-btn"
+                style="display: none; padding: 3px 8px; font-size: 10px;">Download File</button>
+            </div>
+            <pre class="code-viewer-panel"
+              id="code-viewer-panel">// Select coursework to inspect code and synthesized files</pre>
+          </div>
+
+          <!-- Live Compiler Validation Report -->
+          <div class="panel-card" style="padding: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <span style="font-size: 11px; font-weight: 800; color: #fff; letter-spacing: 0.5px;">VALIDATION
+                REPORT</span>
               <span class="status-pill status-not_started" id="validation-status-pill">PENDING</span>
             </div>
 
             <ul class="checklist" id="validation-checklist">
-              <li class="checklist-item"><span class="check-icon check-fail">•</span> Instructions understood</li>
-              <li class="checklist-item"><span class="check-icon check-fail">•</span> Required file generated</li>
-              <li class="checklist-item"><span class="check-icon check-fail">•</span> File format correct</li>
-              <li class="checklist-item"><span class="check-icon check-fail">•</span> Compilation successful</li>
-              <li class="checklist-item"><span class="check-icon check-fail">•</span> Tests passed</li>
-              <li class="checklist-item"><span class="check-icon check-fail">•</span> Submission package created</li>
+              <li class="checklist-item"><span class="check-icon check-fail">-</span> Instructions understood</li>
+              <li class="checklist-item"><span class="check-icon check-fail">-</span> Required files generated</li>
+              <li class="checklist-item"><span class="check-icon check-fail">-</span> Compilation verified (gcc / javac)
+              </li>
+              <li class="checklist-item"><span class="check-icon check-fail">-</span> Test cases passed</li>
+              <li class="checklist-item"><span class="check-icon check-fail">-</span> Submission package ready</li>
             </ul>
 
-            <div id="compiler-output-box" style="margin-top: 14px; display: none;">
-              <div style="font-size: 11px; font-weight: 700; color: #94a3b8; margin-bottom: 4px;">COMPILER / TEST OUTPUT:</div>
-              <pre id="compiler-output-text" style="background: #000; padding: 10px; border-radius: 4px; font-size: 12px; color: #34d399; overflow-x: auto;"></pre>
+            <div id="compiler-output-box" class="compiler-terminal-box" style="margin-top: 10px; display: none;">
+              <div style="font-size: 10px; font-weight: 700; color: #94a3b8; margin-bottom: 4px;">COMPILER OUTPUT:</div>
+              <pre id="compiler-output-text" style="color: #34d399;"></pre>
             </div>
           </div>
         </div>
-      </div>
-    </main>
 
-    <!-- VIEW 6: AUTO-SUBMISSION SCHEDULES -->
-    <main class="page-container" id="view-schedules">
-      <div class="section-title">
-        <span>Scheduled Auto-Submissions Monitor</span>
-        <button class="btn btn-secondary" id="refresh-schedules-btn">Refresh</button>
-      </div>
+        <!-- TAB 3: STUDY BRAIN RAG -->
+        <div class="addon-view-panel" id="addon-view-study">
+          <div>
+            <label
+              style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px; display: block;">Course
+              Scope:</label>
+            <select id="study-brain-course-select"
+              style="width: 100%; background: #111827; border: 1px solid var(--border); color: #fff; padding: 7px 10px; border-radius: var(--radius-sm); font-size: 12px;">
+              <!-- Populated by StudyBrainModule -->
+            </select>
+          </div>
 
-      <div class="validation-box" style="margin-top: 0;">
-        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px;">
-          Academic Agent's background scheduler continuously monitors deadlines. Validated deliverables are automatically uploaded to Google Drive, attached to the student submission, and turned in at:
-          <code style="color: #60a5fa; background: #000; padding: 2px 6px; border-radius: 4px;">submission_time = deadline - configured_offset</code>
-        </p>
+          <!-- Upload Materials Box -->
+          <div class="panel-card">
+            <div
+              style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">
+              Upload Course Material (PDF, DOCX, TXT):</div>
+            <input type="file" id="material-file-input"
+              style="font-size: 11px; color: #94a3b8; width: 100%; margin-bottom: 8px;">
+            <button class="btn btn-primary btn-sm" id="upload-material-btn" style="width: 100%;">Upload Course
+              Document</button>
+          </div>
 
-        <div id="schedules-table-container">
-          <!-- Rendered dynamically -->
+          <!-- Indexed Course Materials Shelf -->
+          <div>
+            <div
+              style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">
+              Indexed Course Documents</div>
+            <div id="study-brain-materials-list" style="display: flex; flex-direction: column; gap: 6px;">
+              <div style="color: var(--text-muted); font-size: 12px;">No documents indexed yet.</div>
+            </div>
+          </div>
+
+          <!-- Quick AI Study Action Pills -->
+          <div>
+            <div
+              style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">
+              Study Actions</div>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+              <button class="btn btn-secondary btn-sm brain-action-pill" data-action="summary">Summarize Unit</button>
+              <button class="btn btn-secondary btn-sm brain-action-pill" data-action="questions">10 Exam
+                Questions</button>
+              <button class="btn btn-secondary btn-sm brain-action-pill" data-action="explanation">Explain
+                Concept</button>
+              <button class="btn btn-secondary btn-sm brain-action-pill" data-action="targeted_study">What to Study
+                First</button>
+            </div>
+          </div>
+
+          <!-- Custom Query Input -->
+          <div style="display: flex; gap: 6px;">
+            <input type="text" id="brain-query-input" placeholder="Ask question about course material..."
+              style="flex: 1; background: var(--bg-surface); border: 1px solid var(--border); color: #fff; padding: 7px 10px; border-radius: var(--radius-sm); font-size: 12px;">
+            <button class="btn btn-primary btn-sm" id="run-brain-query-btn">Ask</button>
+          </div>
+
+          <!-- Study Brain Result Box -->
+          <div class="panel-card" style="min-height: 120px;">
+            <div id="study-brain-title" style="font-size: 13px; font-weight: 700; color: #60a5fa; margin-bottom: 8px;">
+              Select an action or enter a query above.</div>
+            <div id="study-brain-content"
+              style="font-size: 12px; line-height: 1.5; color: #e2e8f0; white-space: pre-wrap;">Course materials are
+              indexed per course and queried with exact source attribution.</div>
+
+            <div id="study-brain-citations"
+              style="margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); display: none;">
+              <div
+                style="font-size: 10px; font-weight: 700; color: #94a3b8; margin-bottom: 6px; text-transform: uppercase;">
+                SOURCE CITATIONS:</div>
+              <div id="citations-list" style="display: flex; flex-direction: column; gap: 6px;"></div>
+            </div>
+          </div>
         </div>
+
+        <!-- TAB 4: NEXT CLASS & TIMETABLE CONTEXT -->
+        <div class="addon-view-panel" id="addon-view-next-class">
+          <!-- Next Class Card with Exact Room -->
+          <div id="timetable-next-class-box">
+            <!-- Populated by TimetableModule -->
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Weekly
+              Schedule Baseline</span>
+            <button class="btn btn-secondary btn-sm" id="open-import-timetable-btn"
+              style="padding: 3px 8px; font-size: 10px;">Import Timetable</button>
+          </div>
+
+          <!-- Weekly Schedule Columns -->
+          <div id="weekly-timetable-matrix" style="display: flex; flex-direction: column; gap: 10px;">
+            <!-- Populated by TimetableModule -->
+          </div>
+        </div>
+
+        <!-- TAB 5: CAMERA ATTENDANCE SCANNER -->
+        <div class="addon-view-panel" id="addon-view-attendance">
+          <div>
+            <div style="font-size: 13px; font-weight: 700; color: #fff;">Camera Attendance Scanner</div>
+            <p style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">
+              Google Lens-style optical verification matching your current timetable slot.
+            </p>
+          </div>
+
+          <!-- Camera Lens Viewfinder -->
+          <div class="camera-scanner-frame" id="scanner-viewport">
+            <video id="scanner-video" class="scanner-video" playsinline autoplay muted></video>
+            <div class="viewfinder-reticle"></div>
+            <div class="scanner-laser"></div>
+          </div>
+
+          <div id="scanner-status-text" style="font-size: 11px; color: var(--text-secondary); text-align: center;">
+            Camera ready for optical attendance detection.
+          </div>
+
+          <!-- Camera Scanner Controls -->
+          <div style="display: flex; gap: 6px;">
+            <button class="btn btn-primary btn-sm" id="btn-start-camera-scan" style="flex: 1;">Open Camera
+              Viewfinder</button>
+            <button class="btn btn-secondary btn-sm" id="btn-stop-camera-scan">Stop</button>
+            <button class="btn btn-secondary btn-sm" id="btn-simulate-lens-scan"
+              title="Simulate optical detection of attendance code">Test Lens Scan</button>
+          </div>
+
+          <!-- Detected Attendance Code Card -->
+          <div class="panel-card" id="scanner-detected-card"
+            style="display: none; border-color: #10b981; background: rgba(16, 185, 129, 0.05);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <span style="font-size: 10px; font-weight: 700; color: #10b981; text-transform: uppercase;">CODE
+                  RECOGNIZED</span>
+                <div id="detected-code-value"
+                  style="font-family: var(--font-mono); font-size: 18px; font-weight: 800; color: #fff;">A235646</div>
+              </div>
+              <span class="status-pill status-ready">MATCHED</span>
+            </div>
+            <div id="detected-class-context" style="font-size: 12px; color: #cbd5e1; margin: 6px 0 10px;">
+              Data Structures · Room AB-204
+            </div>
+            <button class="btn btn-success btn-sm" id="confirm-attendance-btn" style="width: 100%;">
+              Confirm &amp; Mark Attendance
+            </button>
+          </div>
+
+          <!-- Live ERP Attendance & Margin Overview -->
+          <div style="margin-top: 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Live
+                ERP Subject Attendance</span>
+              <button class="btn btn-secondary btn-sm" id="btn-refresh-attendance-tab"
+                style="padding: 2px 8px; font-size: 10px;">Sync ERP</button>
+            </div>
+            <div id="erp-attendance-cards-list" style="display: flex; flex-direction: column; gap: 8px;">
+              <!-- Populated dynamically by CameraScannerModule.loadERPAttendance() -->
+            </div>
+          </div>
+
+          <!-- Recent Attendance History -->
+          <div style="margin-top: 14px; border-top: 1px solid var(--border); padding-top: 12px;">
+            <div
+              style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">
+              Recent Camera Sign-in Codes</div>
+            <div id="recent-attendance-list" style="display: flex; flex-direction: column; gap: 6px;">
+              <!-- Populated by CameraScannerModule -->
+            </div>
+          </div>
+        </div>
+
       </div>
-    </main>
+    </aside>
+
+  </div>
+
+  <!-- MODAL: COMMAND PALETTE (Ctrl+K) -->
+  <div class="modal-overlay" id="command-palette-modal">
+    <div class="palette-box">
+      <input type="text" class="palette-input" id="palette-search-input"
+        placeholder="Type a command or search actions..." autocomplete="off">
+      <div class="palette-results" id="palette-results-list">
+        <!-- Results rendered by CommandPalette -->
+      </div>
+    </div>
   </div>
 
   <!-- MODAL: SCHEDULE AUTO-SUBMIT -->
   <div class="modal-overlay" id="schedule-modal">
-    <div class="modal-box" style="max-width: 520px;">
+    <div class="modal-box">
       <div class="modal-header">
         <h3 class="modal-title" id="schedule-modal-title">Configure Auto-Submit</h3>
         <button class="modal-close" onclick="closeModal('schedule-modal')">&times;</button>
       </div>
       <div class="modal-body">
-        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 18px;" id="schedule-assignment-desc">
-          Automate Google Classroom submission for this assignment once validation passes.
+        <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 14px;">
+          Automatically turn in validated deliverables to Google Classroom before the assignment deadline.
         </p>
-
-        <div style="margin-bottom: 20px;">
-          <label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 8px;">Submit Time Offset:</label>
-          <select id="schedule-offset-select" style="width: 100%; background: #111827; border: 1px solid var(--border); color: #fff; padding: 10px; border-radius: var(--radius-sm);">
-            <option value="4.0" selected>4 hours before deadline (Default Recommended)</option>
+        <div style="margin-bottom: 14px;">
+          <label
+            style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; display: block; margin-bottom: 6px;">Submit
+            Time Offset:</label>
+          <select id="schedule-offset-select"
+            style="width: 100%; background: #111827; border: 1px solid var(--border); color: #fff; padding: 8px; border-radius: var(--radius-sm); font-size: 12px;">
+            <option value="4.0" selected>4 hours before deadline (Default)</option>
             <option value="2.0">2 hours before deadline</option>
             <option value="6.0">6 hours before deadline</option>
             <option value="12.0">12 hours before deadline</option>
             <option value="24.0">24 hours before deadline</option>
-            <option value="0.05">Immediate test (3 minutes from now)</option>
+            <option value="0.05">Immediate test (3 minutes)</option>
           </select>
         </div>
-
-        <div style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: var(--radius-sm); padding: 12px; font-size: 13px; color: #a5b4fc;">
-          <b>Scheduled Pipeline:</b><br>
-          Validation verified → Drive multipart upload → Classroom modifyAttachments → turnIn → State verification.
+        <div
+          style="background: rgba(37, 99, 235, 0.08); border: 1px solid rgba(37, 99, 235, 0.3); border-radius: var(--radius-sm); padding: 8px 10px; font-size: 11px; color: #93c5fd;">
+          <b>Workflow Sequence:</b> Pre-validation check &rarr; Google Drive upload &rarr; modifyAttachments &rarr;
+          turnIn &rarr; State verification.
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-secondary" onclick="closeModal('schedule-modal')">Cancel</button>
-        <button class="btn btn-primary" id="confirm-schedule-btn">Confirm Schedule</button>
+        <button class="btn btn-secondary btn-sm" onclick="closeModal('schedule-modal')">Cancel</button>
+        <button class="btn btn-primary btn-sm" id="confirm-schedule-btn">Confirm Schedule</button>
       </div>
     </div>
   </div>
 
-  <!-- FLOATING 12-STEP EXPO DEMONSTRATION WIDGET -->
-  <div class="demo-overlay" id="expo-demo-overlay">
-    <div class="demo-step-badge" id="demo-step-badge">STEP 1 OF 12</div>
-    <div class="demo-title" id="demo-step-title">Connect Google Classroom</div>
-    <div class="demo-desc" id="demo-step-desc">Connecting simulated Google Classroom environment with courses and pending coursework...</div>
-    <div class="demo-progress">
-      <div class="demo-progress-bar" id="demo-progress-bar"></div>
+  <!-- MODAL: IMPORT TIMETABLE -->
+  <div class="modal-overlay" id="import-timetable-modal">
+    <div class="modal-box" style="max-width: 520px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Import Timetable Schedule</h3>
+        <button class="modal-close" onclick="closeModal('import-timetable-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 10px;">
+          Paste JSON array of classes. Note: Subjects can have different normal rooms on different days (e.g. Digital
+          Electronics in X-201 Tue, C-1011 Thu, C-504 Fri).
+        </p>
+        <textarea id="timetable-json-input" rows="8"
+          style="width: 100%; background: #09090b; border: 1px solid var(--border); border-radius: var(--radius-sm); color: #fff; font-family: var(--font-mono); font-size: 11px; padding: 10px; resize: vertical;"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary btn-sm" onclick="closeModal('import-timetable-modal')">Cancel</button>
+        <button class="btn btn-primary btn-sm" id="submit-import-timetable-btn">Import Entries</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: AUTHENTICATION SETTINGS -->
+  <div class="modal-overlay" id="auth-modal">
+    <div class="modal-box" style="max-width: 420px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Account &amp; OAuth Settings</h3>
+        <button class="modal-close" onclick="closeModal('auth-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="auth-user-status" style="margin-bottom: 12px; font-size: 12px; color: var(--text-secondary);">
+          Sign in or register your student profile (e.g. your university email).
+        </div>
+        <div id="auth-form-container">
+          <div style="margin-bottom: 10px;">
+            <label
+              style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; display: block; margin-bottom: 4px;">Email:</label>
+            <input type="email" id="auth-email-input" placeholder="student@university.edu"
+              style="width: 100%; background: #111827; border: 1px solid var(--border); color: #fff; padding: 8px; border-radius: var(--radius-sm); font-size: 12px;">
+          </div>
+          <div style="margin-bottom: 12px;">
+            <label
+              style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; display: block; margin-bottom: 4px;">Password:</label>
+            <input type="password" id="auth-password-input" placeholder="Min. 8 characters"
+              style="width: 100%; background: #111827; border: 1px solid var(--border); color: #fff; padding: 8px; border-radius: var(--radius-sm); font-size: 12px;">
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn btn-primary btn-sm" id="btn-login-submit" style="flex: 1;">Sign In</button>
+            <button class="btn btn-secondary btn-sm" id="btn-register-submit" style="flex: 1;">Register</button>
+          </div>
+        </div>
+
+        <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); text-align: center;">
+          <button class="btn btn-secondary btn-sm" style="width: 100%; justify-content: center;"
+            onclick="closeModal('auth-modal'); openModal('integrations-modal');">
+            Connect Real Google Classroom &amp; ERP &rarr;
+          </button>
+        </div>
+
+        <div
+          style="margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between;">
+          <a href="/privacy" style="font-size: 11px; color: var(--text-muted); text-decoration: none;">Privacy
+            Policy</a>
+          <a href="/terms" style="font-size: 11px; color: var(--text-muted); text-decoration: none;">Terms of
+            Service</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: REAL GOOGLE CLASSROOM & ERP INTEGRATION HUB -->
+  <div class="modal-overlay" id="integrations-modal">
+    <div class="modal-box" style="max-width: 560px;">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <h3 class="modal-title">Live Integrations Hub</h3>
+          <span class="status-pill status-ready">REAL ENVIRONMENT</span>
+        </div>
+        <button class="modal-close" onclick="closeModal('integrations-modal')">&times;</button>
+      </div>
+
+      <!-- Navigation Tabs inside Integrations Modal: Google Classroom & SRM AP ERP -->
+      <div style="display: flex; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.2); padding: 0 16px;">
+        <button class="integration-sub-tab active" data-target="tab-panel-google"
+          style="padding: 10px 16px; background: transparent; border: none; border-bottom: 2px solid var(--accent); color: #fff; font-size: 12px; font-weight: 700; cursor: pointer;">
+          Google Classroom
+        </button>
+        <button class="integration-sub-tab" data-target="tab-panel-erp"
+          style="padding: 10px 16px; background: transparent; border: none; border-bottom: 2px solid transparent; color: var(--text-secondary); font-size: 12px; font-weight: 700; cursor: pointer;">
+          SRM AP ERP (eVarsity)
+        </button>
+      </div>
+
+      <div class="modal-body" style="padding: 18px 20px;">
+        <!-- TAB 1: GOOGLE CLASSROOM OAUTH -->
+        <div class="integration-tab-panel" id="tab-panel-google">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <span style="font-size: 12px; color: var(--text-secondary);">Google Cloud OAuth 2.0 Credentials</span>
+            <span class="status-pill status-not_started" id="google-modal-status-badge">OFFLINE</span>
+          </div>
+
+          <div
+            style="background: rgba(37, 99, 235, 0.06); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: var(--radius-sm); padding: 10px 12px; font-size: 11px; color: #93c5fd; margin-bottom: 14px; line-height: 1.4;">
+            <b>Google Cloud Setup:</b> Create a Web Application OAuth Client in <a
+              href="https://console.cloud.google.com/apis/credentials" target="_blank"
+              style="color: #60a5fa; text-decoration: underline;">Google Cloud Console</a>, enable Classroom &amp; Drive
+            APIs, and set the Authorized Redirect URI below.
+          </div>
+
+          <div style="margin-bottom: 10px;">
+            <label
+              style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; display: block; margin-bottom: 4px;">Authorized
+              Redirect URI (Copy into Google Console):</label>
+            <input type="text" value="http://localhost:8000/api/auth/google/callback" readonly
+              style="width: 100%; background: #09090b; border: 1px solid var(--border); color: #60a5fa; font-family: var(--font-mono); padding: 7px 10px; border-radius: var(--radius-sm); font-size: 11px;">
+          </div>
+
+          <div style="margin-bottom: 10px;">
+            <label
+              style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; display: block; margin-bottom: 4px;">Client
+              ID:</label>
+            <input type="text" id="google-client-id-input" placeholder="e.g. 1234567890-xxx.apps.googleusercontent.com"
+              style="width: 100%; background: #111827; border: 1px solid var(--border); color: #fff; padding: 8px 10px; border-radius: var(--radius-sm); font-size: 12px;">
+          </div>
+
+          <div style="margin-bottom: 14px;">
+            <label
+              style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; display: block; margin-bottom: 4px;">Client
+              Secret:</label>
+            <input type="password" id="google-client-secret-input" placeholder="e.g. GOCSPX-xxxxxxxxxxxxxxxx"
+              style="width: 100%; background: #111827; border: 1px solid var(--border); color: #fff; padding: 8px 10px; border-radius: var(--radius-sm); font-size: 12px;">
+          </div>
+
+          <div style="display: flex; gap: 8px;">
+            <button class="btn btn-primary btn-sm" id="btn-save-google-credentials" style="flex: 1;">Save Credentials
+              &amp; Sign In with Google</button>
+            <button class="btn btn-secondary btn-sm" id="btn-launch-google-oauth">Sign In (Existing)</button>
+          </div>
+        </div>
+
+        <!-- TAB 2: SRM AP ERP (EVARSITY) -->
+        <div class="integration-tab-panel" id="tab-panel-erp" style="display: none;">
+          <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 14px; line-height: 1.5;">
+            Direct live synchronization exclusively with <b>SRM AP eVarsity / Student Corner</b>
+            (<code>student.srmap.edu.in</code>).
+            Enter your student credentials to automatically authenticate, solve the portal captcha locally, and fetch
+            your
+            official timetable, room numbers, enrolled courses, and attendance.
+          </p>
+
+          <!-- Connected ERP Status Card -->
+          <div class="panel-card" id="erp-modal-status-card"
+            style="display: none; margin-bottom: 14px; background: rgba(16, 185, 129, 0.06); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: var(--radius-sm); padding: 12px;">
+            <!-- Populated dynamically via IntegrationsModule.loadStatus() -->
+          </div>
+
+          <!-- Direct SRM AP Login Form -->
+          <div id="erp-login-form-container">
+            <div style="margin-bottom: 12px;">
+              <label
+                style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; display: block; margin-bottom: 5px;">
+                SRM AP Registration Number:
+              </label>
+              <input type="text" id="erp-direct-id-input" placeholder="e.g. AP23110010042 or AP24..."
+                autocomplete="username"
+                style="width: 100%; background: #111827; border: 1px solid var(--border); color: #fff; padding: 9px 12px; border-radius: var(--radius-sm); font-size: 13px; font-family: var(--font-mono);">
+            </div>
+
+            <div style="margin-bottom: 14px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">
+                  ERP Portal Password:
+                </label>
+                <button type="button" id="erp-toggle-password-btn"
+                  style="background: none; border: none; color: #60a5fa; font-size: 11px; cursor: pointer; padding: 0;">Show</button>
+              </div>
+              <input type="password" id="erp-direct-password-input" placeholder="Enter your SRM AP portal password"
+                autocomplete="current-password"
+                style="width: 100%; background: #111827; border: 1px solid var(--border); color: #fff; padding: 9px 12px; border-radius: var(--radius-sm); font-size: 13px;">
+              <div
+                style="display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 11px; color: var(--text-muted);">
+                <span style="color: #10b981;">🔒</span>
+                <span>Encrypted at rest with AES-128/Fernet. Credentials are never logged or exposed.</span>
+              </div>
+            </div>
+
+            <button class="btn btn-primary" id="btn-connect-direct-erp"
+              style="width: 100%; padding: 10px; font-weight: 600; font-size: 13px;">
+              CONNECT SRM AP ERP
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLOATING 12-STEP TEST TOUR OVERLAY -->
+  <div class="expo-overlay" id="expo-demo-overlay">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+      <span class="status-pill status-ready" id="demo-step-badge">STEP 1 OF 12</span>
+      <button class="toast-close" onclick="ExpoDemoModule.closeDemo()">&times;</button>
+    </div>
+    <div id="demo-step-title" style="font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 4px;">Initialize
+      Classroom Environment</div>
+    <p id="demo-step-desc" style="font-size: 11px; color: var(--text-secondary); margin-bottom: 10px;">Connecting
+      simulated Google Classroom environment with courses and pending coursework...</p>
+    <div
+      style="height: 3px; background: rgba(255, 255, 255, 0.1); border-radius: 2px; overflow: hidden; margin-bottom: 10px;">
+      <div id="demo-progress-bar" style="height: 100%; width: 8%; background: #3b82f6; transition: width 0.3s ease;">
+      </div>
     </div>
     <div style="display: flex; justify-content: space-between; align-items: center;">
-      <button class="btn btn-secondary" id="demo-pause-btn" style="font-size: 12px; padding: 6px 12px;">Pause</button>
-      <div style="display: flex; gap: 8px;">
-        <button class="btn btn-secondary" id="demo-close-btn" style="font-size: 12px; padding: 6px 12px;">Close</button>
-        <button class="btn btn-primary" id="demo-next-btn" style="font-size: 12px; padding: 6px 12px;">Next Step →</button>
+      <button class="btn btn-secondary btn-sm" id="demo-pause-btn"
+        style="padding: 3px 8px; font-size: 10px;">Pause</button>
+      <div style="display: flex; gap: 6px;">
+        <button class="btn btn-secondary btn-sm" id="demo-close-btn"
+          style="padding: 3px 8px; font-size: 10px;">Close</button>
+        <button class="btn btn-primary btn-sm" id="demo-next-btn" style="padding: 3px 8px; font-size: 10px;">Next Step
+          &rarr;</button>
       </div>
     </div>
   </div>
 
   <!-- Scripts -->
   <script src="/js/app.js"></script>
+  <script src="/js/camera_scanner.js"></script>
   <script src="/js/timetable.js"></script>
   <script src="/js/classroom.js"></script>
   <script src="/js/study_brain.js"></script>
   <script src="/js/generator.js"></script>
   <script src="/js/validation.js"></script>
   <script src="/js/scheduler.js"></script>
+  <script src="/js/integrations.js"></script>
   <script src="/js/expo_demo.js"></script>
 </body>
+
 </html>

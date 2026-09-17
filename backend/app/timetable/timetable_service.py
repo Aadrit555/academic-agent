@@ -164,13 +164,31 @@ class TimetableService:
             return
             
         current_day = datetime.now().weekday()
-        # Seed classes for Monday-Friday, including current day
-        days = [current_day, (current_day + 1) % 7, (current_day + 2) % 7]
-        entries = []
-        for d in set(days):
-            entries.extend([
-                {"subject": "Data Structures", "day_of_week": d, "start_time": "10:00", "end_time": "11:00", "classroom": "AB-204"},
-                {"subject": "Discrete Mathematics", "day_of_week": d, "start_time": "12:00", "end_time": "13:00", "classroom": "AB-302"},
-                {"subject": "Algorithms Lab", "day_of_week": d, "start_time": "14:00", "end_time": "16:00", "classroom": "LAB-7"},
-            ])
+        # Seed realistic schedule across Monday-Friday
+        entries = [
+            # Monday
+            {"subject": "Data Structures", "day_of_week": 0, "start_time": "10:00", "end_time": "11:00", "classroom": "AB-204"},
+            {"subject": "Discrete Mathematics", "day_of_week": 0, "start_time": "12:00", "end_time": "13:00", "classroom": "AB-302"},
+            {"subject": "Algorithms Lab", "day_of_week": 0, "start_time": "14:00", "end_time": "16:00", "classroom": "LAB-7"},
+            # Tuesday: CSE 207 in X-201
+            {"subject": "Digital Electronics", "day_of_week": 1, "start_time": "09:00", "end_time": "09:50", "classroom": "X-201"},
+            {"subject": "Data Structures", "day_of_week": 1, "start_time": "11:00", "end_time": "12:00", "classroom": "C-801"},
+            # Wednesday
+            {"subject": "Algorithms Lab", "day_of_week": 2, "start_time": "10:00", "end_time": "12:00", "classroom": "LAB-7"},
+            {"subject": "Discrete Mathematics", "day_of_week": 2, "start_time": "14:00", "end_time": "15:00", "classroom": "AB-302"},
+            # Thursday: CSE 207 in C-1011
+            {"subject": "Digital Electronics", "day_of_week": 3, "start_time": "09:00", "end_time": "09:50", "classroom": "C-1011"},
+            {"subject": "Data Structures", "day_of_week": 3, "start_time": "10:00", "end_time": "11:00", "classroom": "AB-204"},
+            # Friday: CSE 207 in C-504
+            {"subject": "Discrete Mathematics", "day_of_week": 4, "start_time": "11:00", "end_time": "12:00", "classroom": "AB-302"},
+            {"subject": "Digital Electronics", "day_of_week": 4, "start_time": "14:00", "end_time": "15:00", "classroom": "C-504"},
+        ]
+        
+        # Ensure current day also has guaranteed upcoming class for live demo
+        has_today = any(e["day_of_week"] == current_day for e in entries)
+        if not has_today:
+            entries.append({"subject": "Data Structures", "day_of_week": current_day, "start_time": "10:00", "end_time": "11:00", "classroom": "AB-204"})
+            entries.append({"subject": "Digital Electronics", "day_of_week": current_day, "start_time": "14:00", "end_time": "15:00", "classroom": "C-1011"})
+            
         cls.import_entries(db, user, entries)
+

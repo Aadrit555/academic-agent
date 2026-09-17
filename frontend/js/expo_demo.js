@@ -1,4 +1,4 @@
-// 12-Step Interactive Expo Demonstration Module
+// 12-Step Interactive Classroom Add-on Expo Demonstration
 const ExpoDemoModule = {
   currentStep: 0,
   timer: null,
@@ -8,68 +8,72 @@ const ExpoDemoModule = {
   steps: [
     {
       num: 1,
-      title: "Step 1: Connect Google Classroom",
-      desc: "Connecting authorized Google Classroom environment and retrieving courses & coursework...",
+      title: "Step 1: Open Google Classroom",
+      desc: "Loading authentic Google Classroom environment with enrolled courses and active stream...",
       async execute() {
         await api("/demo/setup", { method: "POST" });
         await checkAuthStatus();
-        navigateTo("classroom");
         await ClassroomModule.loadClassroom();
       }
     },
     {
       num: 2,
-      title: "Step 2: Import Academic Timetable",
-      desc: "Importing class schedule entries with subjects, days, times, and classrooms...",
+      title: "Step 2: Open Academic Agent Companion Add-on",
+      desc: "Launching Academic Agent embedded companion add-on inside Google Classroom...",
       async execute() {
-        navigateTo("timetable");
-        await TimetableModule.loadTimetable();
+        navigateToAddonTab("home");
+        await loadHomeSummary();
       }
     },
     {
       num: 3,
-      title: "Step 3: Upload Course Materials",
-      desc: "Course documents (Unit-2.pdf and Lab-Manual.pdf) ingested and indexed by course...",
+      title: "Step 3: Show Next Class with Exact Room",
+      desc: "Checking timetable context: Digital Electronics (CSE 207) at 09:00 in Room C-1011...",
       async execute() {
-        navigateTo("study-brain");
-        await StudyBrainModule.loadStudyBrain();
+        navigateToAddonTab("next-class");
+        await TimetableModule.loadTimetable();
       }
     },
     {
       num: 4,
-      title: "Step 4: Classroom Assignment Detected",
-      desc: "Classroom assignment detected: 'DAA LAB 4: Implement Merge Sort in C' (Due Tomorrow)...",
+      title: "Step 4: Select Assignment from Classroom Stream",
+      desc: "Classroom coursework detected: 'DAA LAB 4: Implement Merge Sort in C'...",
       async execute() {
-        navigateTo("classroom");
-        await ClassroomModule.loadClassroom();
+        navigateToAddonTab("assignments");
+        const daa = AppState.coursework.find(c => c.title.includes("Merge Sort"));
+        if (daa) GeneratorModule.selectAssignment(daa.id);
       }
     },
     {
       num: 5,
-      title: "Step 5: Click Generate Assignment",
-      desc: "Reading assignment instructions, pulling Unit-2 & Lab Manual context, and generating MergeSort.c...",
+      title: "Step 5: AI Dynamic Specification Extraction",
+      desc: "AI reads assignment material and extracts required C code, test suite, benchmark CSV, and report...",
       async execute() {
-        navigateTo("generator");
-        await GeneratorModule.loadGenerator();
-        // Select DAA Lab 4 if available
         const daa = AppState.coursework.find(c => c.title.includes("Merge Sort"));
-        if (daa) GeneratorModule.selectAssignment(daa.id);
-        await GeneratorModule.triggerGeneration();
+        if (daa) await GeneratorModule.updateAssignmentInfo();
       }
     },
     {
       num: 6,
-      title: "Step 6: Code Validation Pipeline",
-      desc: "Reading ✓ Generating ✓ Compiling with MinGW gcc -Wall -Wextra ✓ Testing ✓ Ready for Submission ✓",
+      title: "Step 6: Synthesize Assignment Deliverables",
+      desc: "Synthesizing MergeSort.c with modular divide-and-conquer implementation from course syllabus...",
+      async execute() {
+        await GeneratorModule.triggerGeneration();
+      }
+    },
+    {
+      num: 7,
+      title: "Step 7: Execute Compiler Validation Pipeline",
+      desc: "Compiling with gcc -Wall -Wextra, executing synthetic test cases, verifying zero compiler warnings...",
       async execute() {
         const daa = AppState.coursework.find(c => c.title.includes("Merge Sort"));
         if (daa) await ValidationModule.runValidation(daa.id);
       }
     },
     {
-      num: 7,
-      title: "Step 7: Enable Auto-Submit (4 Hours Before Deadline)",
-      desc: "Enabling automated turn-in scheduled for 4 hours before the assignment deadline...",
+      num: 8,
+      title: "Step 8: Configure Auto-Submit (4 Hours Before Deadline)",
+      desc: "Enabling persistent automated Classroom turn-in scheduled for 4 hours prior to deadline...",
       async execute() {
         const daa = AppState.coursework.find(c => c.title.includes("Merge Sort"));
         if (daa) {
@@ -78,24 +82,16 @@ const ExpoDemoModule = {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ coursework_id: daa.id, offset_hours: 4.0, auto_submit_enabled: true })
           });
+          Toast.success("Auto-submit enabled for 4 hours before deadline.");
         }
-      }
-    },
-    {
-      num: 8,
-      title: "Step 8: Auto-Submission Scheduled",
-      desc: "Schedule stored persistently in background engine: Submitting 4 hours prior to deadline...",
-      async execute() {
-        navigateTo("schedules");
-        await SchedulerModule.loadSchedules();
       }
     },
     {
       num: 9,
       title: "Step 9: Ask Study Brain: Summarize Unit 2",
-      desc: "Study Brain synthesizes structured summary from uploaded Unit-2.pdf with source page citations...",
+      desc: "Synthesizing structured summary from Unit-2.pdf with source page citations...",
       async execute() {
-        navigateTo("study-brain");
+        navigateToAddonTab("study");
         await StudyBrainModule.loadStudyBrain();
         await StudyBrainModule.runAction("summary");
       }
@@ -103,34 +99,29 @@ const ExpoDemoModule = {
     {
       num: 10,
       title: "Step 10: Ask Study Brain: Generate 10 Questions",
-      desc: "Generating high-yield exam & viva questions directly from course notes...",
+      desc: "Generating high-yield exam and viva questions directly from course notes...",
       async execute() {
-        navigateTo("study-brain");
+        navigateToAddonTab("study");
         await StudyBrainModule.runAction("questions");
       }
     },
     {
       num: 11,
-      title: "Step 11: Display NEXT CLASS Context",
-      desc: "Academic Agent contextual awareness: NEXT CLASS: Data Structures (AB-204 · 10:00 AM)...",
+      title: "Step 11: Launch Camera Attendance Scanner",
+      desc: "Opening Google Lens-style attendance viewfinder with optical code recognition...",
       async execute() {
-        navigateTo("home");
-        await loadHomeSummary();
+        navigateToAddonTab("attendance");
+        await CameraScannerModule.loadRecentAttendance();
       }
     },
     {
       num: 12,
-      title: "Step 12: Fast Attendance Action",
-      desc: "Fast attendance entry for the current class in one tap: Entering code 'A235646'...",
+      title: "Step 12: Optical Code Detection & Authorized Mark",
+      desc: "Scanning code 'A235646', matching active class context, and recording verified attendance...",
       async execute() {
-        navigateTo("home");
-        document.getElementById("quick-attendance-code").value = "A235646";
-        await api("/attendance/mark", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ attendance_code: "A235646" })
-        });
-        alert("✓ EXPO DEMO COMPLETE! All 12 academic workflows demonstrated seamlessly.");
+        await CameraScannerModule.triggerCodeDetection("A235646");
+        await CameraScannerModule.confirmAttendance();
+        Toast.success("EXPO DEMO COMPLETE: All 12 Classroom Add-on workflows verified.");
       }
     }
   ],
@@ -156,12 +147,17 @@ const ExpoDemoModule = {
     }
 
     const s = this.steps[this.currentStep];
-    document.getElementById("demo-step-badge").textContent = `STEP ${s.num} OF ${this.totalSteps}`;
-    document.getElementById("demo-step-title").textContent = s.title;
-    document.getElementById("demo-step-desc").textContent = s.desc;
-    
+    const badge = document.getElementById("demo-step-badge");
+    const title = document.getElementById("demo-step-title");
+    const desc = document.getElementById("demo-step-desc");
+    const bar = document.getElementById("demo-progress-bar");
+
+    if (badge) badge.textContent = `STEP ${s.num} OF ${this.totalSteps}`;
+    if (title) title.textContent = s.title;
+    if (desc) desc.textContent = s.desc;
+
     const pct = ((s.num) / this.totalSteps) * 100;
-    document.getElementById("demo-progress-bar").style.width = `${pct}%`;
+    if (bar) bar.style.width = `${pct}%`;
 
     try {
       await s.execute();
@@ -172,7 +168,7 @@ const ExpoDemoModule = {
     if (!this.isPaused && this.currentStep < this.steps.length - 1) {
       this.timer = setTimeout(() => {
         this.nextStep();
-      }, 4500);
+      }, 4200);
     }
   },
 
@@ -187,15 +183,18 @@ const ExpoDemoModule = {
     const btn = document.getElementById("demo-pause-btn");
     if (this.isPaused) {
       clearTimeout(this.timer);
-      btn.textContent = "Resume";
+      if (btn) btn.textContent = "Resume";
     } else {
-      btn.textContent = "Pause";
+      if (btn) btn.textContent = "Pause";
       this.nextStep();
     }
   }
 };
 
 document.addEventListener("DOMContentLoaded", () => {
+  const startBtn = document.getElementById("start-expo-demo-btn");
+  if (startBtn) startBtn.addEventListener("click", () => ExpoDemoModule.startDemo());
+
   const nextBtn = document.getElementById("demo-next-btn");
   if (nextBtn) nextBtn.addEventListener("click", () => ExpoDemoModule.nextStep());
 
