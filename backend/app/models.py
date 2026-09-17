@@ -149,6 +149,9 @@ class GeneratedAssignment(Base):
     file_type = Column(String(20), nullable=False) # ".c", ".cpp", ".java", ".py", ".docx", ".pdf"
     language = Column(String(50), default="") # "c", "cpp", "java", "python", "document"
     code_or_content = Column(Text, nullable=False)
+    report_file_name = Column(String(255), default="")
+    report_file_path = Column(String(500), default="")
+    report_content = Column(Text, default="")
     created_at = Column(DateTime, default=utcnow)
 
     coursework = relationship("Coursework", back_populates="generated_assignments")

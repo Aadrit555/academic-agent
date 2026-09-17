@@ -503,6 +503,219 @@ body {
   border-radius: 3px;
 }
 
+.deliv-action-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 8px;
+}
+
+.deliv-tabs-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.deliv-nav-tab {
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+
+.deliv-nav-tab:hover {
+  background: rgba(51, 65, 85, 0.8);
+  color: #fff;
+  border-color: rgba(96, 165, 250, 0.4);
+}
+
+.deliv-nav-tab.active {
+  background: rgba(37, 99, 235, 0.25);
+  border-color: #3b82f6;
+  color: #93c5fd;
+  font-weight: 700;
+}
+
+.deliv-export-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.pill-pass {
+  background: #10b981;
+  color: #fff;
+  font-size: 8px;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+/* ── Academic Report Preview ────────────────────────────────────────────── */
+.report-view-container {
+  background: #090e1a;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  max-height: 380px;
+  overflow-y: auto;
+  color: #cbd5e1;
+  font-size: 11.5px;
+  line-height: 1.55;
+}
+
+.report-header-banner {
+  border-bottom: 2px solid rgba(59, 130, 246, 0.4);
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+}
+
+.report-header-banner .rep-badge {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #60a5fa;
+  text-transform: uppercase;
+}
+
+.report-header-banner .rep-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #f8fafc;
+  margin-top: 2px;
+}
+
+.report-body-content .rep-h2 {
+  font-size: 13px;
+  font-weight: 700;
+  color: #93c5fd;
+  margin-top: 10px;
+  margin-bottom: 4px;
+}
+
+.report-body-content .rep-h3 {
+  font-size: 12px;
+  font-weight: 700;
+  color: #60a5fa;
+  margin-top: 8px;
+  margin-bottom: 4px;
+}
+
+.report-body-content .rep-h4 {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #38bdf8;
+  margin-top: 10px;
+  margin-bottom: 4px;
+  border-bottom: 1px dashed rgba(56, 189, 248, 0.2);
+  padding-bottom: 2px;
+}
+
+.report-body-content .rep-bullet {
+  padding-left: 10px;
+  margin: 2px 0;
+}
+
+.report-body-content .rep-hr {
+  border: 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.2);
+  margin: 10px 0;
+}
+
+.report-body-content .rep-spacer {
+  height: 8px;
+}
+
+.report-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  margin: 8px 0;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+}
+
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10.5px;
+  text-align: left;
+}
+
+.report-table th {
+  background: rgba(30, 41, 59, 0.9);
+  color: #93c5fd;
+  padding: 5px 8px;
+  font-weight: 700;
+  border: 1px solid var(--border-color);
+  white-space: nowrap;
+}
+
+.report-table td {
+  padding: 4px 8px;
+  border: 1px solid var(--border-color);
+  color: #e2e8f0;
+}
+
+.report-table tr:nth-child(even) td {
+  background: rgba(15, 23, 42, 0.5);
+}
+
+.inline-code {
+  background: rgba(30, 41, 59, 0.8);
+  color: #f472b6;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+/* ── Code & Validation views ────────────────────────────────────────────── */
+.code-view-container, .validation-view-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.code-header-bar, .val-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.val-status-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+}
+
+.val-status-badge.status-pass {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.val-status-badge.status-fail {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
 .deliv-actions {
   display: flex;
   gap: 5px;

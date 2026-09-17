@@ -246,10 +246,10 @@ const AddonApp = {
 
     // Fetch existing specification, deliverable, validation, schedule, and course materials
     await Promise.all([
-      this.loadAssignmentSpec(this.state.selectedId),
-      this.loadAssignmentDeliverable(this.state.selectedId),
-      this.loadSubmissionSchedule(this.state.selectedId),
-      this.loadCourseMaterials(this.state.activeItem ? this.state.activeItem.course_id : null)
+      this.loadAssignmentSpec(this.state.selectedId).catch(() => null),
+      this.loadAssignmentDeliverable(this.state.selectedId).catch(() => null),
+      this.loadSubmissionSchedule(this.state.selectedId).catch(() => null),
+      this.loadCourseMaterials(this.state.activeItem ? this.state.activeItem.course_id : null).catch(() => null)
     ]);
 
     this.renderAssignmentSection();
@@ -345,7 +345,7 @@ const AddonApp = {
     let materials = [];
     try {
       materials = JSON.parse(item.materials_json || "[]");
-    } catch {}
+    } catch { }
 
     if (materials.length > 0) {
       materialsHtml = `
@@ -503,6 +503,11 @@ const AddonApp = {
     }
   },
 
+  switchDelivTab(tabName) {
+    this.state.delivTab = tabName;
+    this.renderDeliverablesBox();
+  },
+
   renderDeliverablesBox() {
     const box = document.getElementById("deliverables-box");
     if (!box) return;
@@ -513,48 +518,233 @@ const AddonApp = {
     if (!deliv) {
       box.innerHTML = `
         <div class="empty-compact">
-          <span>Deliverables not yet generated. Click <b>Execute Assignment</b> above.</span>
+          <span>Deliverables not yet generated. Click <b>⚡ EXECUTE ASSIGNMENT</b> above.</span>
         </div>
       `;
       return;
     }
 
-    const codeSnippet = (deliv.code_or_content || "").slice(0, 500);
+    const hasReport = !!(deliv.has_report || deliv.report_content);
+    if (!this.state.delivTab) {
+      this.state.delivTab = hasReport ? 'report' : 'code';
+    }
+    const currentTab = this.state.delivTab;
     const checklist = val && val.checklist ? val.checklist : [];
+    const reportContent = deliv.report_content || "";
+    const codeSnippet = deliv.code_or_content || "";
+    const reportName = deliv.report_file_name || "Academic_Lab_Report.docx";
+    const codeName = deliv.file_name || "main.c";
+
+    let tabBodyHtml = "";
+
+    if (currentTab === 'report') {
+      tabBodyHtml = `
+        <div class="report-view-container">
+          <div class="report-header-banner">
+            <div class="rep-badge">SRM UNIVERSITY AP • CSE DEPARTMENT • ACADEMIC RECORD</div>
+            <div class="rep-title">${escapeHtml(reportName)}</div>
+          </div>
+          <div class="report-body-content">
+            ${this.renderMarkdownHtml(reportContent || 'Academic Lab Report generated and verified. Click "Download Report (.docx)" above to inspect the complete Word document.')}
+          </div>
+        </div>
+      `;
+    } else if (currentTab === 'code') {
+      tabBodyHtml = `
+        <div class="code-view-container">
+          <div class="code-header-bar">
+            <div class="code-title">
+              <span class="file-ext">${escapeHtml(deliv.file_type || '.c')}</span>
+              <b>${escapeHtml(codeName)}</b>
+            </div>
+            <button class="btn btn-secondary btn-xs" onclick="AddonApp.copyDeliverableCode()">📋 Copy Source Code</button>
+          </div>
+          <div class="code-preview-wrap" style="max-height: 320px;">
+            <pre class="code-preview"><code>${escapeHtml(codeSnippet)}</code></pre>
+          </div>
+        </div>
+      `;
+    } else if (currentTab === 'validation') {
+      tabBodyHtml = `
+        <div class="validation-view-container">
+          <div class="val-header-bar">
+            <div class="val-status-badge ${val && val.passed ? 'status-pass' : 'status-fail'}">
+              ${val && val.passed ? '✓ COMPILER VERIFICATION PASSED (ZERO WARNINGS)' : '⚡ VALIDATION PENDING / FLAGGED'}
+            </div>
+            <button class="btn btn-success btn-xs" onclick="AddonApp.validateDeliverable()" ${this.state.isValidating ? 'disabled' : ''}>
+              ${this.state.isValidating ? 'Compiling...' : '⚡ Re-Run Compiler'}
+            </button>
+          </div>
+
+          <div class="val-checklist">
+            <div class="val-title">AUTOMATED TEST &amp; COMPILER CHECKLIST:</div>
+            ${checklist.length > 0 ? checklist.map(c => `
+              <div class="check-item ${c.passed ? 'check-pass' : 'check-fail'}">
+                <span>${c.passed ? '✓' : '✗'}</span>
+                <span class="check-text"><b>${escapeHtml(c.title)}:</b> ${escapeHtml(c.details || '')}</span>
+              </div>
+            `).join('') : '<div class="empty-compact">No validation run yet. Click Re-Run Compiler above.</div>'}
+          </div>
+
+          ${val && val.compiler_output ? `
+            <div class="terminal-log-wrap" style="margin-top: 8px;">
+              <div class="log-title" style="font-size: 9px; font-weight: 700; color: var(--text-muted); margin-bottom: 3px;">COMPILER OUTPUT (gcc -Wall -Wextra):</div>
+              <pre class="terminal-log" style="background: #020617; border: 1px solid var(--border-color); border-radius: 4px; padding: 6px; font-size: 10px; color: #a5f3fc; overflow: auto; max-height: 100px;"><code>${escapeHtml(val.compiler_output)}</code></pre>
+            </div>
+          ` : ''}
+
+          ${val && val.test_output ? `
+            <div class="terminal-log-wrap" style="margin-top: 8px;">
+              <div class="log-title" style="font-size: 9px; font-weight: 700; color: var(--text-muted); margin-bottom: 3px;">EXECUTION TEST SUITE OUTPUT:</div>
+              <pre class="terminal-log" style="background: #020617; border: 1px solid var(--border-color); border-radius: 4px; padding: 6px; font-size: 10px; color: #86efac; overflow: auto; max-height: 120px;"><code>${escapeHtml(val.test_output)}</code></pre>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
 
     box.innerHTML = `
       <div class="deliv-card">
-        <div class="deliv-header">
-          <div class="deliv-name">
-            <span class="file-ext">${escapeHtml(deliv.file_type || '.c')}</span>
-            <b>${escapeHtml(deliv.file_name)}</b>
+        <div class="deliv-action-toolbar">
+          <div class="deliv-tabs-nav">
+            ${hasReport ? `
+              <button class="deliv-nav-tab ${currentTab === 'report' ? 'active' : ''}" onclick="AddonApp.switchDelivTab('report')">
+                📄 Academic Lab Report
+              </button>
+            ` : ''}
+            <button class="deliv-nav-tab ${currentTab === 'code' ? 'active' : ''}" onclick="AddonApp.switchDelivTab('code')">
+              💻 Source Code (${escapeHtml(deliv.file_type || '.c')})
+            </button>
+            <button class="deliv-nav-tab ${currentTab === 'validation' ? 'active' : ''}" onclick="AddonApp.switchDelivTab('validation')">
+              ⚡ Compiler Validation ${val && val.passed ? '<span class="pill-pass">✓ PASS</span>' : ''}
+            </button>
           </div>
-          <div class="deliv-actions">
-            <button class="btn btn-secondary btn-xs" onclick="AddonApp.copyDeliverableCode()">📋 Copy</button>
-            <button class="btn btn-secondary btn-xs" onclick="AddonApp.downloadDeliverable()">⬇️ Download</button>
-            <button class="btn btn-success btn-xs" onclick="AddonApp.validateDeliverable()" ${this.state.isValidating ? 'disabled' : ''}>
-              ${this.state.isValidating ? 'Compiling...' : '⚡ Run Compiler'}
+          
+          <div class="deliv-export-actions">
+            ${hasReport ? `
+              <button class="btn btn-secondary btn-xs" onclick="AddonApp.downloadReport()" title="Download Word Document Report (.docx)">
+                ⬇️ Report (.docx)
+              </button>
+            ` : ''}
+            <button class="btn btn-secondary btn-xs" onclick="AddonApp.downloadDeliverable()" title="Download Source Code File">
+              ⬇️ Code (${escapeHtml(deliv.file_type || '.c')})
+            </button>
+            <button class="btn btn-primary btn-xs" onclick="AddonApp.downloadAll()" title="Download Submission Package (.zip)">
+              📦 Download All (.zip)
             </button>
           </div>
         </div>
 
-        <div class="code-preview-wrap">
-          <pre class="code-preview"><code>${escapeHtml(codeSnippet)}${deliv.code_or_content && deliv.code_or_content.length > 500 ? '\n... [truncated]' : ''}</code></pre>
-        </div>
-
-        ${checklist.length > 0 ? `
-          <div class="val-checklist">
-            <div class="val-title">COMPILER VALIDATION VERIFICATION:</div>
-            ${checklist.map(c => `
-              <div class="check-item ${c.passed ? 'check-pass' : 'check-fail'}">
-                <span>${c.passed ? '✓' : '✗'}</span>
-                <span class="check-text">${escapeHtml(c.title)}: ${escapeHtml(c.details || '')}</span>
-              </div>
-            `).join("")}
-          </div>
-        ` : ''}
+        ${tabBodyHtml}
       </div>
     `;
+  },
+
+  async downloadReport() {
+    if (!this.state.selectedId) return;
+    try {
+      const blob = await api(`/assignment/${this.state.selectedId}/download-report`);
+      const fileName = (this.state.deliverable && this.state.deliverable.report_file_name) || "Academic_Report.docx";
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      Toast.success(`Downloaded ${fileName}`);
+    } catch (e) {
+      Toast.error(`Download failed: ${e.message}`);
+    }
+  },
+
+  async downloadAll() {
+    if (!this.state.selectedId) return;
+    try {
+      Toast.info("Packaging verified source code and academic report into zip archive...");
+      const blob = await api(`/assignment/${this.state.selectedId}/download-all`);
+      const baseName = (this.state.deliverable && this.state.deliverable.file_name) 
+        ? this.state.deliverable.file_name.replace(/\.[^/.]+$/, "") 
+        : "Submission";
+      const fileName = `${baseName}_Package.zip`;
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      Toast.success(`Downloaded ${fileName}`);
+    } catch (e) {
+      Toast.error(`Download failed: ${e.message}`);
+    }
+  },
+
+  renderMarkdownHtml(md) {
+    if (!md) return '';
+    let escaped = escapeHtml(md);
+
+    // Convert markdown tables
+    const lines = escaped.split('\n');
+    let inTable = false;
+    let tableHtml = '';
+    const processed = [];
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (line.startsWith('|') && line.endsWith('|')) {
+        if (!inTable) {
+          inTable = true;
+          tableHtml = '<div class="report-table-wrap"><table class="report-table"><tbody>';
+        }
+        if (line.includes('---')) {
+          continue; // Separator row
+        }
+        const cells = line.split('|').slice(1, -1);
+        const isHeader = !tableHtml.includes('<tr>');
+        tableHtml += '<tr>' + cells.map(c => `<${isHeader ? 'th' : 'td'}>${c.trim()}</${isHeader ? 'th' : 'td'}>`).join('') + '</tr>';
+      } else {
+        if (inTable) {
+          tableHtml += '</tbody></table></div>';
+          processed.push(tableHtml);
+          inTable = false;
+          tableHtml = '';
+        }
+        processed.push(lines[i]);
+      }
+    }
+    if (inTable) {
+      tableHtml += '</tbody></table></div>';
+      processed.push(tableHtml);
+    }
+
+    let out = processed.join('\n');
+
+    // Headings
+    out = out.replace(/^### (.*$)/gim, '<h4 class="rep-h4">$1</h4>');
+    out = out.replace(/^## (.*$)/gim, '<h3 class="rep-h3">$1</h3>');
+    out = out.replace(/^# (.*$)/gim, '<h2 class="rep-h2">$1</h2>');
+
+    // Bold & Italics
+    out = out.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+    out = out.replace(/\*(.*?)\*/g, '<i>$1</i>');
+
+    // Inline code
+    out = out.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
+
+    // Horizontal rules
+    out = out.replace(/^---$/gim, '<hr class="rep-hr" />');
+
+    // Bullet points
+    out = out.replace(/^\• (.*$)/gim, '<div class="rep-bullet">• $1</div>');
+    out = out.replace(/^\- (.*$)/gim, '<div class="rep-bullet">• $1</div>');
+
+    // Paragraph breaks
+    out = out.replace(/\n\n+/g, '<div class="rep-spacer"></div>');
+
+    return out;
   },
 
   async downloadDeliverable() {
@@ -715,7 +905,6 @@ const AddonApp = {
 
   async reclaimSubmission() {
     if (!this.state.selectedId) return;
-    if (!confirm("Do you want to unsubmit / reclaim this assignment in Google Classroom to make revisions?")) return;
 
     try {
       Toast.info("Reclaiming submission from Google Classroom...");
@@ -761,7 +950,6 @@ const AddonApp = {
 
   async submitNow() {
     if (!this.state.selectedId) return;
-    if (!confirm("Execute autonomous turn-in (generate deliverable, compile & validate in sandbox, upload to Drive, and turn in to Google Classroom)?")) return;
 
     try {
       Toast.info("Executing autonomous submission pipeline...");
@@ -845,7 +1033,6 @@ const AddonApp = {
   },
 
   async disconnectERP() {
-    if (!confirm("Are you sure you want to disconnect your student portal?")) return;
     try {
       await api("/erp/disconnect", { method: "POST" });
       Toast.success("Student portal disconnected.");
@@ -869,7 +1056,6 @@ const AddonApp = {
   },
 
   async disconnectGoogle() {
-    if (!confirm("Are you sure you want to disconnect Google Classroom?")) return;
     try {
       await api("/auth/disconnect", { method: "POST" });
       Toast.success("Google Classroom disconnected.");

@@ -55,6 +55,15 @@ def init_db():
             cw_cols = [col["name"] for col in inspector.get_columns("coursework")]
             if "materials_json" not in cw_cols:
                 conn.execute(text("ALTER TABLE coursework ADD COLUMN materials_json TEXT DEFAULT '[]'"))
+
+        if "generated_assignments" in inspector.get_table_names():
+            ga_cols = [col["name"] for col in inspector.get_columns("generated_assignments")]
+            if "report_file_name" not in ga_cols:
+                conn.execute(text("ALTER TABLE generated_assignments ADD COLUMN report_file_name VARCHAR(255) DEFAULT ''"))
+            if "report_file_path" not in ga_cols:
+                conn.execute(text("ALTER TABLE generated_assignments ADD COLUMN report_file_path VARCHAR(500) DEFAULT ''"))
+            if "report_content" not in ga_cols:
+                conn.execute(text("ALTER TABLE generated_assignments ADD COLUMN report_content TEXT DEFAULT ''"))
         
         conn.commit()
 

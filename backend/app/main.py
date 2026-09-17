@@ -441,8 +441,13 @@ def get_coursework_list(db: Session = Depends(get_db), user: User = Depends(curr
             "due_time": w.due_time,
             "max_points": w.max_points,
             "status": w.status,
+            "alternate_link": w.alternate_link or "",
+            "materials_json": w.materials_json or "[]",
+            "submission_id": w.submission_id or "",
             "has_generated_file": bool(assignment),
             "generated_file_name": assignment.file_name if assignment else None,
+            "has_report": bool(assignment and assignment.report_file_path and Path(assignment.report_file_path).exists()),
+            "report_file_name": assignment.report_file_name if assignment else None,
             "validation_passed": validation.passed if validation else False,
             "schedule": {
                 "offset_hours": schedule.offset_hours,
@@ -576,7 +581,7 @@ def get_assignment_specification(coursework_id: int, db: Session = Depends(get_d
     cw = db.query(Coursework).filter_by(id=coursework_id, user_id=user.id).first()
     if not cw:
         raise HTTPException(status_code=404, detail="Coursework not found or access denied")
-    spec = GeneratorService.extract_assignment_specification(cw)
+    spec = GeneratorService.extract_assignment_specification(cw, db=db)
     return AssignmentSpecificationResponse(**spec)
 
 @app.post("/api/assignment/generate", response_model=GeneratedAssignmentResponse)
@@ -600,6 +605,9 @@ def get_deliverable(coursework_id: int, db: Session = Depends(get_db), user: Use
         "file_type": assignment.file_type,
         "language": assignment.language,
         "code_or_content": assignment.code_or_content,
+        "report_file_name": assignment.report_file_name or "",
+        "report_content": assignment.report_content or "",
+        "has_report": bool(assignment.report_file_path and Path(assignment.report_file_path).exists()),
         "created_at": assignment.created_at
     }
 
@@ -621,6 +629,58 @@ def download_deliverable(coursework_id: int, db: Session = Depends(get_db), user
         path=str(file_path),
         filename=assignment.file_name,
         media_type="application/octet-stream"
+    )
+
+@app.get("/api/assignment/{coursework_id}/download-report")
+def download_report(coursework_id: int, db: Session = Depends(get_db), user: User = Depends(current_user)):
+    cw = db.query(Coursework).filter_by(id=coursework_id, user_id=user.id).first()
+    if not cw:
+        raise HTTPException(status_code=404, detail="Coursework not found or access denied")
+    assignment = db.query(GeneratedAssignment).filter_by(coursework_id=cw.id).order_by(GeneratedAssignment.id.desc()).first()
+    if not assignment or not assignment.report_file_path:
+        raise HTTPException(status_code=404, detail="Report document not generated for this assignment")
+
+    file_path = Path(assignment.report_file_path)
+    if not settings.is_safe_path(settings.GENERATED_DIR, file_path) or not file_path.exists():
+        raise HTTPException(status_code=404, detail="Report file path is invalid or outside allowed directory")
+
+    return FileResponse(
+        path=str(file_path),
+        filename=assignment.report_file_name or f"Academic_Report_{cw.id}.docx",
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    )
+
+@app.get("/api/assignment/{coursework_id}/download-all")
+def download_all_deliverables(coursework_id: int, db: Session = Depends(get_db), user: User = Depends(current_user)):
+    import zipfile
+    import io
+    from fastapi.responses import StreamingResponse
+
+    cw = db.query(Coursework).filter_by(id=coursework_id, user_id=user.id).first()
+    if not cw:
+        raise HTTPException(status_code=404, detail="Coursework not found or access denied")
+    assignment = db.query(GeneratedAssignment).filter_by(coursework_id=cw.id).order_by(GeneratedAssignment.id.desc()).first()
+    if not assignment:
+        raise HTTPException(status_code=404, detail="No deliverable found for this assignment")
+
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+        if assignment.file_path and Path(assignment.file_path).exists():
+            zf.write(assignment.file_path, arcname=assignment.file_name)
+        elif assignment.code_or_content:
+            zf.writestr(assignment.file_name, assignment.code_or_content)
+
+        if assignment.report_file_path and Path(assignment.report_file_path).exists():
+            rep_name = assignment.report_file_name or f"{Path(assignment.file_name).stem}_Report.docx"
+            zf.write(assignment.report_file_path, arcname=rep_name)
+
+    zip_buffer.seek(0)
+    zip_name = f"{Path(assignment.file_name).stem}_Submission_Package.zip"
+
+    return StreamingResponse(
+        zip_buffer,
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="{zip_name}"'}
     )
 
 # ── Code & Document Validation Endpoints ─────────────────────────────────────

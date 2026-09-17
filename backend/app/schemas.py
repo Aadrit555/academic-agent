@@ -165,6 +165,9 @@ class GeneratedAssignmentResponse(BaseModel):
     file_type: str
     language: str
     code_or_content: str
+    report_file_name: Optional[str] = None
+    report_file_path: Optional[str] = None
+    report_content: Optional[str] = None
     created_at: datetime
     model_config = ConfigDict(from_attributes=True)
 
