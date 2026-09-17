@@ -4,9 +4,98 @@ from fastapi.testclient import TestClient
 from backend.app.main import app
 from backend.app.database import init_db
 
+from datetime import datetime, timezone, timedelta
+from backend.app.database import SessionLocal
+from backend.app.models import User, Course, Coursework, TimetableEntry, Document, DocumentChunk
+from backend.app.auth.security import hash_password
+
 @pytest.fixture(scope="module")
 def client():
     init_db()
+    db = SessionLocal()
+    user = db.query(User).filter_by(email="student@university.edu").first()
+    if not user:
+        pwd_hash, salt = hash_password("Pass@Academic2026!")
+        user = User(
+            id=1,
+            email="student@university.edu",
+            name="Student",
+            hashed_password=pwd_hash,
+            salt=salt,
+            role="student",
+            is_active=True
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+    course = db.query(Course).filter_by(user_id=user.id).first()
+    if not course:
+        course = Course(
+            user_id=user.id,
+            name="Algorithms",
+            code="CSE 204"
+        )
+        db.add(course)
+        db.commit()
+        db.refresh(course)
+
+    cw = db.query(Coursework).filter_by(user_id=user.id).first()
+    if not cw:
+        now = datetime.now(timezone.utc)
+        cw = Coursework(
+            user_id=user.id,
+            course_id=course.id,
+            classroom_course_id="c_test",
+            coursework_id="cw_test_merge",
+            title="DAA Lab: Implement Merge Sort in C",
+            description="Write MergeSort.c with gcc -Wall -Wextra. Include test cases.",
+            status="READY",
+            due_date=(now + timedelta(days=2)).strftime("%Y-%m-%d"),
+            due_time="23:59:00"
+        )
+        db.add(cw)
+        db.commit()
+
+    now_dt = datetime.now()
+    tt = db.query(TimetableEntry).filter_by(user_id=user.id).first()
+    if not tt:
+        tt = TimetableEntry(
+            user_id=user.id,
+            subject="Algorithms",
+            day_of_week=now_dt.weekday(),
+            start_time="00:00",
+            end_time="23:59",
+            classroom="C-1011",
+            faculty="Prof. Test"
+        )
+        db.add(tt)
+        db.commit()
+
+    doc = db.query(Document).filter_by(course_id=course.id).first()
+    if not doc:
+        doc = Document(
+            user_id=user.id,
+            course_id=course.id,
+            filename="algorithms_notes.txt",
+            file_type=".txt",
+            file_size=120,
+            file_path="uploads/test_doc.txt"
+        )
+        db.add(doc)
+        db.commit()
+        db.refresh(doc)
+        chunk = DocumentChunk(
+            document_id=doc.id,
+            course_id=course.id,
+            chunk_index=0,
+            content="Merge sort is an efficient, divide-and-conquer comparison-based sorting algorithm with O(n log n) runtime complexity.",
+            page_number=1
+        )
+        db.add(chunk)
+        db.commit()
+
+    db.close()
     with TestClient(app) as c:
         yield c
 
@@ -141,7 +230,7 @@ def test_erp_status_and_connect_endpoint(client):
     conn_res = client.post("/api/erp/connect-session", json={
         "portal_url": "https://student.srmap.edu.in/srmapstudentcorner",
         "session_cookie": "JSESSIONID=TEST_SRMAP_SESSION_ID_12345",
-        "student_id": "AP23110010042"
+        "student_id": "AP23000000001"
     })
     assert conn_res.status_code == 200
     assert conn_res.json()["is_connected"] is True
@@ -151,8 +240,12 @@ def test_erp_status_and_connect_endpoint(client):
     assert status_after.status_code == 200
     after_data = status_after.json()
     assert after_data["is_connected"] is True
-    assert after_data["student_id"] == "AP23110010042"
+    assert after_data["student_id"] == "AP23000000001"
     assert len(after_data["attendance_summary"]) > 0
+
+    # Disconnect ERP to leave database in clean disconnected state
+    disc_res = client.post("/api/erp/disconnect")
+    assert disc_res.status_code == 200
 
 def test_erp_schedule_import_endpoint(client):
     from backend.app.database import SessionLocal

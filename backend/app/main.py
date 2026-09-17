@@ -236,7 +236,7 @@ def register_user(req: UserRegister, db: Session = Depends(get_db)):
 def login_user(req: UserLogin, db: Session = Depends(get_db)):
     clean_identifier = req.email.strip().lower()
     
-    # 1. Match by ERP Student Registration Number (e.g. AP23110010042)
+    # 1. Match by ERP Student Registration Number (e.g. AP23000000001)
     erp_match = (
         db.query(ERPIntegration)
         .filter(func.lower(ERPIntegration.student_id) == clean_identifier)

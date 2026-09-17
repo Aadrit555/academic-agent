@@ -54,8 +54,8 @@ def test_erp_scraper_profile():
     """Tests parsing student profile from ids=1 report HTML."""
     sample_profile_html = """
     <table class="table-striped">
-      <tr><td>Student Name</td><td>:</td><td>AADRIT YADAV</td></tr>
-      <tr><td>Register No</td><td>:</td><td>AP23110010042</td></tr>
+      <tr><td>Student Name</td><td>:</td><td>SAMPLE STUDENT</td></tr>
+      <tr><td>Register No</td><td>:</td><td>AP23000000001</td></tr>
       <tr><td>Institution</td><td>:</td><td>School of Engineering and Sciences</td></tr>
       <tr><td>Semester</td><td>:</td><td>4</td></tr>
       <tr><td>Program / Section</td><td>:</td><td>B.Tech Computer Science and Engineering / B</td></tr>
@@ -63,8 +63,8 @@ def test_erp_scraper_profile():
     </table>
     """
     profile = ERPScraper.parse_profile(sample_profile_html)
-    assert profile["name"] == "AADRIT YADAV"
-    assert profile["register_no"] == "AP23110010042"
+    assert profile["name"] == "SAMPLE STUDENT"
+    assert profile["register_no"] == "AP23000000001"
     assert profile["semester"] == "4"
     assert "Computer Science" in profile["program"]
     assert profile["section"] == "B"
@@ -269,17 +269,17 @@ def test_erp_scraper_srmap_live_format():
     """Verifies accurate parsing of real SRM AP eVarsity profile & timetable layout."""
     profile_html = """
     <table class="table table-striped">
-      <tr><td>Student Name</td><td>:</td><td>AADRIT</td></tr>
-      <tr><td>Register No.</td><td>:</td><td>AP25110010004</td></tr>
-      <tr><td>Student Contact Number / Email</td><td>:</td><td>7233023333(Verified )/ aadrit_y@srmap.edu.in</td></tr>
-      <tr><td>Father Name / Mother Name</td><td>:</td><td>YATENDRA KUMAR / ARCHANA</td></tr>
+      <tr><td>Student Name</td><td>:</td><td>STUDENT USER</td></tr>
+      <tr><td>Register No.</td><td>:</td><td>AP23000000001</td></tr>
+      <tr><td>Student Contact Number / Email</td><td>:</td><td>9876543210(Verified )/ student@srmap.edu.in</td></tr>
+      <tr><td>Father Name / Mother Name</td><td>:</td><td>PARENT A / PARENT B</td></tr>
     </table>
     """
     prof = ERPScraper.parse_profile(profile_html)
-    assert prof["name"] == "AADRIT"
-    assert prof["register_no"] == "AP25110010004"
-    assert prof["email"] == "aadrit_y@srmap.edu.in"
-    assert prof["phone"] == "7233023333"
+    assert prof["name"] == "STUDENT USER"
+    assert prof["register_no"] == "AP23000000001"
+    assert prof["email"] == "student@srmap.edu.in"
+    assert prof["phone"] == "9876543210"
 
     timetable_html = """
     <table>

@@ -15,13 +15,12 @@ def setup_addon_test_db():
     db = SessionLocal()
     
     # Ensure test user
-    test_user = db.query(User).filter(User.email == "aadrit_y@srmap.edu.in").first()
+    test_user = db.query(User).filter(User.email == "test_student@university.edu").first()
     if not test_user:
         test_user = User(
-            email="aadrit_y@srmap.edu.in",
+            email="test_student@university.edu",
             hashed_password="hashed_pw_test",
-            name="Aadrit",
-            registration_number="AP23110010042",
+            name="Test Student",
             is_active=True
         )
         db.add(test_user)
@@ -29,9 +28,23 @@ def setup_addon_test_db():
         db.refresh(test_user)
 
     yield db, test_user
-    db.close()
+    # Clean up test user artifacts so production database stays pristine
+    try:
+        db.query(TimetableEntry).filter_by(user_id=test_user.id).delete()
+        for cw in db.query(Coursework).filter_by(user_id=test_user.id).all():
+            db.query(SubmissionSchedule).filter_by(coursework_id=cw.id).delete()
+            db.query(GeneratedAssignment).filter_by(coursework_id=cw.id).delete()
+        db.query(Coursework).filter_by(user_id=test_user.id).delete()
+        db.query(Course).filter_by(user_id=test_user.id).delete()
+        db.query(Document).filter_by(user_id=test_user.id).delete()
+        db.delete(test_user)
+        db.commit()
+    except Exception:
+        db.rollback()
+    finally:
+        db.close()
 
-def get_auth_headers(user_id=1, email="aadrit_y@srmap.edu.in"):
+def get_auth_headers(user_id=1, email="test_student@university.edu"):
     token = create_access_token(user_id=user_id, email=email)
     return {"Authorization": f"Bearer {token}"}
 

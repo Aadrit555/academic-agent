@@ -12,45 +12,46 @@
 <body>
   <div class="addon-container">
 
-    <!-- ── Top Header & Integrations ──────────────────────────────────────── -->
+    <!-- ── Top Header & Connection Badges ───────────────────────────────────── -->
     <header class="addon-header">
       <div class="header-brand">
-        <div class="brand-logo">AA</div>
+        <div class="brand-logo" aria-hidden="true">AA</div>
         <div class="brand-text">
           <div class="brand-title">
             <span>ACADEMIC AGENT</span>
-            <span class="brand-badge">SRM AP</span>
+            <span class="brand-badge">COMPANION</span>
           </div>
-          <span class="brand-sub">Google Classroom Companion</span>
+          <span class="brand-sub">Google Classroom AI Layer</span>
         </div>
       </div>
 
       <div class="header-status">
-        <div class="status-chip disconnected" id="addon-google-chip" title="Google Classroom Connection Status">
+        <button class="status-chip disconnected" id="addon-google-chip" title="Google Classroom Connection Status"
+          onclick="AddonApp.openSettingsTab('google')">
           <span class="chip-dot"></span>
-          <span>Google</span>
-        </div>
+          <span class="chip-text">Google</span>
+        </button>
 
-        <div class="status-chip disconnected" id="addon-erp-chip" title="SRM AP eVarsity Status"
-          onclick="openModal('erp-modal')">
+        <button class="status-chip disconnected" id="addon-erp-chip" title="Student Portal / Timetable Status"
+          onclick="AddonApp.openSettingsTab('portal')">
           <span class="chip-dot"></span>
-          <span>SRM ERP</span>
-        </div>
+          <span class="chip-text">Portal</span>
+        </button>
 
-        <button class="icon-btn" id="btn-settings" title="Settings & ERP Auth" onclick="openModal('erp-modal')"
-          aria-label="Settings">
+        <button class="icon-btn" id="btn-settings" title="Settings & Integrations"
+          onclick="openModal('settings-modal')" aria-label="Settings">
           ⚙️
         </button>
       </div>
     </header>
 
-    <!-- ── Section 1: Next Class Widget (Real ERP Timetable) ─────────────── -->
+    <!-- ── Section 1: Next Class Widget (Real Timetable & Room) ───────────── -->
     <section class="addon-section" id="section-next-class">
-      <div class="section-label">NEXT CLASS</div>
+      <div class="section-label">UPCOMING CLASS SCHEDULE</div>
       <div id="next-class-content">
         <div class="loading-compact">
           <span class="spinner-dot"></span>
-          <span>Retrieving ERP timetable schedule...</span>
+          <span>Resolving timetable schedule...</span>
         </div>
       </div>
     </section>
@@ -72,24 +73,22 @@
       </div>
     </section>
 
-    <!-- ── Section 3: Progress State Machine ──────────────────────────────── -->
+    <!-- ── Section 3: Progress State Machine Stepper ──────────────────────── -->
     <section class="addon-section" id="section-progress">
-      <div class="section-label">PROGRESS</div>
+      <div class="section-label">EXECUTION PROGRESS</div>
       <div id="progress-tracker-box">
         <div class="progress-stepper">
-          <div class="step-item"><span class="step-icon">○</span><span class="step-label">Assignment analyzed</span>
-          </div>
-          <div class="step-item"><span class="step-icon">○</span><span class="step-label">Files generated</span></div>
-          <div class="step-item"><span class="step-icon">○</span><span class="step-label">Validation passed</span></div>
-          <div class="step-item"><span class="step-icon">○</span><span class="step-label">Submission scheduled</span>
-          </div>
+          <div class="step-item"><span class="step-icon">○</span><span class="step-label">Analyzed</span></div>
+          <div class="step-item"><span class="step-icon">○</span><span class="step-label">Generated</span></div>
+          <div class="step-item"><span class="step-icon">○</span><span class="step-label">Validated</span></div>
+          <div class="step-item"><span class="step-icon">○</span><span class="step-label">Scheduled</span></div>
         </div>
       </div>
     </section>
 
     <!-- ── Section 4: Deliverables & Real Compiler Validation ─────────────── -->
     <section class="addon-section" id="section-deliverables">
-      <div class="section-label">DELIVERABLES &amp; VALIDATION</div>
+      <div class="section-label">DELIVERABLES &amp; COMPILER VALIDATION</div>
       <div id="deliverables-box">
         <div class="empty-compact">
           <span>Deliverables not yet generated. Execute the assignment above to create and compile code.</span>
@@ -104,11 +103,11 @@
       <div class="material-actions-bar">
         <button class="btn btn-secondary btn-sm" id="btn-summarize-material"
           onclick="AddonApp.queryMaterial('summary')">
-          📖 Summarize
+          📖 Summarize Syllabus
         </button>
         <button class="btn btn-secondary btn-sm" id="btn-questions-material"
           onclick="AddonApp.queryMaterial('questions')">
-          ❓ Questions
+          ❓ Viva / Exam Questions
         </button>
         <label class="btn btn-secondary btn-sm btn-upload-label" title="Upload PDF/DOCX for AI grounding">
           <span>📎 Upload Material</span>
@@ -120,14 +119,14 @@
       <div id="material-output-box" class="material-output-box" style="display: none;"></div>
     </section>
 
-    <!-- ── Section 6: Automation & Turn In ────────────────────────────────── -->
+    <!-- ── Section 6: Automation & Auto-Submit ────────────────────────────── -->
     <section class="addon-section" id="section-automation">
-      <div class="section-label">AUTOMATION</div>
+      <div class="section-label">AUTOMATION &amp; TURN IN</div>
       <div id="automation-details-box">
         <div class="auto-box">
           <div class="auto-row">
             <div>
-              <div class="auto-title">AUTO SUBMIT</div>
+              <div class="auto-title">AUTO-SUBMIT SCHEDULER</div>
               <div class="auto-sub">Scheduled: <b>Default: 4 hours before deadline</b></div>
             </div>
             <button class="btn btn-sm btn-secondary" onclick="AddonApp.toggleAutoSubmit()">
@@ -152,53 +151,142 @@
         <span>•</span>
         <a href="javascript:void(0)" onclick="AddonApp.syncClassroom()">Sync Classroom</a>
       </div>
-      <div class="footer-copy">Academic Agent v2.0 • SRM University AP</div>
+      <div class="footer-copy">Academic Agent • Google Classroom Native Layer</div>
     </footer>
 
   </div>
 
-  <!-- ── Settings & ERP Authentication Modal ──────────────────────────────── -->
-  <div class="modal-overlay" id="erp-modal" role="dialog" aria-modal="true">
+  <!-- ── Settings & Account Integrations Modal ────────────────────────────── -->
+  <div class="modal-overlay" id="settings-modal" role="dialog" aria-modal="true">
     <div class="modal-card">
       <div class="modal-header">
         <div class="modal-title">
-          <span>🏛️ SRM AP eVarsity Portal</span>
+          <span>⚙️ Integrations &amp; Accounts</span>
         </div>
-        <button class="modal-close" onclick="closeModal('erp-modal')" aria-label="Close modal">&times;</button>
+        <button class="modal-close" onclick="closeModal('settings-modal')" aria-label="Close modal">&times;</button>
+      </div>
+
+      <!-- Modal Tabs -->
+      <div class="modal-tabs">
+        <button class="modal-tab active" id="tab-btn-portal" onclick="AddonApp.switchModalTab('portal')">
+          🏛️ Student Portal
+        </button>
+        <button class="modal-tab" id="tab-btn-google" onclick="AddonApp.switchModalTab('google')">
+          📚 Google Classroom
+        </button>
+        <button class="modal-tab" id="tab-btn-config" onclick="AddonApp.switchModalTab('config')">
+          🔑 OAuth Credentials
+        </button>
       </div>
 
       <div class="modal-body">
-        <p class="modal-intro">
-          Authenticate with your SRM AP student registration number and portal password to automatically sync your live
-          timetable, variable classrooms, and academic calendar.
-        </p>
 
-        <div class="form-group">
-          <label class="form-label" for="erp-id-input">Registration Number / Portal ID</label>
-          <input type="text" class="form-input" id="erp-id-input" placeholder="e.g. AP23110010042"
-            autocomplete="username">
+        <!-- Tab 1: Student Portal / ERP -->
+        <div class="tab-pane active" id="tab-pane-portal">
+          <div id="portal-connected-view" style="display: none;">
+            <div class="integration-status-card is-connected">
+              <div class="isc-header">
+                <span class="chip-dot"></span>
+                <b>Connected to Student Portal</b>
+              </div>
+              <div class="isc-meta">
+                <div class="isc-row">
+                  <span class="isc-label">Student ID:</span>
+                  <span class="isc-val" id="portal-info-id">—</span>
+                </div>
+                <div class="isc-row">
+                  <span class="isc-label">Student Name:</span>
+                  <span class="isc-val" id="portal-info-name">—</span>
+                </div>
+                <div class="isc-row">
+                  <span class="isc-label">Last Synced:</span>
+                  <span class="isc-val" id="portal-info-synced">—</span>
+                </div>
+              </div>
+              <div class="isc-actions">
+                <button class="btn btn-secondary btn-sm" onclick="AddonApp.refreshERP()">↻ Refresh Timetable</button>
+                <button class="btn btn-danger btn-sm" onclick="AddonApp.disconnectERP()">Disconnect Portal</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="portal-login-view">
+            <p class="modal-intro">
+              Connect your student registration number and portal password to automatically sync your live timetable,
+              daily variable classrooms, and schedule.
+            </p>
+
+            <div class="form-group">
+              <label class="form-label" for="erp-id-input">Registration Number / Student ID</label>
+              <input type="text" class="form-input" id="erp-id-input" placeholder="Enter Student ID / Registration No."
+                autocomplete="username">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="erp-password-input">Portal Password</label>
+              <input type="password" class="form-input" id="erp-password-input" placeholder="Enter portal password"
+                autocomplete="current-password">
+            </div>
+
+            <button class="btn btn-primary btn-block" id="btn-erp-submit">
+              Connect Student Portal
+            </button>
+          </div>
         </div>
 
-        <div class="form-group">
-          <label class="form-label" for="erp-password-input">Portal Password</label>
-          <input type="password" class="form-input" id="erp-password-input" placeholder="Enter portal password"
-            autocomplete="current-password">
+        <!-- Tab 2: Google Classroom -->
+        <div class="tab-pane" id="tab-pane-google" style="display: none;">
+          <div id="google-connected-view" style="display: none;">
+            <div class="integration-status-card is-connected">
+              <div class="isc-header">
+                <span class="chip-dot"></span>
+                <b>Connected to Google Classroom</b>
+              </div>
+              <div class="isc-meta">
+                <div class="isc-row">
+                  <span class="isc-label">Google Account:</span>
+                  <span class="isc-val" id="google-info-email">—</span>
+                </div>
+              </div>
+              <div class="isc-actions">
+                <button class="btn btn-secondary btn-sm" onclick="AddonApp.syncClassroom()">↻ Sync Coursework</button>
+                <button class="btn btn-danger btn-sm" onclick="AddonApp.disconnectGoogle()">Disconnect Google</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="google-login-view">
+            <p class="modal-intro">
+              Connect your institutional Google account to automatically import enrolled courses, assignment instructions,
+              deadlines, and enable direct Google Drive deliverable turn-in.
+            </p>
+            <button class="btn btn-secondary btn-block" onclick="AddonApp.launchGoogleOAuth()">
+              <span>🔗 Connect Google Classroom</span>
+            </button>
+          </div>
         </div>
 
-        <button class="btn btn-primary btn-block" id="btn-erp-submit">
-          Connect SRM AP ERP
-        </button>
+        <!-- Tab 3: OAuth Credentials Config -->
+        <div class="tab-pane" id="tab-pane-config" style="display: none;">
+          <p class="modal-intro">
+            If running on a custom domain or staging environment, configure your Google Cloud OAuth Client ID and Secret here.
+          </p>
 
-        <div class="modal-divider">
-          <span>OR</span>
-        </div>
+          <div class="form-group">
+            <label class="form-label" for="config-client-id">Google Client ID</label>
+            <input type="text" class="form-input" id="config-client-id" placeholder="e.g. 123456789.apps.googleusercontent.com">
+          </div>
 
-        <div class="oauth-section">
-          <label class="form-label">Google Workspace / Classroom</label>
-          <button class="btn btn-secondary btn-block" onclick="AddonApp.launchGoogleOAuth()">
-            <span>Connect Google Classroom</span>
+          <div class="form-group">
+            <label class="form-label" for="config-client-secret">Google Client Secret</label>
+            <input type="password" class="form-input" id="config-client-secret" placeholder="Enter Client Secret">
+          </div>
+
+          <button class="btn btn-primary btn-block" onclick="AddonApp.saveGoogleCredentials()">
+            Save OAuth Credentials
           </button>
         </div>
+
       </div>
     </div>
   </div>

@@ -59,11 +59,11 @@ const AddonApp = {
       if (gBadge) {
         if (googleRes.connected) {
           gBadge.className = "status-chip connected";
-          gBadge.innerHTML = `<span class="chip-dot"></span><span>Google: ${escapeHtml(googleRes.email || 'Connected')}</span>`;
+          const displayEmail = googleRes.email ? googleRes.email.split("@")[0] : "Connected";
+          gBadge.innerHTML = `<span class="chip-dot"></span><span class="chip-text">Google: ${escapeHtml(displayEmail)}</span>`;
         } else {
           gBadge.className = "status-chip disconnected";
-          gBadge.innerHTML = `<span class="chip-dot"></span><span>Connect Google</span>`;
-          gBadge.onclick = () => AddonApp.launchGoogleOAuth();
+          gBadge.innerHTML = `<span class="chip-dot"></span><span class="chip-text">Connect Google</span>`;
         }
       }
 
@@ -71,15 +71,76 @@ const AddonApp = {
       if (erpBadge) {
         if (erpRes.is_connected) {
           erpBadge.className = "status-chip connected";
-          erpBadge.innerHTML = `<span class="chip-dot"></span><span>SRM ERP: ${escapeHtml(erpRes.student_id || erpRes.student_name || 'Active')}</span>`;
+          const displayId = erpRes.student_id || erpRes.student_name || "Connected";
+          erpBadge.innerHTML = `<span class="chip-dot"></span><span class="chip-text">Portal: ${escapeHtml(displayId)}</span>`;
         } else {
           erpBadge.className = "status-chip disconnected";
-          erpBadge.innerHTML = `<span class="chip-dot"></span><span>Connect SRM ERP</span>`;
+          erpBadge.innerHTML = `<span class="chip-dot"></span><span class="chip-text">Connect Portal</span>`;
         }
       }
+
+      // Sync views inside Settings Modal
+      this.renderModalAuthViews();
     } catch (e) {
       console.warn("Error loading auth status:", e);
     }
+  },
+
+  renderModalAuthViews() {
+    const googleRes = this.state.googleStatus || { connected: false };
+    const erpRes = this.state.erpStatus || { is_connected: false };
+
+    // Portal Tab Views
+    const portalConnView = document.getElementById("portal-connected-view");
+    const portalLoginView = document.getElementById("portal-login-view");
+    if (portalConnView && portalLoginView) {
+      if (erpRes.is_connected) {
+        portalConnView.style.display = "block";
+        portalLoginView.style.display = "none";
+        const idEl = document.getElementById("portal-info-id");
+        const nameEl = document.getElementById("portal-info-name");
+        const syncEl = document.getElementById("portal-info-synced");
+        if (idEl) idEl.textContent = erpRes.student_id || "Active";
+        if (nameEl) nameEl.textContent = erpRes.student_name || "Student";
+        if (syncEl) syncEl.textContent = erpRes.last_synced_at ? new Date(erpRes.last_synced_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : "Just now";
+      } else {
+        portalConnView.style.display = "none";
+        portalLoginView.style.display = "block";
+      }
+    }
+
+    // Google Tab Views
+    const googleConnView = document.getElementById("google-connected-view");
+    const googleLoginView = document.getElementById("google-login-view");
+    if (googleConnView && googleLoginView) {
+      if (googleRes.connected) {
+        googleConnView.style.display = "block";
+        googleLoginView.style.display = "none";
+        const gEmailEl = document.getElementById("google-info-email");
+        if (gEmailEl) gEmailEl.textContent = googleRes.email || "Active Google Session";
+      } else {
+        googleConnView.style.display = "none";
+        googleLoginView.style.display = "block";
+      }
+    }
+  },
+
+  openSettingsTab(tabName) {
+    openModal("settings-modal");
+    this.switchModalTab(tabName);
+  },
+
+  switchModalTab(tabName) {
+    const tabs = ["portal", "google", "config"];
+    tabs.forEach(t => {
+      const btn = document.getElementById(`tab-btn-${t}`);
+      const pane = document.getElementById(`tab-pane-${t}`);
+      if (btn) btn.classList.toggle("active", t === tabName);
+      if (pane) {
+        pane.style.display = (t === tabName) ? "flex" : "none";
+        pane.classList.toggle("active", t === tabName);
+      }
+    });
   },
 
   // ── 1. Next Class Widget (Real ERP Timetable) ──────────────────────────
@@ -409,9 +470,10 @@ const AddonApp = {
             <b>${escapeHtml(deliv.file_name)}</b>
           </div>
           <div class="deliv-actions">
-            <button class="btn btn-secondary btn-xs" onclick="AddonApp.downloadDeliverable()">Download File</button>
+            <button class="btn btn-secondary btn-xs" onclick="AddonApp.copyDeliverableCode()">📋 Copy</button>
+            <button class="btn btn-secondary btn-xs" onclick="AddonApp.downloadDeliverable()">⬇️ Download</button>
             <button class="btn btn-success btn-xs" onclick="AddonApp.validateDeliverable()" ${this.state.isValidating ? 'disabled' : ''}>
-              ${this.state.isValidating ? 'Compiling...' : 'Run Compiler'}
+              ${this.state.isValidating ? 'Compiling...' : '⚡ Run Compiler'}
             </button>
           </div>
         </div>
@@ -451,6 +513,20 @@ const AddonApp = {
       Toast.success(`Downloaded ${fileName}`);
     } catch (e) {
       Toast.error(`Download failed: ${e.message}`);
+    }
+  },
+
+  copyDeliverableCode() {
+    const code = this.state.deliverable?.code_or_content;
+    if (!code) return;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(code).then(() => {
+        Toast.success("Code copied to clipboard!");
+      }).catch(() => {
+        Toast.info("Copying enabled. Select from preview.");
+      });
+    } else {
+      Toast.info("Clipboard access restricted in current iframe sandbox.");
     }
   },
 
@@ -626,7 +702,7 @@ const AddonApp = {
     const password = pwInput ? pwInput.value.trim() : "";
 
     if (!erpId || !password) {
-      Toast.warning("Please enter your SRM AP Registration Number and Portal Password.");
+      Toast.warning("Please enter your Student Registration Number and Portal Password.");
       return;
     }
 
@@ -647,18 +723,74 @@ const AddonApp = {
         localStorage.setItem("academic_agent_jwt", res.access_token);
       }
 
-      Toast.success("Connected to SRM AP eVarsity! Real timetable synchronized.");
+      Toast.success("Connected to Student Portal! Real timetable synchronized.");
       if (pwInput) pwInput.value = "";
-      closeModal("erp-modal");
+      closeModal("settings-modal");
       await this.loadAuthStatus();
       await this.loadNextClass();
     } catch (e) {
-      Toast.error(`ERP Connection Failed: ${e.message}`);
+      Toast.error(`Portal Connection Failed: ${e.message}`);
     } finally {
       if (btn) {
-        btn.textContent = "Connect SRM AP ERP";
+        btn.textContent = "Connect Student Portal";
         btn.disabled = false;
       }
+    }
+  },
+
+  async disconnectERP() {
+    if (!confirm("Are you sure you want to disconnect your student portal?")) return;
+    try {
+      await api("/erp/disconnect", { method: "POST" });
+      Toast.success("Student portal disconnected.");
+      await this.loadAuthStatus();
+      await this.loadNextClass();
+    } catch (e) {
+      Toast.error(`Disconnect failed: ${e.message}`);
+    }
+  },
+
+  async refreshERP() {
+    try {
+      Toast.info("Refreshing live timetable from portal...");
+      await api("/erp/refresh", { method: "POST" });
+      Toast.success("Timetable refreshed successfully!");
+      await this.loadAuthStatus();
+      await this.loadNextClass();
+    } catch (e) {
+      Toast.error(`Refresh failed: ${e.message}`);
+    }
+  },
+
+  async disconnectGoogle() {
+    if (!confirm("Are you sure you want to disconnect Google Classroom?")) return;
+    try {
+      await api("/auth/disconnect", { method: "POST" });
+      Toast.success("Google Classroom disconnected.");
+      await this.loadAuthStatus();
+      await this.loadCoursework();
+    } catch (e) {
+      Toast.error(`Disconnect failed: ${e.message}`);
+    }
+  },
+
+  async saveGoogleCredentials() {
+    const cid = (document.getElementById("config-client-id")?.value || "").trim();
+    const sec = (document.getElementById("config-client-secret")?.value || "").trim();
+    if (!cid || !sec) {
+      Toast.warning("Please provide both Client ID and Client Secret.");
+      return;
+    }
+    try {
+      await api("/config/google-credentials", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ client_id: cid, client_secret: sec })
+      });
+      Toast.success("OAuth credentials saved! You can now connect Google Classroom.");
+      this.switchModalTab("google");
+    } catch (e) {
+      Toast.error(`Failed to save credentials: ${e.message}`);
     }
   }
 };

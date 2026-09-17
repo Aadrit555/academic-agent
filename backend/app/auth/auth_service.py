@@ -12,11 +12,12 @@ def utcnow():
     return datetime.now(timezone.utc)
 
 def get_or_create_default_user(db: Session) -> User:
-    user = db.query(User).first()
+    default_email = "student@university.edu"
+    user = db.query(User).filter_by(email=default_email).first()
     if not user:
         pwd_hash, salt = hash_password("Pass@Academic2026!")
         user = User(
-            email="student@university.edu",
+            email=default_email,
             name="Student",
             hashed_password=pwd_hash,
             salt=salt,
