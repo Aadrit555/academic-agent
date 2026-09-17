@@ -17,7 +17,7 @@ def get_or_create_default_user(db: Session) -> User:
         pwd_hash, salt = hash_password("Pass@Academic2026!")
         user = User(
             email="student@university.edu",
-            name="Aadrit",
+            name="Student",
             hashed_password=pwd_hash,
             salt=salt,
             role="student",

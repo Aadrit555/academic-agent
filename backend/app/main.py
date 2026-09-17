@@ -772,6 +772,18 @@ if frontend_dir.exists():
     def serve_addon():
         return FileResponse(str(frontend_dir / "index.html"))
 
+    @app.get("/addon/student")
+    def serve_addon_student():
+        return FileResponse(str(frontend_dir / "index.html"))
+
+    @app.get("/addon/teacher")
+    def serve_addon_teacher():
+        return FileResponse(str(frontend_dir / "teacher.html"))
+
+    @app.get("/addon/review")
+    def serve_addon_review():
+        return FileResponse(str(frontend_dir / "review.html"))
+
     @app.get("/favicon.svg")
     def serve_favicon():
         return FileResponse(str(frontend_dir / "favicon.svg"), media_type="image/svg+xml")

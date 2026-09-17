@@ -14,9 +14,13 @@ class GeneratorService:
     @classmethod
     def extract_assignment_specification(cls, coursework: Coursework) -> dict:
         """Dynamically infers full structured Assignment Specification from coursework material."""
-        text = f"{coursework.title}\n{coursework.description}".lower()
+        full_text = f"{coursework.title}\n{coursework.description or ''}"
+        text = full_text.lower()
         course_name = coursework.course.name if coursework.course else "Academic Course"
         deadline_str = f"{coursework.due_date} {coursework.due_time or ''}".strip() if coursework.due_date else "No deadline specified"
+
+        # Explicitly mentioned filenames in title/description (e.g. MergeSort.c, timing_results.csv, Lab4_Report.docx)
+        explicit_files = re.findall(r'\b([A-Za-z0-9_\-]+\.(?:c|cpp|h|hpp|java|py|docx|doc|csv|png|pdf|txt))\b', full_text)
 
         # Derive clean identifier for deliverable files
         raw_slug = re.sub(r'[^a-zA-Z0-9]+', '_', coursework.title.strip()).strip('_')
@@ -24,35 +28,17 @@ class GeneratorService:
         if not file_slug:
             file_slug = "assignment_deliverable"
 
-        # 1. Document / Word Report assignments (.docx, .doc, report, paper, essay, analysis)
-        if (".docx" in text or "word document" in text or "analysis report" in text or "essay" in text or "paper" in text or ("report" in text and not (".c" in text or "in c" in text or "gcc" in text or "lab" in text))):
-            doc_name = f"{file_slug}.docx"
-            return {
-                "course": course_name,
-                "title": coursework.title,
-                "description": coursework.description or "Formal structured academic deliverable.",
-                "deadline": deadline_str,
-                "language": "document",
-                "required_files": [doc_name],
-                "required_formats": [".docx"],
-                "required_programs": [],
-                "required_tests": ["Document section completeness verification"],
-                "required_experiments": [],
-                "required_figures": [],
-                "required_tables": ["Comparative summary table"],
-                "required_report": True,
-                "required_outputs": ["Formally styled Word document (.docx)"],
-                "compiler_flags": None,
-                "submission_constraints": [
-                    "Must contain Executive Summary, Body, and References",
-                    "Standard academic typography and formatting"
-                ]
-            }
+        # Determine primary assignment modality
+        has_python = any(k in text for k in [".py", "python", "pytest"])
+        has_cpp = any(k in text for k in [".cpp", "c++", "g++"])
+        has_java = any(k in text for k in [".java", "javac"]) or (bool(re.search(r'\bjava\b', text)) and not bool(re.search(r'\bjavascript\b', text)))
+        has_c = any(k in text for k in [".c\b", "gcc", "clang"]) or bool(re.search(r'\bin c\b', text)) or any(f.endswith(".c") for f in explicit_files)
 
-        # 2. Python assignments (.py, python, pytest, avl, tree, script)
-        elif ".py" in text or "python" in text or "pytest" in text:
-            py_name = "avl_tree.py" if ("avl" in text or "tree" in text) else f"{file_slug.lower()}.py"
-            test_name = f"test_{py_name}"
+        # 1. Python assignments
+        if has_python and not (has_cpp or has_java or has_c):
+            py_files = [f for f in explicit_files if f.endswith(".py")]
+            py_name = py_files[0] if py_files else f"{file_slug.lower()}.py"
+            test_name = f"test_{py_name}" if not py_name.startswith("test_") else f"{py_name}_spec_test.py"
             return {
                 "course": course_name,
                 "title": coursework.title,
@@ -82,9 +68,10 @@ class GeneratorService:
                 ]
             }
 
-        # 3. C++ assignments (.cpp, c++, g++, stl)
-        elif ".cpp" in text or "c++" in text or "g++" in text or "cpp" in text:
-            cpp_name = f"{file_slug}.cpp"
+        # 2. C++ assignments
+        elif has_cpp and not (has_python or has_java):
+            cpp_files = [f for f in explicit_files if f.endswith((".cpp", ".cc"))]
+            cpp_name = cpp_files[0] if cpp_files else f"{file_slug}.cpp"
             return {
                 "course": course_name,
                 "title": coursework.title,
@@ -104,15 +91,17 @@ class GeneratorService:
                 "submission_constraints": ["Clean compilation with g++ -Wall -Wextra", "Zero compiler warnings"]
             }
 
-        # 4. Java assignments (.java, java, javac, oop)
-        elif ".java" in text or "java" in text or "javac" in text:
+        # 3. Java assignments
+        elif has_java and not (has_python or has_cpp):
+            java_files = [f for f in explicit_files if f.endswith(".java")]
+            java_name = java_files[0] if java_files else "Main.java"
             return {
                 "course": course_name,
                 "title": coursework.title,
                 "description": coursework.description or "Object-oriented program implementation in Java.",
                 "deadline": deadline_str,
                 "language": "java",
-                "required_files": ["Main.java"],
+                "required_files": [java_name],
                 "required_formats": [".java"],
                 "required_programs": ["Modular Java class with public static void main"],
                 "required_tests": ["Representative input test suite"],
@@ -125,20 +114,82 @@ class GeneratorService:
                 "submission_constraints": ["Clean compilation with javac", "No unhandled exceptions"]
             }
 
+        # 4. Pure Document / Word Report assignments (no code indicators)
+        elif not has_c and (".docx" in text or "word document" in text or "analysis report" in text or "essay" in text or "paper" in text or "report" in text):
+            doc_files = [f for f in explicit_files if f.endswith((".docx", ".doc"))]
+            doc_name = doc_files[0] if doc_files else f"{file_slug}.docx"
+            return {
+                "course": course_name,
+                "title": coursework.title,
+                "description": coursework.description or "Formal structured academic deliverable.",
+                "deadline": deadline_str,
+                "language": "document",
+                "required_files": [doc_name],
+                "required_formats": [".docx"],
+                "required_programs": [],
+                "required_tests": ["Document section completeness verification"],
+                "required_experiments": [],
+                "required_figures": [],
+                "required_tables": ["Comparative summary table"],
+                "required_report": True,
+                "required_outputs": ["Formally styled Word document (.docx)"],
+                "compiler_flags": None,
+                "submission_constraints": [
+                    "Must contain Executive Summary, Body, and References",
+                    "Standard academic typography and formatting"
+                ]
+            }
+
         # 5. C / Systems / Algorithms (Default code)
         else:
-            is_merge = ("merge" in text or "sort" in text or "daa" in text)
-            c_name = "MergeSort.c" if is_merge else f"{file_slug}.c"
-            req_files = ["MergeSort.c", "verification_tests.c", "timing_results.csv", "Lab4_Report.docx"] if is_merge else [c_name, "verification_tests.c"]
-            req_tests = [
-                "Multiple synthetic test arrays (sorted, reverse, random)",
-                "Edge case verification: empty array, single element, duplicates",
-                "Randomized stress verification"
-            ] if is_merge else [
-                "Multiple synthetic test arrays/inputs",
-                "Edge case verification: empty input, boundary values",
-                "Correct program termination"
-            ]
+            req_report = any(k in text for k in ["report", "analysis", "paper", "documentation"]) or any(f.endswith((".docx", ".doc")) for f in explicit_files)
+            req_bench = any(k in text for k in ["benchmark", "timing", "measure", "experiment", "runtime", "csv"]) or any(f.endswith(".csv") for f in explicit_files)
+            req_plot = any(k in text for k in ["plot", "graph", "figure", "chart", "png"]) or any(f.endswith(".png") for f in explicit_files)
+
+            c_files = [f for f in explicit_files if f.endswith(".c")]
+            c_name = c_files[0] if c_files else f"{file_slug}.c"
+            req_files = [c_name]
+            if not any(f.endswith("_tests.c") or "test" in f.lower() for f in explicit_files):
+                req_files.append(f"{file_slug}_tests.c")
+            req_formats = [".c"]
+
+            csv_files = [f for f in explicit_files if f.endswith(".csv")]
+            if csv_files:
+                for cf in csv_files:
+                    if cf not in req_files:
+                        req_files.append(cf)
+                if ".csv" not in req_formats:
+                    req_formats.append(".csv")
+            elif req_bench:
+                req_files.append(f"{file_slug}_timing.csv")
+                req_formats.append(".csv")
+
+            png_files = [f for f in explicit_files if f.endswith(".png")]
+            if png_files:
+                for pf in png_files:
+                    if pf not in req_files:
+                        req_files.append(pf)
+                if ".png" not in req_formats:
+                    req_formats.append(".png")
+            elif req_plot:
+                req_files.append(f"{file_slug}_plot.png")
+                req_formats.append(".png")
+
+            doc_files = [f for f in explicit_files if f.endswith((".docx", ".doc"))]
+            if doc_files:
+                for df in doc_files:
+                    if df not in req_files:
+                        req_files.append(df)
+                if ".docx" not in req_formats:
+                    req_formats.append(".docx")
+            elif req_report:
+                req_files.append(f"{file_slug}_report.docx")
+                req_formats.append(".docx")
+
+            for ef in explicit_files:
+                if ef not in req_files:
+                    req_files.append(ef)
+
             return {
                 "course": course_name,
                 "title": coursework.title,
@@ -146,16 +197,20 @@ class GeneratorService:
                 "deadline": deadline_str,
                 "language": "c",
                 "required_files": req_files,
-                "required_formats": [".c", ".csv", ".docx"] if is_merge else [".c"],
+                "required_formats": req_formats,
                 "required_programs": [
                     f"Modular implementation of {coursework.title}",
                     "Verification test harness"
                 ],
-                "required_tests": req_tests,
-                "required_experiments": ["Empirical runtime measurement across varying input sizes"],
-                "required_figures": ["Runtime scaling comparison plot"] if is_merge else [],
-                "required_tables": ["Timing measurements & complexity bounds"],
-                "required_report": is_merge,
+                "required_tests": [
+                    "Multiple representative input datasets",
+                    "Edge case boundary verification",
+                    "Deterministic exit code 0"
+                ],
+                "required_experiments": ["Empirical runtime measurement across varying input sizes"] if req_bench else [],
+                "required_figures": ["Runtime scaling comparison plot"] if req_plot else [],
+                "required_tables": ["Timing measurements & complexity bounds"] if req_bench else [],
+                "required_report": req_report,
                 "required_outputs": ["Program execution output", "Verification logs"],
                 "compiler_flags": "gcc -Wall -Wextra",
                 "submission_constraints": [

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Academic Agent — Teacher Add-on Attachment</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <div class="addon-container">
+    <header class="addon-header">
+      <div class="header-brand">
+        <div class="brand-logo">AA</div>
+        <div class="brand-text">
+          <div class="brand-title">
+            <span>ACADEMIC AGENT</span>
+            <span class="brand-badge">TEACHER VIEW</span>
+          </div>
+          <span class="brand-sub">Google Classroom Add-on Attachment</span>
+        </div>
+      </div>
+    </header>
+
+    <section class="addon-section">
+      <div class="section-label">ADD-ON ATTACHMENT CONFIGURATION</div>
+      <div class="assignment-meta-card">
+        <h3 class="meta-title">Academic Agent AI Assignment Executor</h3>
+        <p class="meta-desc">
+          Attach Academic Agent to this assignment. When students view the assignment, they will have access to automated requirement analysis, compiler sandboxing, RAG course-material grounding, and verified submission workflows.
+        </p>
+
+        <div class="meta-footer">
+          <div class="due-tag">
+            <span class="tag-label">Course ID:</span>
+            <span class="tag-val" id="teacher-course-id">Auto-detecting...</span>
+          </div>
+          <div class="req-tag">
+            <span class="tag-label">Item ID:</span>
+            <span class="tag-val" id="teacher-item-id">Auto-detecting...</span>
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-block btn-execute" id="btn-attach-addon" onclick="attachAddon()">
+          Attach Academic Agent to Assignment
+        </button>
+      </div>
+    </section>
+
+    <footer class="addon-footer">
+      <div class="footer-copy">Google Workspace Marketplace Add-on • Academic Agent</div>
+    </footer>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const courseId = params.get("courseId") || "classroom_course";
+    const itemId = params.get("itemId") || "coursework_item";
+
+    document.getElementById("teacher-course-id").textContent = courseId;
+    document.getElementById("teacher-item-id").textContent = itemId;
+
+    function attachAddon() {
+      const origin = window.location.origin;
+      const attachmentPayload = {
+        type: "ADD_ATTACHMENT",
+        attachment: {
+          title: "Academic Agent AI Assignment Executor",
+          studentViewUri: `${origin}/addon?courseId=${courseId}&itemId=${itemId}`,
+          teacherViewUri: `${origin}/addon/teacher?courseId=${courseId}&itemId=${itemId}`,
+          studentWorkReviewUri: `${origin}/addon/review?courseId=${courseId}&itemId=${itemId}`
+        }
+      };
+
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage(JSON.stringify(attachmentPayload), "*");
+      }
+
+      const btn = document.getElementById("btn-attach-addon");
+      btn.textContent = "✓ Academic Agent Attached to Assignment";
+      btn.className = "btn btn-success btn-block";
+      btn.disabled = true;
+    }
+  </script>
+</body>
+</html>

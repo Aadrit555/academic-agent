@@ -36,7 +36,7 @@ def get_auth_headers(user_id=1, email="aadrit_y@srmap.edu.in"):
     return {"Authorization": f"Bearer {token}"}
 
 def test_google_classroom_addon_html_serving():
-    """Verifies that / and /addon serve the clean Google Classroom companion HTML."""
+    """Verifies that /, /addon, /addon/student, /addon/teacher, /addon/review and /manifest.json serve properly."""
     res = client.get("/")
     assert res.status_code == 200
     assert "Academic Agent" in res.text
@@ -47,7 +47,30 @@ def test_google_classroom_addon_html_serving():
     assert addon_res.status_code == 200
     assert "section-next-class" in addon_res.text
     assert "coursework-select" in addon_res.text
-    assert "btn-execute-assignment" not in addon_res.text or "execute" in addon_res.text.lower()
+
+    student_res = client.get("/addon/student")
+    assert student_res.status_code == 200
+    assert "Academic Agent" in student_res.text
+
+    teacher_res = client.get("/addon/teacher?courseId=101&itemId=202")
+    assert teacher_res.status_code == 200
+    assert "TEACHER VIEW" in teacher_res.text
+    assert "ATTACHMENT CONFIGURATION" in teacher_res.text
+    assert "btn-attach-addon" in teacher_res.text
+
+    review_res = client.get("/addon/review?itemId=202")
+    assert review_res.status_code == 200
+    assert "Student Work Review" in review_res.text
+    assert "review-content" in review_res.text
+
+    manifest_res = client.get("/manifest.json")
+    assert manifest_res.status_code == 200
+    manifest = manifest_res.json()
+    assert "addOns" in manifest
+    assert "classroom" in manifest["addOns"]
+    assert "studentViewUri" in manifest["addOns"]["classroom"]
+    assert "teacherViewUri" in manifest["addOns"]["classroom"]
+    assert "studentWorkReviewUri" in manifest["addOns"]["classroom"]
 
 def test_addon_next_class_real_timetable(setup_addon_test_db):
     """Core Capability 6: Real ERP Timetable Next-Class resolution."""

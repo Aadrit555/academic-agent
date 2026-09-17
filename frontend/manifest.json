@@ -4,11 +4,16 @@
   "addOns": {
     "common": {
       "name": "Academic Agent",
-      "logoUrl": "http://localhost:8000/favicon.svg",
+      "logoUrl": "http://127.0.0.1:8000/favicon.svg",
       "layoutProperties": {
         "primaryColor": "#2563eb",
         "secondaryColor": "#10b981"
       }
+    },
+    "classroom": {
+      "teacherViewUri": "http://127.0.0.1:8000/addon/teacher",
+      "studentViewUri": "http://127.0.0.1:8000/addon",
+      "studentWorkReviewUri": "http://127.0.0.1:8000/addon/review"
     }
   }
 }

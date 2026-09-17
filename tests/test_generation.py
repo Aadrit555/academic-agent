@@ -112,7 +112,7 @@ def test_dynamic_assignment_specification(db_session, test_user_and_course):
         classroom_course_id="c1",
         coursework_id="w_spec",
         title="DAA LAB 4: Implement Merge Sort in C",
-        description="Write MergeSort.c using gcc -Wall -Wextra. Include test cases and benchmark CSV."
+        description="Write MergeSort.c using gcc -Wall -Wextra. Include test cases, timing_results.csv, and Lab4_Report.docx."
     )
     db_session.add(cw)
     db_session.commit()

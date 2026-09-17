@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Academic Agent — Student Work Review</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <div class="addon-container">
+    <header class="addon-header">
+      <div class="header-brand">
+        <div class="brand-logo">AA</div>
+        <div class="brand-text">
+          <div class="brand-title">
+            <span>ACADEMIC AGENT</span>
+            <span class="brand-badge">WORK REVIEW</span>
+          </div>
+          <span class="brand-sub">Submission &amp; Compiler Verification Review</span>
+        </div>
+      </div>
+    </header>
+
+    <section class="addon-section">
+      <div class="section-label">SUBMISSION REVIEW</div>
+      <div id="review-content">
+        <div class="loading-compact">
+          <span class="spinner-dot"></span>
+          <span>Loading verified submission deliverables...</span>
+        </div>
+      </div>
+    </section>
+
+    <footer class="addon-footer">
+      <div class="footer-copy">Academic Agent Compiler Verification • Google Classroom Native</div>
+    </footer>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const itemId = params.get("itemId") || params.get("courseWorkId");
+
+    async function loadReview() {
+      const container = document.getElementById("review-content");
+      if (!itemId) {
+        container.innerHTML = '<div class="empty-compact">No assignment item identifier specified in review context.</div>';
+        return;
+      }
+
+      try {
+        const token = localStorage.getItem("academic_agent_jwt");
+        const headers = token ? { "Authorization": `Bearer ${token}` } : {};
+
+        // Fetch coursework list and locate matching item
+        const cws = await fetch("/api/classroom/coursework", { headers }).then(r => r.json()).catch(() => []);
+        const matched = cws.find(c => String(c.id) === String(itemId) || String(c.coursework_id) === String(itemId));
+
+        if (!matched) {
+          container.innerHTML = '<div class="empty-compact">Assignment submission record not found or not yet executed.</div>';
+          return;
+        }
+
+        const [deliv, val] = await Promise.all([
+          fetch(`/api/assignment/${matched.id}/deliverable`, { headers }).then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch(`/api/assignment/${matched.id}/validate`, { headers }).then(r => r.ok ? r.json() : null).catch(() => null)
+        ]);
+
+        if (!deliv) {
+          container.innerHTML = '<div class="empty-compact">No deliverable files generated for this submission.</div>';
+          return;
+        }
+
+        const checklist = val && val.checklist ? val.checklist : [];
+
+        container.innerHTML = `
+          <div class="deliv-card">
+            <div class="deliv-header">
+              <div class="deliv-name">
+                <span class="file-ext">${escapeHtml(deliv.file_type || '.c')}</span>
+                <b>${escapeHtml(deliv.file_name)}</b>
+              </div>
+              <span class="status-pill status-${val && val.passed ? 'completed' : 'not_started'}">
+                ${val && val.passed ? 'VERIFIED' : 'PENDING'}
+              </span>
+            </div>
+
+            <div class="code-preview-wrap">
+              <pre class="code-preview"><code>${escapeHtml(deliv.code_or_content || '')}</code></pre>
+            </div>
+
+            ${checklist.length > 0 ? `
+              <div class="val-checklist">
+                <div class="val-title">COMPILER VALIDATION CHECKLIST:</div>
+                ${checklist.map(c => `
+                  <div class="check-item ${c.passed ? 'check-pass' : 'check-fail'}">
+                    <span>${c.passed ? '✓' : '✗'}</span>
+                    <span class="check-text">${escapeHtml(c.title)}: ${escapeHtml(c.details || '')}</span>
+                  </div>
+                `).join('')}
+              </div>
+            ` : ''}
+          </div>
+        `;
+      } catch (e) {
+        container.innerHTML = `<div class="empty-compact text-danger">Failed to load submission review: ${escapeHtml(e.message)}</div>`;
+      }
+    }
+
+    function escapeHtml(str) {
+      if (!str) return "";
+      return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+
+    document.addEventListener("DOMContentLoaded", loadReview);
+  </script>
+</body>
+</html>
