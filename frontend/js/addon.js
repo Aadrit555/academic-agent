@@ -93,7 +93,25 @@ const AddonApp = {
 
       this.state.nextClass = next;
 
-      if (!next || !next.has_class) {
+      let classObj = null;
+      let isOngoing = false;
+
+      if (next) {
+        if (next.has_class) {
+          classObj = next;
+          isOngoing = !!next.is_ongoing;
+        } else if (next.has_schedule) {
+          if (next.ongoing_class) {
+            classObj = next.ongoing_class;
+            isOngoing = true;
+          } else if (next.upcoming_class) {
+            classObj = next.upcoming_class;
+            isOngoing = false;
+          }
+        }
+      }
+
+      if (!classObj) {
         card.innerHTML = `
           <div class="empty-compact">
             <span>No upcoming classes scheduled for the current session.</span>
@@ -102,7 +120,6 @@ const AddonApp = {
         return;
       }
 
-      const isOngoing = next.is_ongoing;
       const statusBadge = isOngoing 
         ? '<span class="pill pill-green">IN SESSION NOW</span>' 
         : '<span class="pill pill-blue">NEXT CLASS</span>';
@@ -111,12 +128,12 @@ const AddonApp = {
         <div class="next-class-box ${isOngoing ? 'is-ongoing' : ''}">
           <div class="nc-top">
             ${statusBadge}
-            <span class="nc-time">${escapeHtml(next.start_time)} – ${escapeHtml(next.end_time)}</span>
+            <span class="nc-time">${escapeHtml(classObj.start_time)} – ${escapeHtml(classObj.end_time)}</span>
           </div>
-          <div class="nc-subject">${escapeHtml(next.subject)}</div>
+          <div class="nc-subject">${escapeHtml(classObj.subject)}</div>
           <div class="nc-meta">
-            <span class="nc-room">Room: <b>${escapeHtml(next.classroom || 'TBD')}</b></span>
-            ${next.faculty ? `<span class="nc-faculty">• ${escapeHtml(next.faculty)}</span>` : ''}
+            <span class="nc-room">Room: <b>${escapeHtml(classObj.classroom || 'TBD')}</b></span>
+            ${classObj.faculty ? `<span class="nc-faculty">• ${escapeHtml(classObj.faculty)}</span>` : ''}
           </div>
         </div>
       `;

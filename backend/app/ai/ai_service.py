@@ -274,6 +274,28 @@ class AIService:
                         "```"
                     )
 
+        if "COURSE MATERIAL CONTEXT:" in prompt:
+            context_part = prompt.split("COURSE MATERIAL CONTEXT:")[-1].strip()
+            if "summarize" in prompt_lc:
+                sentences = [s.strip() for s in context_part.split(".") if len(s.strip()) > 10]
+                bullets = "\n".join([f"- {s}." for s in sentences[:5]])
+                return (
+                    f"### Course Material Summary\n\n"
+                    f"{bullets}\n\n"
+                    f"*Key takeaways extracted directly from course materials.*"
+                )
+            elif "question" in prompt_lc or "viva" in prompt_lc:
+                words = [w.strip(",.;()[]") for w in context_part.split() if len(w) > 4]
+                topics = list(dict.fromkeys(words))[:4]
+                t1 = topics[0] if len(topics) > 0 else "the core topic"
+                t2 = topics[1] if len(topics) > 1 else "the methodology"
+                return (
+                    f"### Exam & Viva Questions\n\n"
+                    f"1. **Explain the principles of {t1}.**\n   - *Model Answer*: Grounded in uploaded lecture notes.\n\n"
+                    f"2. **How does {t2} apply in practice?**\n   - *Model Answer*: Essential exam concept covered in coursework.\n\n"
+                    f"*Synthesized from course syllabus materials.*"
+                )
+
         return (
             "Academic Agent Analysis:\n"
             "Based on your course materials and academic requirements, the foundational concepts, "
