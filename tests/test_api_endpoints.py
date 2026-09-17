@@ -211,15 +211,28 @@ def test_addon_endpoint(client):
     assert "Academic Agent Companion" in res.text or "<!DOCTYPE html>" in res.text
 
 def test_google_credentials_config_endpoint(client):
-    res = client.post("/api/config/google-credentials", json={
-        "client_id": "test-client-id-12345.apps.googleusercontent.com",
-        "client_secret": "test-client-secret-abc",
-        "redirect_uri": "http://localhost:8000/api/auth/google/callback"
-    })
-    assert res.status_code == 200
-    data = res.json()
-    assert "configured successfully" in data["message"]
-    assert "accounts.google.com" in data["auth_url"]
+    from backend.app.config import settings, BASE_DIR
+    env_path = BASE_DIR / ".env"
+    original_content = env_path.read_text(encoding="utf-8") if env_path.exists() else None
+    orig_cid = settings.GOOGLE_CLIENT_ID
+    orig_sec = settings.GOOGLE_CLIENT_SECRET
+    orig_red = settings.GOOGLE_REDIRECT_URI
+    try:
+        res = client.post("/api/config/google-credentials", json={
+            "client_id": "test-client-id-12345.apps.googleusercontent.com",
+            "client_secret": "test-client-secret-abc",
+            "redirect_uri": "http://localhost:8000/api/auth/google/callback"
+        })
+        assert res.status_code == 200
+        data = res.json()
+        assert "configured successfully" in data["message"]
+        assert "accounts.google.com" in data["auth_url"]
+    finally:
+        settings.GOOGLE_CLIENT_ID = orig_cid
+        settings.GOOGLE_CLIENT_SECRET = orig_sec
+        settings.GOOGLE_REDIRECT_URI = orig_red
+        if original_content is not None:
+            env_path.write_text(original_content, encoding="utf-8")
 
 def test_erp_status_and_connect_endpoint(client):
     # Check initial ERP status

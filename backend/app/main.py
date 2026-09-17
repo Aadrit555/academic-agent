@@ -11,7 +11,7 @@ from fastapi.responses import FileResponse, RedirectResponse, JSONResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
-from backend.app.config import settings
+from backend.app.config import settings, BASE_DIR
 from backend.app.database import get_db, init_db
 from backend.app.models import User, Course, TimetableEntry, Coursework, Document, GeneratedAssignment, AssignmentValidation, SubmissionSchedule, Submission, ERPIntegration
 from backend.app.schemas import (
@@ -357,7 +357,7 @@ def configure_google_credentials(
 
     # Safely persist to .env file in project root if possible
     try:
-        env_path = settings.BASE_DIR / ".env"
+        env_path = BASE_DIR / ".env"
         existing_lines = []
         if env_path.exists():
             existing_lines = env_path.read_text(encoding="utf-8").splitlines()
