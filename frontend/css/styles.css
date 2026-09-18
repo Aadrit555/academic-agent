@@ -684,13 +684,15 @@ body {
 }
 
 /* ── Code & Validation views ────────────────────────────────────────────── */
-.code-view-container, .validation-view-container {
+.code-view-container,
+.validation-view-container {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.code-header-bar, .val-header-bar {
+.code-header-bar,
+.val-header-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;

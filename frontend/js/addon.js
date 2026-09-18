@@ -270,23 +270,23 @@ const AddonApp = {
         listEl.innerHTML = `
           <div class="ingested-notice-card" style="flex-direction: column; align-items: flex-start; gap: 6px;">
             <div style="display: flex; align-items: center; gap: 6px; width: 100%;">
-              <span>✓ <b>Classroom PDFs Grounded:</b> ${docs.length} document(s) pre-indexed in Study Brain:</span>
+              <span>✓ <b>Professor's Assignment Handouts Grounded:</b> ${docs.length} handout/syllabus document(s) pre-indexed in Study Brain:</span>
             </div>
             <div style="display: flex; flex-wrap: wrap; gap: 4px; width: 100%;">
               ${docs.map(d => `
                 <span class="attachment-chip" style="font-size: 10px; padding: 2px 6px;">
                   📄 ${escapeHtml(d.filename)} (${d.page_count}p)
-                  <span class="att-badge">Indexed</span>
+                  <span class="att-badge">Handout Read</span>
                 </span>
               `).join('')}
             </div>
           </div>
         `;
       } else {
-        listEl.innerHTML = `<div class="ingested-notice-card"><span>✓ <b>Classroom PDFs Auto-Ingested:</b> Materials are pre-indexed into Study Brain.</span></div>`;
+        listEl.innerHTML = `<div class="ingested-notice-card"><span>✓ <b>Professor's Assignment Handouts:</b> Materials are pre-indexed into Study Brain.</span></div>`;
       }
     } catch {
-      listEl.innerHTML = `<div class="ingested-notice-card"><span>✓ <b>Classroom PDFs Auto-Ingested:</b> Materials are pre-indexed into Study Brain.</span></div>`;
+      listEl.innerHTML = `<div class="ingested-notice-card"><span>✓ <b>Professor's Assignment Handouts:</b> Materials are pre-indexed into Study Brain.</span></div>`;
     }
   },
 
@@ -350,13 +350,13 @@ const AddonApp = {
     if (materials.length > 0) {
       materialsHtml = `
         <div class="classroom-attachments-panel">
-          <div class="attachments-label">📎 CLASSROOM ATTACHED MATERIALS (AUTO-INGESTED):</div>
+          <div class="attachments-label">📎 PROFESSOR'S ASSIGNMENT HANDOUT &amp; BRIEF (READ BY AI):</div>
           <div class="attachments-chips">
             ${materials.map(m => `
-              <a href="${escapeHtml(m.alternateLink || m.url || 'javascript:void(0)')}" target="_blank" class="attachment-chip" title="Open in Google Classroom / Drive">
+              <a href="${escapeHtml(m.alternateLink || m.url || 'javascript:void(0)')}" target="_blank" class="attachment-chip" title="Open Professor's Handout in Google Classroom / Drive">
                 <span class="att-icon">${m.type === 'driveFile' ? '📄' : '🔗'}</span>
                 <span class="att-title">${escapeHtml(m.title || 'Document')}</span>
-                <span class="att-badge">✓ Ingested</span>
+                <span class="att-badge">✓ Read by AI</span>
               </a>
             `).join('')}
           </div>
@@ -541,11 +541,11 @@ const AddonApp = {
       tabBodyHtml = `
         <div class="report-view-container">
           <div class="report-header-banner">
-            <div class="rep-badge">SRM UNIVERSITY AP • CSE DEPARTMENT • ACADEMIC RECORD</div>
+            <div class="rep-badge">SRM UNIVERSITY AP • STUDENT SUBMISSION RECORD • PREPARED FROM PROFESSOR'S HANDOUT</div>
             <div class="rep-title">${escapeHtml(reportName)}</div>
           </div>
           <div class="report-body-content">
-            ${this.renderMarkdownHtml(reportContent || 'Academic Lab Report generated and verified. Click "Download Report (.docx)" above to inspect the complete Word document.')}
+            ${this.renderMarkdownHtml(reportContent || 'Student Academic Lab Report generated from professor assignment handout. Click "Student Report (.docx)" above to download the Word document.')}
           </div>
         </div>
       `;
@@ -569,7 +569,7 @@ const AddonApp = {
         <div class="validation-view-container">
           <div class="val-header-bar">
             <div class="val-status-badge ${val && val.passed ? 'status-pass' : 'status-fail'}">
-              ${val && val.passed ? '✓ COMPILER VERIFICATION PASSED (ZERO WARNINGS)' : '⚡ VALIDATION PENDING / FLAGGED'}
+              ${val && val.passed ? '✓ COMPILER &amp; HANDOUT TEST VERIFICATION PASSED' : '⚡ VALIDATION PENDING / FLAGGED'}
             </div>
             <button class="btn btn-success btn-xs" onclick="AddonApp.validateDeliverable()" ${this.state.isValidating ? 'disabled' : ''}>
               ${this.state.isValidating ? 'Compiling...' : '⚡ Re-Run Compiler'}
@@ -609,27 +609,27 @@ const AddonApp = {
           <div class="deliv-tabs-nav">
             ${hasReport ? `
               <button class="deliv-nav-tab ${currentTab === 'report' ? 'active' : ''}" onclick="AddonApp.switchDelivTab('report')">
-                📄 Academic Lab Report
+                📄 Student Lab Report (.docx)
               </button>
             ` : ''}
             <button class="deliv-nav-tab ${currentTab === 'code' ? 'active' : ''}" onclick="AddonApp.switchDelivTab('code')">
-              💻 Source Code (${escapeHtml(deliv.file_type || '.c')})
+              💻 Student Code (${escapeHtml(deliv.file_type || '.c')})
             </button>
             <button class="deliv-nav-tab ${currentTab === 'validation' ? 'active' : ''}" onclick="AddonApp.switchDelivTab('validation')">
-              ⚡ Compiler Validation ${val && val.passed ? '<span class="pill-pass">✓ PASS</span>' : ''}
+              ⚡ Compiler &amp; Test Validation ${val && val.passed ? '<span class="pill-pass">✓ PASS</span>' : ''}
             </button>
           </div>
           
           <div class="deliv-export-actions">
             ${hasReport ? `
-              <button class="btn btn-secondary btn-xs" onclick="AddonApp.downloadReport()" title="Download Word Document Report (.docx)">
-                ⬇️ Report (.docx)
+              <button class="btn btn-secondary btn-xs" onclick="AddonApp.downloadReport()" title="Download Student Word Document Report (.docx)">
+                ⬇️ Student Report (.docx)
               </button>
             ` : ''}
-            <button class="btn btn-secondary btn-xs" onclick="AddonApp.downloadDeliverable()" title="Download Source Code File">
-              ⬇️ Code (${escapeHtml(deliv.file_type || '.c')})
+            <button class="btn btn-secondary btn-xs" onclick="AddonApp.downloadDeliverable()" title="Download Student Source Code File">
+              ⬇️ Source Code (${escapeHtml(deliv.file_type || '.c')})
             </button>
-            <button class="btn btn-primary btn-xs" onclick="AddonApp.downloadAll()" title="Download Submission Package (.zip)">
+            <button class="btn btn-primary btn-xs" onclick="AddonApp.downloadAll()" title="Download Full Student Submission Package (.zip)">
               📦 Download All (.zip)
             </button>
           </div>
@@ -664,8 +664,8 @@ const AddonApp = {
     try {
       Toast.info("Packaging verified source code and academic report into zip archive...");
       const blob = await api(`/assignment/${this.state.selectedId}/download-all`);
-      const baseName = (this.state.deliverable && this.state.deliverable.file_name) 
-        ? this.state.deliverable.file_name.replace(/\.[^/.]+$/, "") 
+      const baseName = (this.state.deliverable && this.state.deliverable.file_name)
+        ? this.state.deliverable.file_name.replace(/\.[^/.]+$/, "")
         : "Submission";
       const fileName = `${baseName}_Package.zip`;
       const url = window.URL.createObjectURL(blob);
