@@ -61,6 +61,20 @@ class ClassroomService:
         cr.raise_for_status()
         courses_data = cr.json().get("courses", [])
 
+        # Fallback: if no courses found, try querying explicitly as enrolled student
+        if not courses_data:
+            try:
+                r_stud = requests.get(
+                    f"{API_BASE}/courses",
+                    headers=headers,
+                    params={"studentId": "me", "courseStates": "ACTIVE", "pageSize": 50},
+                    timeout=20
+                )
+                if r_stud.status_code == 200:
+                    courses_data = r_stud.json().get("courses", [])
+            except Exception as e:
+                logger.debug(f"Student courses fallback: {e}")
+
         synced_coursework = []
         for c in courses_data:
             cid = c.get("id")

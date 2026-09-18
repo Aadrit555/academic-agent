@@ -171,17 +171,54 @@ def get_auth_status(db: Session = Depends(get_db), user: User = Depends(current_
     }
 
 @app.get("/api/auth/google/url")
-def get_google_auth_url():
-    return {"url": AuthService.get_auth_url()}
+def get_google_auth_url(target: str = "/addon", user: User = Depends(current_user)):
+    import base64
+    state_payload = json.dumps({"user_id": user.id, "target": target})
+    state = base64.urlsafe_b64encode(state_payload.encode("utf-8")).decode("utf-8")
+    return {"url": AuthService.get_auth_url(state=state)}
 
 @app.get("/api/auth/google/callback")
-def google_auth_callback(code: str, db: Session = Depends(get_db), user: User = Depends(current_user)):
+def google_auth_callback(
+    code: Optional[str] = None,
+    state: Optional[str] = None,
+    error: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    import base64
+    import urllib.parse
+    target = "/addon"
+    user = None
+    if state:
+        try:
+            decoded = base64.urlsafe_b64decode(state.encode("utf-8")).decode("utf-8")
+            data = json.loads(decoded)
+            uid = data.get("user_id")
+            target = data.get("target", "/addon")
+            if uid:
+                user = db.query(User).filter_by(id=int(uid)).first()
+        except Exception as e:
+            logger.warning(f"Could not parse OAuth state: {e}")
+
+    if not user:
+        user = get_or_create_default_user(db)
+
+    if error:
+        logger.warning(f"Google OAuth returned error parameter: {error}")
+        return RedirectResponse(url=f"{target}?auth_error={urllib.parse.quote(error)}")
+
+    if not code:
+        return RedirectResponse(url=f"{target}?auth_error=No+authorization+code+received")
+
     try:
         AuthService.exchange_code(db, user, code)
-        ClassroomService.sync_classroom_data(db, user)
-        return RedirectResponse(url="/?auth_success=true")
+        try:
+            ClassroomService.sync_classroom_data(db, user)
+        except Exception as sync_err:
+            logger.warning(f"Initial Classroom sync after OAuth warning: {sync_err}")
+        return RedirectResponse(url=f"{target}?auth_success=true")
     except Exception as e:
-        return RedirectResponse(url=f"/?auth_error={str(e)}")
+        logger.exception("Google OAuth exchange failed:")
+        return RedirectResponse(url=f"{target}?auth_error={urllib.parse.quote(str(e))}")
 
 @app.post("/api/auth/register", response_model=TokenResponse)
 def register_user(req: UserRegister, db: Session = Depends(get_db)):

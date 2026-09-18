@@ -1,10 +1,14 @@
+import os
 import json
+import logging
 import requests
 from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 from backend.app.models import Coursework, GeneratedAssignment, AssignmentValidation, Submission, ClassroomIntegration, User
 from backend.app.drive.drive_service import DriveService
 from backend.app.auth.auth_service import AuthService
+
+logger = logging.getLogger("academic_agent.submission")
 
 API_BASE = "https://classroom.googleapis.com/v1"
 
@@ -40,8 +44,18 @@ class SubmissionService:
         db.commit()
 
         try:
-            # 5. Upload file to Drive
+            # 5. Upload deliverables to Google Drive (Code + formal Lab Report .docx)
+            attachments = []
             drive_file_id, file_name = DriveService.upload_file(assignment.file_path, token)
+            attachments.append({"driveFile": {"id": drive_file_id}})
+
+            report_drive_id = None
+            if assignment.report_file_path and os.path.exists(assignment.report_file_path):
+                try:
+                    report_drive_id, report_file_name = DriveService.upload_file(assignment.report_file_path, token)
+                    attachments.append({"driveFile": {"id": report_drive_id}})
+                except Exception as upload_err:
+                    logger.warning(f"Could not upload lab report document to Drive: {upload_err}")
 
             # Live Google Classroom API
             headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
@@ -59,11 +73,12 @@ class SubmissionService:
                 submission_id = subs[0]["id"]
                 coursework.submission_id = submission_id
 
-            # Attach drive file
-            attach_url = f"{API_BASE}/courses/{cid}/courseWork/{wid}/studentSubmissions/{submission_id}:modifyAttachments"
-            attach_body = {"addAttachments": [{"driveFile": {"id": drive_file_id}}]}
-            ar = requests.post(attach_url, json=attach_body, headers=headers, timeout=20)
-            ar.raise_for_status()
+            # Attach drive file(s)
+            if attachments:
+                attach_url = f"{API_BASE}/courses/{cid}/courseWork/{wid}/studentSubmissions/{submission_id}:modifyAttachments"
+                attach_body = {"addAttachments": attachments}
+                ar = requests.post(attach_url, json=attach_body, headers=headers, timeout=20)
+                ar.raise_for_status()
 
             # Turn in
             turnin_url = f"{API_BASE}/courses/{cid}/courseWork/{wid}/studentSubmissions/{submission_id}:turnIn"

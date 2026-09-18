@@ -76,17 +76,19 @@ class AuthService:
         "https://www.googleapis.com/auth/classroom.courses.readonly",
         "https://www.googleapis.com/auth/classroom.coursework.me",
         "https://www.googleapis.com/auth/classroom.courseworkmaterials.readonly",
+        "https://www.googleapis.com/auth/classroom.student-submissions.me.readonly",
         "https://www.googleapis.com/auth/classroom.addons.student",
         "https://www.googleapis.com/auth/classroom.addons.teacher",
         "https://www.googleapis.com/auth/drive.file",
         "https://www.googleapis.com/auth/drive.readonly",
         "https://www.googleapis.com/auth/userinfo.email",
+        "https://www.googleapis.com/auth/userinfo.profile",
     ]
     AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
     TOKEN_URL = "https://oauth2.googleapis.com/token"
 
     @classmethod
-    def get_auth_url(cls, redirect_uri: str = None) -> str:
+    def get_auth_url(cls, redirect_uri: str = None, state: str = None) -> str:
         redirect = redirect_uri or settings.GOOGLE_REDIRECT_URI
         client_id = settings.GOOGLE_CLIENT_ID
         if not client_id:
@@ -102,6 +104,8 @@ class AuthService:
             "prompt": "consent",
             "include_granted_scopes": "true",
         }
+        if state:
+            params["state"] = state
         return f"{cls.AUTH_URL}?{urllib.parse.urlencode(params)}"
 
     @classmethod

@@ -970,8 +970,9 @@ const AddonApp = {
   async syncClassroom() {
     try {
       Toast.info("Syncing enrolled courses and coursework from Google Classroom...");
-      await api("/classroom/sync", { method: "POST" });
-      Toast.success("Classroom synchronized!");
+      const res = await api("/classroom/sync", { method: "POST" });
+      Toast.success(res.message || "Classroom synchronized!");
+      await this.loadAuthStatus();
       await this.loadCoursework();
     } catch (e) {
       Toast.error(`Sync Failed: ${e.message}`);
@@ -980,7 +981,8 @@ const AddonApp = {
 
   async launchGoogleOAuth() {
     try {
-      const res = await api("/auth/google/url");
+      const currentTarget = encodeURIComponent(window.location.pathname || "/addon");
+      const res = await api(`/auth/google/url?target=${currentTarget}`);
       if (res && res.url) {
         window.location.href = res.url;
       }
