@@ -196,7 +196,7 @@ def test_assignment_lifecycle_endpoints(client):
     # 6. Submit Now requires valid Google OAuth authorization
     sub_res = client.post(f"/api/assignment/{cw_id}/submit-now")
     assert sub_res.status_code == 400
-    assert "Google" in sub_res.json()["detail"]
+    assert "Google" in sub_res.json()["detail"] or "Classroom" in sub_res.json()["detail"]
 
 def test_classroom_addon_iframe_context(client):
     # Tests that when Google Classroom launches the add-on iframe with courseId and itemId

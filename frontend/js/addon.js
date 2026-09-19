@@ -79,6 +79,18 @@ const AddonApp = {
         }
       }
 
+      // Update Banners on main view
+      const gBanner = document.getElementById("banner-google-needed");
+      if (gBanner) gBanner.style.display = googleRes.connected ? "none" : "flex";
+
+      const pBanner = document.getElementById("banner-portal-needed");
+      if (pBanner) pBanner.style.display = erpRes.is_connected ? "none" : "flex";
+
+      const bannerContainer = document.getElementById("connection-banner-container");
+      if (bannerContainer) {
+        bannerContainer.style.display = (!googleRes.connected || !erpRes.is_connected) ? "flex" : "none";
+      }
+
       // Sync views inside Settings Modal
       this.renderModalAuthViews();
     } catch (e) {
@@ -1089,6 +1101,56 @@ const AddonApp = {
       }
     } catch (e) {
       Toast.error(`Failed to save credentials: ${e.message}`);
+    }
+  },
+
+  async quickConnectGoogle() {
+    try {
+      Toast.info("Connecting with Academic Classroom Profile...");
+      const res = await api("/auth/google/quick-connect", { method: "POST" });
+      Toast.success(res.message || "Google Classroom connected!");
+      await this.loadAuthStatus();
+      await this.loadCoursework();
+      closeModal("settings-modal");
+    } catch (e) {
+      Toast.error(`Quick Connect Error: ${e.message}`);
+    }
+  },
+
+  async quickConnectERP() {
+    try {
+      Toast.info("Loading SRM AP CSE schedule & variable classrooms...");
+      const res = await api("/erp/quick-connect", { method: "POST" });
+      Toast.success(res.message || "Timetable connected!");
+      await this.loadAuthStatus();
+      await this.loadNextClass();
+      closeModal("settings-modal");
+    } catch (e) {
+      Toast.error(`Timetable Error: ${e.message}`);
+    }
+  },
+
+  async connectDirectToken() {
+    const input = document.getElementById("direct-token-input");
+    const token = input ? input.value.trim() : "";
+    if (!token) {
+      Toast.warning("Please paste a Google access token.");
+      return;
+    }
+    try {
+      Toast.info("Validating and connecting Google token...");
+      const res = await api("/auth/google/direct-token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ access_token: token })
+      });
+      Toast.success(res.message || "Connected successfully!");
+      if (input) input.value = "";
+      await this.loadAuthStatus();
+      await this.loadCoursework();
+      closeModal("settings-modal");
+    } catch (e) {
+      Toast.error(`Direct token failed: ${e.message}`);
     }
   }
 };

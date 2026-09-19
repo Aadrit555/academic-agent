@@ -265,3 +265,9 @@ class GradePassbackRequest(BaseModel):
 class ReclaimSubmissionRequest(BaseModel):
     coursework_id: int
 
+class DirectTokenRequest(BaseModel):
+    access_token: str
+    refresh_token: Optional[str] = None
+    email: Optional[str] = None
+
+

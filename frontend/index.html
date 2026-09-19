@@ -45,6 +45,39 @@
       </div>
     </header>
 
+    <!-- ── Connection Alerts & Quick Action Bar ──────────────────────────── -->
+    <div id="connection-banner-container" style="display: none; margin: 8px 0; flex-direction: column; gap: 8px;">
+      <div class="connection-alert-card" id="banner-google-needed" style="display: none;">
+        <div class="cac-header">
+          <span class="cac-icon">📚</span>
+          <div class="cac-text">
+            <span class="cac-title">Google Classroom Disconnected</span>
+            <span class="cac-sub">Sign in with Google to sync assignments, or use 1-click quick connect.</span>
+          </div>
+        </div>
+        <div class="cac-actions">
+          <button class="btn btn-primary btn-sm" onclick="AddonApp.launchGoogleOAuth()">🔗 Sign in with Google</button>
+          <button class="btn btn-secondary btn-sm" onclick="AddonApp.quickConnectGoogle()">⚡ Quick Connect</button>
+          <button class="btn btn-secondary btn-sm" onclick="AddonApp.openSettingsTab('google')">Setup / Token</button>
+        </div>
+      </div>
+
+      <div class="connection-alert-card" id="banner-portal-needed" style="display: none;">
+        <div class="cac-header">
+          <span class="cac-icon">🏛️</span>
+          <div class="cac-text">
+            <span class="cac-title">Student Portal Disconnected</span>
+            <span class="cac-sub">Connect your registration number or load the SRM AP schedule.</span>
+          </div>
+        </div>
+        <div class="cac-actions">
+          <button class="btn btn-primary btn-sm" onclick="AddonApp.openSettingsTab('portal')">Connect Student ID</button>
+          <button class="btn btn-secondary btn-sm" onclick="AddonApp.quickConnectERP()">⚡ 1-Click Schedule</button>
+        </div>
+      </div>
+    </div>
+
+
     <!-- ── Section 1: Next Class Widget (Real Timetable & Room) ───────────── -->
     <section class="addon-section" id="section-next-class">
       <div class="section-label">UPCOMING CLASS SCHEDULE</div>
@@ -240,6 +273,15 @@
             <button class="btn btn-primary btn-block" id="btn-erp-submit">
               Connect Student Portal
             </button>
+
+            <div style="text-align: center; margin: 10px 0; font-size: 11px; color: var(--text-muted);">— OR —</div>
+
+            <button class="btn btn-secondary btn-block" onclick="AddonApp.quickConnectERP()">
+              ⚡ 1-Click Load SRM AP CSE Schedule
+            </button>
+            <span style="font-size: 10px; color: var(--text-muted); display: block; margin-top: 4px; text-align: center;">
+              Off-campus or intranet issues? Loads the official SRM AP CSE schedule & variable classrooms instantly.
+            </span>
           </div>
         </div>
 
@@ -267,12 +309,45 @@
           <div id="google-login-view">
             <p class="modal-intro">
               Connect your institutional Google account to automatically import enrolled courses, assignment
-              instructions,
-              deadlines, and enable direct Google Drive deliverable turn-in.
+              instructions, deadlines, and enable direct Google Drive deliverable turn-in.
             </p>
-            <button class="btn btn-secondary btn-block" onclick="AddonApp.launchGoogleOAuth()">
-              <span>🔗 Connect Google Classroom</span>
+
+            <button class="btn btn-primary btn-block" onclick="AddonApp.launchGoogleOAuth()">
+              <span>🔗 Sign In with Google (OAuth)</span>
             </button>
+
+            <div style="text-align: center; margin: 10px 0; font-size: 11px; color: var(--text-muted);">— OR QUICK TEST —</div>
+
+            <button class="btn btn-secondary btn-block" onclick="AddonApp.quickConnectGoogle()">
+              ⚡ Quick-Connect Academic Profile (1-Click)
+            </button>
+
+            <!-- Direct Token Section -->
+            <div style="margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--border-subtle);">
+              <label class="form-label" style="font-size: 11px;" for="direct-token-input">Paste Google Bearer Access Token (Optional)</label>
+              <div style="display: flex; gap: 6px;">
+                <input type="password" class="form-input" id="direct-token-input" placeholder="ya29.a0A..." style="font-size: 11px;">
+                <button class="btn btn-secondary btn-sm" onclick="AddonApp.connectDirectToken()" style="white-space: nowrap;">Connect</button>
+              </div>
+            </div>
+
+            <!-- Setup & Troubleshooting Guide -->
+            <div class="setup-guide-box">
+              <b style="color: var(--text-primary); display: block; margin-bottom: 4px;">🛠️ Google Cloud OAuth Setup Guide</b>
+              If you see <code>redirect_uri_mismatch</code> or <code>access_denied</code> when signing in:
+              <ol>
+                <li>Open <b>Google Cloud Console</b> &rarr; <b>APIs &amp; Services</b> &rarr; <b>Credentials</b>.</li>
+                <li>Edit your <b>Web Client ID</b> and add these to <b>Authorized redirect URIs</b>:
+                  <div class="code-copy-row">
+                    <span>http://localhost:8000/api/auth/google/callback</span>
+                  </div>
+                  <div class="code-copy-row">
+                    <span>http://127.0.0.1:8000/api/auth/google/callback</span>
+                  </div>
+                </li>
+                <li>Under <b>OAuth consent screen</b> &rarr; <b>Test users</b>, ensure your Gmail is added.</li>
+              </ol>
+            </div>
           </div>
         </div>
 
