@@ -13,7 +13,7 @@ def utcnow():
 
 def get_or_create_default_user(db: Session) -> User:
     user = db.query(User).filter_by(id=1).first()
-    default_email = "student@university.edu"
+    default_email = "aadriteye@gmail.com"
     if not user:
         user = db.query(User).filter_by(email=default_email).first()
     if not user:
@@ -21,7 +21,7 @@ def get_or_create_default_user(db: Session) -> User:
         user = User(
             id=1,
             email=default_email,
-            name="Student",
+            name="Aadrit",
             hashed_password=pwd_hash,
             salt=salt,
             role="student",
@@ -91,7 +91,7 @@ class AuthService:
     TOKEN_URL = "https://oauth2.googleapis.com/token"
 
     @classmethod
-    def get_auth_url(cls, redirect_uri: str = None, state: str = None) -> str:
+    def get_auth_url(cls, redirect_uri: str = None, state: str = None, login_hint: str = None) -> str:
         redirect = redirect_uri or settings.GOOGLE_REDIRECT_URI
         client_id = settings.GOOGLE_CLIENT_ID
         if not client_id:
@@ -107,6 +107,8 @@ class AuthService:
             "prompt": "consent",
             "include_granted_scopes": "true",
         }
+        if login_hint:
+            params["login_hint"] = login_hint
         if state:
             params["state"] = state
         return f"{cls.AUTH_URL}?{urllib.parse.urlencode(params)}"

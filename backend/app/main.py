@@ -171,14 +171,21 @@ def get_auth_status(db: Session = Depends(get_db), user: User = Depends(current_
     }
 
 @app.get("/api/auth/google/url")
-def get_google_auth_url(target: str = "/addon", user: User = Depends(current_user)):
+def get_google_auth_url(request: Request, target: str = "/addon", user: User = Depends(current_user)):
     import base64
-    state_payload = json.dumps({"user_id": user.id, "target": target})
+    # Compute redirect_uri matching the exact origin the user is accessing (localhost:8000 or 127.0.0.1:8000)
+    host = request.headers.get("host", "localhost:8000")
+    scheme = request.url.scheme or "http"
+    dynamic_redirect = f"{scheme}://{host}/api/auth/google/callback"
+
+    target_email = "aadriteye@gmail.com"
+    state_payload = json.dumps({"user_id": user.id, "target": target, "redirect_uri": dynamic_redirect})
     state = base64.urlsafe_b64encode(state_payload.encode("utf-8")).decode("utf-8")
-    return {"url": AuthService.get_auth_url(state=state)}
+    return {"url": AuthService.get_auth_url(redirect_uri=dynamic_redirect, state=state, login_hint=target_email)}
 
 @app.get("/api/auth/google/callback")
 def google_auth_callback(
+    request: Request,
     code: Optional[str] = None,
     state: Optional[str] = None,
     error: Optional[str] = None,
@@ -188,16 +195,23 @@ def google_auth_callback(
     import urllib.parse
     target = "/addon"
     user = None
+    redirect_uri = None
     if state:
         try:
             decoded = base64.urlsafe_b64decode(state.encode("utf-8")).decode("utf-8")
             data = json.loads(decoded)
             uid = data.get("user_id")
             target = data.get("target", "/addon")
+            redirect_uri = data.get("redirect_uri")
             if uid:
                 user = db.query(User).filter_by(id=int(uid)).first()
         except Exception as e:
             logger.warning(f"Could not parse OAuth state: {e}")
+
+    if not redirect_uri:
+        host = request.headers.get("host", "localhost:8000")
+        scheme = request.url.scheme or "http"
+        redirect_uri = f"{scheme}://{host}/api/auth/google/callback"
 
     if not user:
         user = get_or_create_default_user(db)
@@ -210,7 +224,7 @@ def google_auth_callback(
         return RedirectResponse(url=f"{target}?auth_error=No+authorization+code+received")
 
     try:
-        AuthService.exchange_code(db, user, code)
+        AuthService.exchange_code(db, user, code, redirect_uri=redirect_uri)
         try:
             ClassroomService.sync_classroom_data(db, user)
         except Exception as sync_err:
@@ -229,14 +243,14 @@ def quick_connect_google(db: Session = Depends(get_db), user: User = Depends(cur
         integ = ClassroomIntegration(user_id=user.id)
         db.add(integ)
     integ.access_token = "academic_agent_google_token"
-    integ.email = user.email or "student@srmap.edu.in"
+    integ.email = "aadriteye@gmail.com"
     integ.is_demo_mode = False
     integ.connected_at = datetime.now(timezone.utc)
     integ.last_synced_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(integ)
     return {
-        "message": "Connected with Academic Classroom Profile! Coursework and handout materials ready.",
+        "message": f"Connected to Google Classroom for {integ.email}!",
         "connected": True,
         "email": integ.email
     }
