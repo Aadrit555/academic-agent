@@ -1033,6 +1033,13 @@ const AddonApp = {
   async submitNow() {
     if (!this.state.selectedId || this.state.isExecuting) return;
 
+    // If Google Classroom is not connected, prepare and verify deliverables, then prompt to connect or download
+    if (!this.state.googleStatus || !this.state.googleStatus.connected) {
+      await this.executeAssignment();
+      Toast.info("Deliverables prepared & compiler-verified! Sign in with Google to turn in directly, or download below.");
+      return;
+    }
+
     try {
       this.state.isExecuting = true;
       this.renderProgressTracker();
@@ -1056,6 +1063,17 @@ const AddonApp = {
 
   // ── 8. Integrations & Auth Triggers ────────────────────────────────────
   async syncClassroom() {
+    if (!this.state.googleStatus || !this.state.googleStatus.connected) {
+      Toast.warning("Google Classroom is not connected. Please sign in with Google first.");
+      this.openSettingsTab("google");
+      return;
+    }
+    const syncBtn = document.getElementById("btn-sync-classroom");
+    if (syncBtn && syncBtn.disabled) return;
+    if (syncBtn) {
+      syncBtn.disabled = true;
+      syncBtn.textContent = "Syncing...";
+    }
     try {
       Toast.info("Syncing enrolled courses and coursework from Google Classroom...");
       const res = await api("/classroom/sync", { method: "POST" });
@@ -1064,6 +1082,11 @@ const AddonApp = {
       await this.loadCoursework();
     } catch (e) {
       Toast.error(`Sync Failed: ${e.message}`);
+    } finally {
+      if (syncBtn) {
+        syncBtn.disabled = false;
+        syncBtn.textContent = "Sync Coursework";
+      }
     }
   },
 
@@ -1262,6 +1285,7 @@ async function api(path, options = {}) {
 
 const Toast = {
   container: null,
+  lastToast: { msg: "", time: 0 },
   init() {
     if (!this.container) {
       this.container = document.createElement("div");
@@ -1269,21 +1293,34 @@ const Toast = {
       document.body.appendChild(this.container);
     }
   },
-  show(msg, type = "info", duration = 4000) {
+  show(msg, type = "info", duration = 3500) {
     this.init();
+    const now = Date.now();
+    // Drop identical duplicate toasts within 2.5 seconds
+    if (this.lastToast.msg === msg && (now - this.lastToast.time) < 2500) {
+      return;
+    }
+    this.lastToast = { msg, time: now };
+
+    // Limit visible toasts on screen to at most 2
+    while (this.container.children.length >= 2) {
+      this.container.children[0].remove();
+    }
+
     const item = document.createElement("div");
     item.className = `toast-item toast-${type}`;
-    item.innerHTML = `<span>${escapeHtml(msg)}</span>`;
+    item.innerHTML = `<span>${escapeHtml(msg)}</span><button class="toast-close" style="background:none;border:none;color:inherit;opacity:0.6;cursor:pointer;padding-left:8px;font-size:14px;line-height:1;" aria-label="Close">&times;</button>`;
+    item.onclick = () => item.remove();
     this.container.appendChild(item);
     setTimeout(() => {
       item.classList.add("fade-out");
       setTimeout(() => item.remove(), 250);
     }, duration);
   },
-  success(m) { this.show(m, "success"); },
-  error(m) { this.show(m, "error", 5500); },
-  info(m) { this.show(m, "info"); },
-  warning(m) { this.show(m, "warning"); }
+  success(m) { this.show(m, "success", 3000); },
+  error(m) { this.show(m, "error", 4500); },
+  info(m) { this.show(m, "info", 2500); },
+  warning(m) { this.show(m, "warning", 3500); }
 };
 
 function escapeHtml(str) {
@@ -1331,6 +1368,8 @@ document.addEventListener("click", (e) => {
   // 2. Element or ancestor with data-action
   const actionEl = e.target.closest("[data-action]");
   if (actionEl) {
+    // If element already has inline onclick handler, do not double-invoke
+    if (actionEl.getAttribute("onclick")) return;
     const action = actionEl.getAttribute("data-action");
     switch (action) {
       case "openSettingsTab": {

@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from backend.app.database import SessionLocal
 from backend.app.models import SubmissionSchedule, Coursework, User, GeneratedAssignment, AssignmentValidation
 from backend.app.submission.submission_service import SubmissionService
+from backend.app.auth.auth_service import AuthService
 
 logger = logging.getLogger("academic_agent.scheduler")
 
@@ -199,6 +200,16 @@ class SchedulerService:
                         continue
 
                     # 3. Authorized submission: Drive upload, modifyAttachments, turnIn
+                    token, _ = AuthService.get_valid_token(db, user)
+                    if not token:
+                        schedule.status = "SCHEDULED"
+                        schedule.failure_reason = "Google Classroom not connected"
+                        if coursework.status not in ("READY", "SUBMITTED"):
+                            coursework.status = "READY"
+                        db.commit()
+                        logger.info(f"[Scheduler] Awaiting Google Classroom connection for auto-submission of '{coursework.title}'.")
+                        continue
+
                     SubmissionService.execute_submission(db, user, coursework)
                     schedule.status = "SUBMITTED"
                     schedule.failure_reason = ""
