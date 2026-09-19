@@ -1,5 +1,6 @@
 import os
 import time
+from typing import Optional
 import requests
 from datetime import datetime, timezone, timedelta
 from sqlalchemy.orm import Session
@@ -12,13 +13,13 @@ def utcnow():
     return datetime.now(timezone.utc)
 
 def get_or_create_default_user(db: Session) -> User:
-    user = db.query(User).filter_by(id=1).first()
-    default_email = "aadriteye@gmail.com"
     default_email = "aadrit_y@srmap.edu.in"
+    default_password = "aadrit_009900"
+    user = db.query(User).filter_by(id=1).first()
     if not user:
         user = db.query(User).filter_by(email=default_email).first()
     if not user:
-        pwd_hash, salt = hash_password("Pass@Academic2026!")
+        pwd_hash, salt = hash_password(default_password)
         user = User(
             id=1,
             email=default_email,
@@ -32,7 +33,7 @@ def get_or_create_default_user(db: Session) -> User:
         db.commit()
         db.refresh(user)
     elif not user.hashed_password:
-        pwd_hash, salt = hash_password("Pass@Academic2026!")
+        pwd_hash, salt = hash_password(default_password)
         user.hashed_password = pwd_hash
         user.salt = salt
         db.commit()
