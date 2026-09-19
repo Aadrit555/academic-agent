@@ -21,7 +21,7 @@
             <span>ACADEMIC AGENT</span>
             <span class="brand-badge">COMPANION</span>
           </div>
-          <span class="brand-sub">Google Classroom AI Layer</span>
+          <span class="brand-sub">Google Classroom Workspace Layer</span>
         </div>
       </div>
 
@@ -38,9 +38,12 @@
           <span class="chip-text">Portal</span>
         </button>
 
-        <button class="icon-btn" id="btn-settings" title="Settings & Integrations" data-action="openModal"
+        <button class="icon-btn" id="btn-settings" title="Settings &amp; Integrations" data-action="openModal"
           data-modal="settings-modal" onclick="openModal('settings-modal')" aria-label="Settings">
-          ⚙️
+          <svg class="svg-icon" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
         </button>
       </div>
     </header>
@@ -49,17 +52,20 @@
     <div id="connection-banner-container" style="display: none; margin: 8px 0; flex-direction: column; gap: 8px;">
       <div class="connection-alert-card" id="banner-google-needed" style="display: none;">
         <div class="cac-header">
-          <span class="cac-icon">📚</span>
+          <span class="cac-icon">
+            <svg class="svg-icon" viewBox="0 0 24 24" style="stroke: var(--warning);">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+            </svg>
+          </span>
           <div class="cac-text">
             <span class="cac-title">Google Classroom Disconnected</span>
-            <span class="cac-sub">Sign in with Google to sync assignments, or use 1-click quick connect.</span>
+            <span class="cac-sub">Sign in with Google to sync courses and coursework.</span>
           </div>
         </div>
         <div class="cac-actions">
           <button class="btn btn-primary btn-sm" id="banner-btn-google-oauth" data-action="launchGoogleOAuth"
-            onclick="AddonApp.launchGoogleOAuth()">🔗 Sign in with Google</button>
-          <button class="btn btn-secondary btn-sm" id="banner-btn-google-quick" data-action="quickConnectGoogle"
-            onclick="AddonApp.quickConnectGoogle()">⚡ Quick Connect</button>
+            onclick="AddonApp.launchGoogleOAuth()">Sign in with Google</button>
           <button class="btn btn-secondary btn-sm" id="banner-btn-google-setup" data-action="openSettingsTab"
             data-tab="google" onclick="AddonApp.openSettingsTab('google')">Setup / Token</button>
         </div>
@@ -67,7 +73,16 @@
 
       <div class="connection-alert-card" id="banner-portal-needed" style="display: none;">
         <div class="cac-header">
-          <span class="cac-icon">🏛️</span>
+          <span class="cac-icon">
+            <svg class="svg-icon" viewBox="0 0 24 24" style="stroke: var(--warning);">
+              <path d="M3 21h18"></path>
+              <path d="M5 21V9"></path>
+              <path d="M19 21V9"></path>
+              <path d="M9 21V9"></path>
+              <path d="M15 21V9"></path>
+              <path d="M2 9l10-6 10 6"></path>
+            </svg>
+          </span>
           <div class="cac-text">
             <span class="cac-title">Student Portal Disconnected</span>
             <span class="cac-sub">Connect your registration number or load the SRM AP schedule.</span>
@@ -77,11 +92,10 @@
           <button class="btn btn-primary btn-sm" id="banner-btn-portal-setup" data-action="openSettingsTab"
             data-tab="portal" onclick="AddonApp.openSettingsTab('portal')">Connect Student ID</button>
           <button class="btn btn-secondary btn-sm" id="banner-btn-portal-quick" data-action="quickConnectERP"
-            onclick="AddonApp.quickConnectERP()">⚡ 1-Click Schedule</button>
+            onclick="AddonApp.quickConnectERP()">Load SRM AP Schedule</button>
         </div>
       </div>
     </div>
-
 
     <!-- ── Section 1: Next Class Widget (Real Timetable & Room) ───────────── -->
     <section class="addon-section" id="section-next-class">
@@ -116,10 +130,10 @@
       <div class="section-label">EXECUTION PROGRESS</div>
       <div id="progress-tracker-box">
         <div class="progress-stepper">
-          <div class="step-item"><span class="step-icon">○</span><span class="step-label">Analyzed</span></div>
-          <div class="step-item"><span class="step-icon">○</span><span class="step-label">Generated</span></div>
-          <div class="step-item"><span class="step-icon">○</span><span class="step-label">Validated</span></div>
-          <div class="step-item"><span class="step-icon">○</span><span class="step-label">Scheduled</span></div>
+          <div class="step-item"><span class="step-icon">[ ]</span><span class="step-label">Analyzed</span></div>
+          <div class="step-item"><span class="step-icon">[ ]</span><span class="step-label">Generated</span></div>
+          <div class="step-item"><span class="step-icon">[ ]</span><span class="step-label">Validated</span></div>
+          <div class="step-item"><span class="step-icon">[ ]</span><span class="step-label">Scheduled</span></div>
         </div>
       </div>
     </section>
@@ -129,8 +143,7 @@
       <div class="section-label">STUDENT SUBMISSION DELIVERABLES (PREPARED FROM PROFESSOR'S HANDOUT)</div>
       <div id="deliverables-box">
         <div class="empty-compact">
-          <span>Deliverables not yet generated. Execute the assignment above to create code and complete the lab
-            report.</span>
+          <span>Deliverables not yet generated. Execute the assignment above to create code and complete the lab report.</span>
         </div>
       </div>
     </section>
@@ -141,23 +154,22 @@
 
       <div id="course-ingested-materials" class="course-ingested-materials">
         <div class="ingested-notice-card">
-          <span>✓ <b>Professor's Handout Ingested:</b> Assignment handout PDF and course syllabus are pre-indexed into
-            Study Brain.</span>
+          <span><b>Professor Handout Ingested:</b> Assignment handout PDF and course syllabus are pre-indexed into Study Brain.</span>
         </div>
       </div>
 
       <div class="material-actions-bar">
         <button class="btn btn-secondary btn-sm" id="btn-summarize-material"
           onclick="AddonApp.queryMaterial('summary')">
-          📖 Summarize Syllabus
+          Summarize Syllabus
         </button>
         <button class="btn btn-secondary btn-sm" id="btn-questions-material"
           onclick="AddonApp.queryMaterial('questions')">
-          ❓ Viva / Exam Questions
+          Viva / Exam Questions
         </button>
         <label class="btn btn-secondary btn-sm btn-upload-label"
           title="Classroom PDFs are automatically pre-ingested. Use this only to add supplementary documents.">
-          <span>📎 + Add Extra File (Optional)</span>
+          <span>+ Add Extra File (Optional)</span>
           <input type="file" id="material-file-upload" accept=".pdf,.docx,.txt,.md" style="display: none;"
             onchange="AddonApp.handleMaterialUpload(this)">
         </label>
@@ -173,7 +185,7 @@
         <div class="auto-box">
           <div class="auto-row">
             <div>
-              <div class="auto-title">⚡ AUTO-SUBMIT ACTIVE</div>
+              <div class="auto-title">AUTONOMOUS SUBMISSION ACTIVE</div>
               <div class="auto-sub">Scheduled: <b>Default: 4 hours before deadline</b></div>
             </div>
             <button class="btn btn-sm btn-success" id="btn-toggle-auto" data-action="toggleAutoSubmit"
@@ -184,7 +196,7 @@
           <div style="display: flex; gap: 8px; margin-top: 10px;">
             <button class="btn btn-primary btn-sm btn-block" id="btn-submit-now" data-action="submitNow"
               onclick="AddonApp.submitNow()">
-              ⚡ Auto-Submit Now (Autonomous End-to-End)
+              Auto-Submit Now (Autonomous End-to-End)
             </button>
           </div>
         </div>
@@ -201,7 +213,10 @@
         <a href="javascript:void(0)" id="link-sync-classroom" data-action="syncClassroom"
           onclick="AddonApp.syncClassroom()">Sync Classroom</a>
       </div>
-      <div class="footer-copy">Academic Agent • Google Classroom Native Layer</div>
+      <div class="footer-copy">
+        Academic Agent - Google Classroom Native Layer
+        <span class="made-with-ai-badge">Made with AI</span>
+      </div>
     </footer>
 
   </div>
@@ -211,7 +226,11 @@
     <div class="modal-card">
       <div class="modal-header">
         <div class="modal-title">
-          <span>⚙️ Integrations &amp; Accounts</span>
+          <svg class="svg-icon" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+          <span>Integrations &amp; Accounts</span>
         </div>
         <button class="modal-close" id="btn-close-settings-modal" data-action="closeModal" data-modal="settings-modal"
           onclick="closeModal('settings-modal')" aria-label="Close modal">&times;</button>
@@ -221,15 +240,15 @@
       <div class="modal-tabs">
         <button class="modal-tab active" id="tab-btn-portal" data-action="switchModalTab" data-tab="portal"
           onclick="AddonApp.switchModalTab('portal')">
-          🏛️ Student Portal
+          Student Portal
         </button>
         <button class="modal-tab" id="tab-btn-google" data-action="switchModalTab" data-tab="google"
           onclick="AddonApp.switchModalTab('google')">
-          📚 Google Classroom
+          Google Classroom
         </button>
         <button class="modal-tab" id="tab-btn-config" data-action="switchModalTab" data-tab="config"
           onclick="AddonApp.switchModalTab('config')">
-          🔑 OAuth Credentials
+          OAuth Credentials
         </button>
       </div>
 
@@ -259,7 +278,7 @@
               </div>
               <div class="isc-actions">
                 <button class="btn btn-secondary btn-sm" id="btn-erp-refresh" data-action="refreshERP"
-                  onclick="AddonApp.refreshERP()">↻ Refresh Timetable</button>
+                  onclick="AddonApp.refreshERP()">Refresh Timetable</button>
                 <button class="btn btn-danger btn-sm" id="btn-erp-disconnect" data-action="disconnectERP"
                   onclick="AddonApp.disconnectERP()">Disconnect Portal</button>
               </div>
@@ -292,7 +311,7 @@
 
             <button class="btn btn-secondary btn-block" id="btn-erp-quick" data-action="quickConnectERP"
               onclick="AddonApp.quickConnectERP()">
-              ⚡ 1-Click Load SRM AP CSE Schedule
+              Load SRM AP CSE Schedule
             </button>
             <span
               style="font-size: 10px; color: var(--text-muted); display: block; margin-top: 4px; text-align: center;">
@@ -317,7 +336,7 @@
               </div>
               <div class="isc-actions">
                 <button class="btn btn-secondary btn-sm" id="btn-google-sync" data-action="syncClassroom"
-                  onclick="AddonApp.syncClassroom()">↻ Sync Coursework</button>
+                  onclick="AddonApp.syncClassroom()">Sync Coursework</button>
                 <button class="btn btn-danger btn-sm" id="btn-google-disconnect" data-action="disconnectGoogle"
                   onclick="AddonApp.disconnectGoogle()">Disconnect Google</button>
               </div>
@@ -332,9 +351,8 @@
 
             <button class="btn btn-primary btn-block" id="btn-google-oauth-login" data-action="launchGoogleOAuth"
               onclick="AddonApp.launchGoogleOAuth()">
-              <span>🔗 Sign In with Google (OAuth)</span>
+              <span>Sign In with Google (OAuth)</span>
             </button>
-
 
             <!-- Direct Token Section -->
             <div style="margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--border-subtle);">
@@ -350,7 +368,7 @@
 
             <!-- Setup & Troubleshooting Guide -->
             <div class="setup-guide-box">
-              <b style="color: var(--text-primary); display: block; margin-bottom: 4px;">🛠️ Google Cloud OAuth Setup
+              <b style="color: var(--text-primary); display: block; margin-bottom: 4px;">Google Cloud OAuth Setup
                 Guide</b>
               If you see <code>redirect_uri_mismatch</code> or <code>access_denied</code> when signing in:
               <ol>

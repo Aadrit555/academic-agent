@@ -279,7 +279,7 @@ const AddonApp = {
     const listEl = document.getElementById("course-ingested-materials");
     if (!listEl) return;
     if (!courseId) {
-      listEl.innerHTML = `<div class="ingested-notice-card"><span>✓ <b>Classroom PDFs Auto-Ingested:</b> Materials are pre-indexed into Study Brain.</span></div>`;
+      listEl.innerHTML = `<div class="ingested-notice-card"><span><b>Classroom PDFs Ingested:</b> Materials are pre-indexed into Study Brain.</span></div>`;
       return;
     }
 
@@ -289,12 +289,12 @@ const AddonApp = {
         listEl.innerHTML = `
           <div class="ingested-notice-card" style="flex-direction: column; align-items: flex-start; gap: 6px;">
             <div style="display: flex; align-items: center; gap: 6px; width: 100%;">
-              <span>✓ <b>Professor's Assignment Handouts Grounded:</b> ${docs.length} handout/syllabus document(s) pre-indexed in Study Brain:</span>
+              <span><b>Professor's Assignment Handouts Grounded:</b> ${docs.length} handout/syllabus document(s) pre-indexed in Study Brain:</span>
             </div>
             <div style="display: flex; flex-wrap: wrap; gap: 4px; width: 100%;">
               ${docs.map(d => `
                 <span class="attachment-chip" style="font-size: 10px; padding: 2px 6px;">
-                  📄 ${escapeHtml(d.filename)} (${d.page_count}p)
+                  ${escapeHtml(d.filename)} (${d.page_count}p)
                   <span class="att-badge">Handout Read</span>
                 </span>
               `).join('')}
@@ -302,10 +302,10 @@ const AddonApp = {
           </div>
         `;
       } else {
-        listEl.innerHTML = `<div class="ingested-notice-card"><span>✓ <b>Professor's Assignment Handouts:</b> Materials are pre-indexed into Study Brain.</span></div>`;
+        listEl.innerHTML = `<div class="ingested-notice-card"><span><b>Professor's Assignment Handouts:</b> Materials are pre-indexed into Study Brain.</span></div>`;
       }
     } catch {
-      listEl.innerHTML = `<div class="ingested-notice-card"><span>✓ <b>Professor's Assignment Handouts:</b> Materials are pre-indexed into Study Brain.</span></div>`;
+      listEl.innerHTML = `<div class="ingested-notice-card"><span><b>Professor's Assignment Handouts:</b> Materials are pre-indexed into Study Brain.</span></div>`;
     }
   },
 
@@ -369,13 +369,13 @@ const AddonApp = {
     if (materials.length > 0) {
       materialsHtml = `
         <div class="classroom-attachments-panel">
-          <div class="attachments-label">📎 PROFESSOR'S ASSIGNMENT HANDOUT &amp; BRIEF (READ BY AI):</div>
+          <div class="attachments-label">PROFESSOR'S ASSIGNMENT HANDOUT &amp; BRIEF:</div>
           <div class="attachments-chips">
             ${materials.map(m => `
               <a href="${escapeHtml(m.alternateLink || m.url || 'javascript:void(0)')}" target="_blank" class="attachment-chip" title="Open Professor's Handout in Google Classroom / Drive">
-                <span class="att-icon">${m.type === 'driveFile' ? '📄' : '🔗'}</span>
+                
                 <span class="att-title">${escapeHtml(m.title || 'Document')}</span>
-                <span class="att-badge">✓ Read by AI</span>
+                <span class="att-badge">Read by AI</span>
               </a>
             `).join('')}
           </div>
@@ -406,7 +406,7 @@ const AddonApp = {
         </div>
 
         <button class="btn btn-primary btn-block btn-execute" id="btn-execute-assignment" data-action="submitNow" onclick="AddonApp.submitNow()">
-          ${this.state.isExecuting ? '⚡ Ingesting, Generating & Turning in to Classroom...' : (item.status === 'SUBMITTED' ? '✓ TURNED IN TO GOOGLE CLASSROOM (RE-SUBMIT)' : '⚡ 1-CLICK CREATE & DIRECT TURN-IN (NO DOWNLOAD)')}
+          ${this.state.isExecuting ? 'Ingesting, Generating & Turning in to Classroom...' : (item.status === 'SUBMITTED' ? 'TURNED IN TO GOOGLE CLASSROOM (RE-SUBMIT)' : '1-CLICK CREATE & DIRECT TURN-IN (NO DOWNLOAD)')}
         </button>
       </div>
     `;
@@ -420,7 +420,7 @@ const AddonApp = {
     if (!container) return;
     container.innerHTML = `
       <div class="empty-state-box">
-        <div class="empty-icon">📋</div>
+        <div class="empty-icon">[empty]</div>
         <div class="empty-title">NO ASSIGNMENTS FOUND</div>
         <div class="empty-desc">${errMsg ? escapeHtml(errMsg) : 'No Google Classroom assignments were found. Sign in with Google or click Sync Classroom below.'}</div>
         <button class="btn btn-secondary btn-sm" onclick="AddonApp.syncClassroom()">Sync Classroom</button>
@@ -442,19 +442,19 @@ const AddonApp = {
     container.innerHTML = `
       <div class="progress-stepper">
         <div class="step-item ${hasSpec ? 'step-done' : (this.state.isExecuting ? 'step-active' : '')}">
-          <span class="step-icon">${hasSpec ? '✓' : '○'}</span>
+          <span class="step-icon">${hasSpec ? '[x]' : '[ ]'}</span>
           <span class="step-label">Assignment analyzed</span>
         </div>
         <div class="step-item ${hasFiles ? 'step-done' : ''}">
-          <span class="step-icon">${hasFiles ? '✓' : '○'}</span>
+          <span class="step-icon">${hasFiles ? '[x]' : '[ ]'}</span>
           <span class="step-label">Files generated</span>
         </div>
         <div class="step-item ${isValidated ? 'step-done' : (this.state.isValidating ? 'step-active' : '')}">
-          <span class="step-icon">${isValidated ? '✓' : '○'}</span>
+          <span class="step-icon">${isValidated ? '[x]' : '[ ]'}</span>
           <span class="step-label">Validation passed</span>
         </div>
         <div class="step-item ${isSubmitted ? 'step-done' : (isScheduled ? 'step-scheduled' : '')}">
-          <span class="step-icon">${isSubmitted ? '✓' : (isScheduled ? '⏰' : '○')}</span>
+          <span class="step-icon">${isSubmitted ? '[x]' : (isScheduled ? '[sched]' : '[ ]')}</span>
           <span class="step-label">${isSubmitted ? 'Turned in to Classroom' : (isScheduled ? 'Submission scheduled' : 'Submission pending')}</span>
         </div>
       </div>
@@ -537,7 +537,7 @@ const AddonApp = {
     if (!deliv) {
       box.innerHTML = `
         <div class="empty-compact">
-          <span>Deliverables not yet generated. Click <b>⚡ EXECUTE ASSIGNMENT</b> above.</span>
+          <span>Deliverables not yet generated. Click <b>EXECUTE ASSIGNMENT</b> above.</span>
         </div>
       `;
       return;
@@ -576,7 +576,7 @@ const AddonApp = {
               <span class="file-ext">${escapeHtml(deliv.file_type || '.c')}</span>
               <b>${escapeHtml(codeName)}</b>
             </div>
-            <button class="btn btn-secondary btn-xs" onclick="AddonApp.copyDeliverableCode()">📋 Copy Source Code</button>
+            <button class="btn btn-secondary btn-xs" onclick="AddonApp.copyDeliverableCode()">Copy Source Code</button>
           </div>
           <div class="code-preview-wrap" style="max-height: 320px;">
             <pre class="code-preview"><code>${escapeHtml(codeSnippet)}</code></pre>
@@ -588,10 +588,10 @@ const AddonApp = {
         <div class="validation-view-container">
           <div class="val-header-bar">
             <div class="val-status-badge ${val && val.passed ? 'status-pass' : 'status-fail'}">
-              ${val && val.passed ? '✓ COMPILER &amp; HANDOUT TEST VERIFICATION PASSED' : '⚡ VALIDATION PENDING / FLAGGED'}
+              ${val && val.passed ? 'COMPILER &amp; HANDOUT TEST VERIFICATION PASSED' : 'VALIDATION PENDING / FLAGGED'}
             </div>
             <button class="btn btn-success btn-xs" onclick="AddonApp.validateDeliverable()" ${this.state.isValidating ? 'disabled' : ''}>
-              ${this.state.isValidating ? 'Compiling...' : '⚡ Re-Run Compiler'}
+              ${this.state.isValidating ? 'Compiling...' : 'Re-Run Compiler'}
             </button>
           </div>
 
@@ -599,7 +599,7 @@ const AddonApp = {
             <div class="val-title">AUTOMATED TEST &amp; COMPILER CHECKLIST:</div>
             ${checklist.length > 0 ? checklist.map(c => `
               <div class="check-item ${c.passed ? 'check-pass' : 'check-fail'}">
-                <span>${c.passed ? '✓' : '✗'}</span>
+                <span>${c.passed ? '[PASS]' : '[FAIL]'}</span>
                 <span class="check-text"><b>${escapeHtml(c.title)}:</b> ${escapeHtml(c.details || '')}</span>
               </div>
             `).join('') : '<div class="empty-compact">No validation run yet. Click Re-Run Compiler above.</div>'}
@@ -628,27 +628,27 @@ const AddonApp = {
           <div class="deliv-tabs-nav">
             ${hasReport ? `
               <button class="deliv-nav-tab ${currentTab === 'report' ? 'active' : ''}" onclick="AddonApp.switchDelivTab('report')">
-                📄 Student Lab Report (.docx)
+                Student Lab Report (.docx)
               </button>
             ` : ''}
             <button class="deliv-nav-tab ${currentTab === 'code' ? 'active' : ''}" onclick="AddonApp.switchDelivTab('code')">
-              💻 Student Code (${escapeHtml(deliv.file_type || '.c')})
+              Student Code (${escapeHtml(deliv.file_type || '.c')})
             </button>
             <button class="deliv-nav-tab ${currentTab === 'validation' ? 'active' : ''}" onclick="AddonApp.switchDelivTab('validation')">
-              ⚡ Compiler &amp; Test Validation ${val && val.passed ? '<span class="pill-pass">✓ PASS</span>' : ''}
+              Compiler &amp; Test Validation ${val && val.passed ? '<span class="pill-pass">PASS</span>' : ''}
             </button>
           </div>
           
           <div class="deliv-export-actions">
             ${this.state.activeItem && this.state.activeItem.status === 'SUBMITTED' ? `
-              <span class="pill pill-green" style="font-size: 10px; font-weight: 700;">✓ Turned In Directly to Classroom</span>
+              <span class="pill pill-green" style="font-size: 10px; font-weight: 700;">Turned In Directly to Classroom</span>
             ` : `
               <button class="btn btn-success btn-xs" data-action="submitNow" onclick="AddonApp.submitNow()" title="Submit directly to Google Classroom without any downloads">
-                ⚡ Direct Turn-In to Classroom
+                Direct Turn-In to Classroom
               </button>
             `}
             <button class="btn btn-secondary btn-xs" onclick="AddonApp.downloadAll()" title="Download Full Student Submission Package (Optional Backup)">
-              💾 Offline Backup (.zip)
+              Offline Backup (.zip)
             </button>
           </div>
         </div>
@@ -826,7 +826,7 @@ const AddonApp = {
         outputEl.innerHTML = `
           <div class="material-ai-result">
             <div class="result-header">
-              <b>${actionType === 'summary' ? '📖 Course Syllabus Summary' : '❓ Grounded Practice Questions'}</b>
+              <b>${actionType === 'summary' ? 'Course Syllabus Summary' : 'Grounded Practice Questions'}</b>
               <button class="btn-icon" onclick="document.getElementById('material-output-box').style.display='none'">&times;</button>
             </div>
             <div class="result-body">${escapeHtml(res.content)}</div>
@@ -877,7 +877,7 @@ const AddonApp = {
           <div class="auto-row">
             <div>
               <div class="auto-title" style="color: #34d399; font-size: 13px; display: flex; align-items: center; gap: 6px;">
-                <span>✓ TURNED IN DIRECTLY TO GOOGLE CLASSROOM</span>
+                <span>TURNED IN DIRECTLY TO GOOGLE CLASSROOM</span>
               </div>
               <div class="auto-sub" style="color: #cbd5e1; margin-top: 3px;">
                 Deliverables attached to coursework and turned in. Zero download or manual file handling needed.
@@ -903,9 +903,9 @@ const AddonApp = {
         <div class="auto-row">
           <div>
             <div class="auto-title" style="display: flex; align-items: center; gap: 6px;">
-              <span>⚡ AUTONOMOUS AUTO-SUBMIT</span>
+              <span>AUTONOMOUS AUTO-SUBMIT</span>
               <span style="background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.4); font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 4px;">
-                ${isAutoPilot ? '🤖 AUTOPILOT ACTIVE' : (isAutoOn ? 'SCHEDULED' : 'READY')}
+                ${isAutoPilot ? 'AUTOPILOT ACTIVE' : (isAutoOn ? 'SCHEDULED' : 'READY')}
               </span>
             </div>
             <div class="auto-sub">Scheduled Execution: <b>${escapeHtml(schedTimeStr)}</b></div>
@@ -914,13 +914,13 @@ const AddonApp = {
             </div>
           </div>
           <button class="btn btn-sm ${isAutoPilot ? 'btn-success' : 'btn-secondary'}" data-action="toggleAutoPilot" onclick="AddonApp.toggleAutoPilot()">
-            ${isAutoPilot ? '🤖 AUTOPILOT: ON' : 'ENABLE AUTOPILOT'}
+            ${isAutoPilot ? 'AUTOPILOT: ON' : 'ENABLE AUTOPILOT'}
           </button>
         </div>
 
         <div style="display: flex; gap: 8px; margin-top: 10px;">
           <button class="btn btn-primary btn-sm btn-block" id="btn-submit-now" data-action="submitNow" onclick="AddonApp.submitNow()">
-            ⚡ 1-Click Auto Submit (Zero-Touch Direct Turn-In)
+            1-Click Auto Submit (Zero-Touch Direct Turn-In)
           </button>
         </div>
       </div>
@@ -931,7 +931,7 @@ const AddonApp = {
     const current = localStorage.getItem("academic_autopilot") === "true";
     const nextVal = !current;
     localStorage.setItem("academic_autopilot", nextVal ? "true" : "false");
-    Toast.success(nextVal ? "⚡ Auto-Pilot ON: Assignments submit automatically upon selection! User does nothing." : "Auto-Pilot paused.");
+    Toast.success(nextVal ? "Auto-Pilot ON: Assignments submit automatically upon selection! User does nothing." : "Auto-Pilot paused.");
     this.renderAutomationSection();
     if (nextVal && this.state.activeItem && this.state.activeItem.status !== "SUBMITTED" && !this.state.isExecuting) {
       this.submitNow();
@@ -990,12 +990,12 @@ const AddonApp = {
       this.state.isExecuting = true;
       this.renderProgressTracker();
       this.renderAssignmentSection();
-      Toast.info("⚡ Ingesting handout, creating code & report, and turning in directly to Google Classroom...");
+      Toast.info("Ingesting handout, creating code & report, and turning in directly to Google Classroom...");
       const res = await api(`/assignment/${this.state.selectedId}/autonomous-submit`, {
         method: "POST"
       });
 
-      Toast.success(res.message || "🎉 Assignment turned in directly to Google Classroom! Zero download needed.");
+      Toast.success(res.message || "Assignment turned in directly to Google Classroom! Zero download needed.");
       await this.loadCoursework();
       await this.selectCoursework(this.state.selectedId, false);
     } catch (e) {
