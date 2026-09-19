@@ -65,7 +65,7 @@ def test_requirement_detection(db_session, test_user_and_course):
     assert req_py["type"] == ".py"
     assert req_py["language"] == "python"
 
-def test_generate_c_assignment(db_session, test_user_and_course):
+def test_generate_c_assignment(db_session, test_user_and_course, monkeypatch):
     user, course = test_user_and_course
     cw = Coursework(
         user_id=user.id,
@@ -78,12 +78,44 @@ def test_generate_c_assignment(db_session, test_user_and_course):
     db_session.add(cw)
     db_session.commit()
 
+    sample_c = (
+        "```c\n"
+        "#include <stdio.h>\n"
+        "int main(void) {\n"
+        "    printf(\"Merge sort executed cleanly.\\n\");\n"
+        "    return 0;\n"
+        "}\n"
+        "```"
+    )
+    from backend.app.ai.ai_service import AIService
+    monkeypatch.setattr(AIService, "generate_completion", lambda prompt, system_prompt="": sample_c)
+
     assignment = GeneratorService.generate_assignment(db_session, cw)
     assert assignment.id is not None
     assert assignment.file_type == ".c"
     assert os.path.exists(assignment.file_path)
     assert "#include <stdio.h>" in assignment.code_or_content
     assert cw.status == "GENERATED"
+
+def test_generate_c_assignment_fails_closed_when_ai_unavailable(db_session, test_user_and_course, monkeypatch):
+    user, course = test_user_and_course
+    cw = Coursework(
+        user_id=user.id,
+        course_id=course.id,
+        classroom_course_id="c1",
+        coursework_id="w1_fail",
+        title="DAA LAB 4: Implement Merge Sort in C",
+        description="Implement Merge Sort in C"
+    )
+    db_session.add(cw)
+    db_session.commit()
+
+    from backend.app.ai.ai_service import AIService
+    monkeypatch.setattr(AIService, "generate_completion", lambda prompt, system_prompt="": "[AI_UNAVAILABLE] No keys")
+
+    with pytest.raises(RuntimeError) as exc:
+        GeneratorService.generate_assignment(db_session, cw)
+    assert "No AI service provider configured" in str(exc.value)
 
 def test_generate_docx_assignment(db_session, test_user_and_course):
     user, course = test_user_and_course

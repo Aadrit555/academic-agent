@@ -257,13 +257,12 @@ def test_study_brain_with_erp_context(auth_headers, db_session):
     assert resp.content is not None
     assert len(resp.content) > 10
 
-def test_auth_token_auto_recovery_fallback():
-    """Verifies that expired or invalid Bearer tokens gracefully fall back to default user without 401 lockout."""
+def test_invalid_auth_token_strictly_rejected():
+    """Verifies that expired or invalid Bearer tokens are strictly rejected with 401 Unauthorized."""
     bad_headers = {"Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.deadbeef.invalid"}
     r = client.get("/api/erp/status", headers=bad_headers)
-    assert r.status_code == 200
-    data = r.json()
-    assert "is_connected" in data
+    assert r.status_code == 401
+    assert "Authentication required" in r.json()["detail"]
 
 def test_erp_scraper_srmap_live_format():
     """Verifies accurate parsing of real SRM AP eVarsity profile & timetable layout."""

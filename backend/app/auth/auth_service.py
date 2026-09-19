@@ -167,7 +167,9 @@ class AuthService:
     def get_valid_token(cls, db: Session, user: User) -> tuple[str | None, bool]:
         """Returns (access_token, False). Handles token refresh automatically for real Google tokens."""
         integration = db.query(ClassroomIntegration).filter_by(user_id=user.id).first()
-        if not integration or integration.is_demo_mode or integration.access_token == "demo_google_classroom_token":
+        if not integration or integration.is_demo_mode or not integration.access_token:
+            return None, False
+        if integration.access_token in ("demo_google_classroom_token", "academic_agent_google_token"):
             return None, False
             
         now = utcnow()

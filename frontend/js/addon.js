@@ -1133,18 +1133,6 @@ const AddonApp = {
     }
   },
 
-  async quickConnectGoogle() {
-    try {
-      Toast.info("Connecting with Academic Classroom Profile...");
-      const res = await api("/auth/google/quick-connect", { method: "POST" });
-      Toast.success(res.message || "Google Classroom connected!");
-      await this.loadAuthStatus();
-      await this.loadCoursework();
-      closeModal("settings-modal");
-    } catch (e) {
-      Toast.error(`Quick Connect Error: ${e.message}`);
-    }
-  },
 
   async quickConnectERP() {
     try {

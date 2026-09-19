@@ -40,36 +40,6 @@ class SubmissionService:
         if not token:
             raise RuntimeError("Google authorization expired or not connected. Please connect Google Classroom with valid OAuth credentials.")
 
-        # Handle direct autonomous submission for Academic Profile mode
-        is_academic_token = token in ("academic_agent_google_token", "demo_google_classroom_token")
-        if is_academic_token:
-            drive_file_id = f"1Drv_{coursework.classroom_course_id}_{coursework.coursework_id}"
-            file_name = assignment.file_name
-            submission_id = coursework.submission_id or f"sub_{coursework.classroom_course_id}_{coursework.coursework_id}"
-            verified_state = "TURNED_IN"
-            response_payload = {
-                "state": "TURNED_IN",
-                "assignedGrade": None,
-                "submissionHistory": [{"stateHistory": {"state": "TURNED_IN", "stateTimestamp": utcnow().isoformat()}}],
-                "attachments": [
-                    {"driveFile": {"id": drive_file_id, "title": assignment.file_name}}
-                ]
-            }
-            sub_record = Submission(
-                coursework_id=coursework.id,
-                classroom_submission_id=submission_id,
-                drive_file_id=drive_file_id,
-                drive_file_name=file_name,
-                turned_in_at=utcnow(),
-                verified_state=verified_state,
-                response_payload=json.dumps(response_payload)
-            )
-            db.add(sub_record)
-            coursework.status = "SUBMITTED"
-            db.commit()
-            db.refresh(sub_record)
-            return sub_record
-
         coursework.status = "SUBMITTING"
         db.commit()
 
@@ -176,11 +146,6 @@ class SubmissionService:
         token, is_demo = AuthService.get_valid_token(db, user)
         if not token:
             raise RuntimeError("Google Classroom is not connected.")
-
-        if token in ("academic_agent_google_token", "demo_google_classroom_token"):
-            coursework.status = "READY_FOR_SUBMISSION"
-            db.commit()
-            return {"status": "RECLAIMED", "submission_id": coursework.submission_id or "sub_123"}
 
         cid = coursework.classroom_course_id
         wid = coursework.coursework_id

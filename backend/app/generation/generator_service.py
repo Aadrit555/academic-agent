@@ -402,6 +402,11 @@ class GeneratorService:
         )
         system_prompt = "You are Academic Agent Code Generator. Write robust, bug-free, perfectly compiling academic code."
         raw_response = AIService.generate_completion(prompt, system_prompt)
+        if raw_response.startswith("[AI_UNAVAILABLE]"):
+            raise RuntimeError(
+                "Code generation failed: No AI service provider configured (OpenAI, Gemini, or Groq). "
+                "Please configure an API key in Settings -> AI Configuration."
+            )
 
         # Extract code from markdown block if present
         code_match = re.search(r"```(?:\w+)?\n([\s\S]*?)```", raw_response)
@@ -527,20 +532,20 @@ class GeneratorService:
             )
 
             # 5. Verification Table
-            doc.add_heading("5. Experimental Verification Matrix", level=1)
+            doc.add_heading("5. Test Case Design & Verification Matrix", level=1)
             v_table = doc.add_table(rows=5, cols=4)
             v_table.alignment = WD_TABLE_ALIGNMENT.CENTER
-            v_headers = ["Test Case", "Input Array", "Expected Subarray & Sum", "Status"]
+            v_headers = ["Test Case", "Input Array", "Expected Subarray & Sum", "Verification Strategy"]
             for i, h in enumerate(v_headers):
                 c = v_table.cell(0, i)
                 c.text = h
                 c.paragraphs[0].runs[0].bold = True
 
             v_rows = [
-                ["CLRS Worked Example", "A[1..16] (16 elements)", "A[8..11] (sum 43)", "PASS (Verified)"],
-                ["All-Negative Array", "[-12, -5, -23, -4, -18]", "[-4] (sum -4)", "PASS (Verified)"],
-                ["Single Element", "[42]", "[42] (sum 42)", "PASS (Verified)"],
-                ["Uniform Positive", "[10, 20, 30, 40]", "Full array (sum 100)", "PASS (Verified)"]
+                ["CLRS Worked Example", "A[1..16] (16 elements)", "A[8..11] (sum 43)", "Assert computed sum == 43"],
+                ["All-Negative Array", "[-12, -5, -23, -4, -18]", "[-4] (sum -4)", "Assert single max element [-4]"],
+                ["Single Element", "[42]", "[42] (sum 42)", "Base case boundary check"],
+                ["Uniform Positive", "[10, 20, 30, 40]", "Full array (sum 100)", "Assert full span accumulated"]
             ]
             for r_idx, row in enumerate(v_rows):
                 for c_idx, val in enumerate(row):
@@ -549,20 +554,20 @@ class GeneratorService:
             doc.add_paragraph()
 
             # 6. Benchmark Table
-            doc.add_heading("6. Scalability & Timing Benchmark", level=1)
+            doc.add_heading("6. Asymptotic Complexity & Growth Rate Analysis", level=1)
             b_table = doc.add_table(rows=5, cols=5)
             b_table.alignment = WD_TABLE_ALIGNMENT.CENTER
-            b_headers = ["Input Size (n)", "Brute-Force Theta(n^2)", "D&C Theta(n log n)", "Speedup Factor", "Cross-Check"]
+            b_headers = ["Input Size (n)", "Brute-Force Theta(n^2) Ops", "D&C Theta(n log n) Ops", "Theoretical Ratio (n / log n)", "Complexity Class"]
             for i, h in enumerate(b_headers):
                 c = b_table.cell(0, i)
                 c.text = h
                 c.paragraphs[0].runs[0].bold = True
 
             b_rows = [
-                ["n = 100", "0.03 ms", "0.01 ms", "3.0x", "MATCH ✓"],
-                ["n = 1,000", "2.15 ms", "0.12 ms", "17.9x", "MATCH ✓"],
-                ["n = 5,000", "54.80 ms", "0.68 ms", "80.5x", "MATCH ✓"],
-                ["n = 10,000", "224.50 ms", "1.45 ms", "154.8x", "MATCH ✓"]
+                ["n = 100", "~10,000 ops", "~664 ops", "~15.1x reduction", "Polynomial vs Log-linear"],
+                ["n = 1,000", "~1,000,000 ops", "~9,966 ops", "~100.3x reduction", "Polynomial vs Log-linear"],
+                ["n = 5,000", "~25,000,000 ops", "~61,439 ops", "~406.9x reduction", "Polynomial vs Log-linear"],
+                ["n = 10,000", "~100,000,000 ops", "~132,877 ops", "~752.6x reduction", "Polynomial vs Log-linear"]
             ]
             for r_idx, row in enumerate(b_rows):
                 for c_idx, val in enumerate(row):
@@ -630,20 +635,20 @@ class GeneratorService:
                 f"$$T(n) = \\Theta(n \\log n)$$\n\n"
                 f"*Why the crossing step must be $\\Theta(n)$ and cannot be recursive:*\n"
                 f"A crossing subarray must contain elements on both sides of $mid$. By fixing $mid$, the left part is simply the maximum suffix of $A[low..mid]$ and the right part is the maximum prefix of $A[mid+1..high]$. These two independent 1D scans each touch at most $n/2$ elements, achieving $\\Theta(n)$ without recursive branching.\n\n"
-                f"### 5. Experimental Verification Matrix\n\n"
-                f"| Test Case Description | Input Dataset | Expected Subarray | Computed Subarray & Sum | Status |\n"
+                f"### 5. Test Case Design & Verification Matrix\n\n"
+                f"| Test Case Description | Input Dataset | Expected Subarray | Verification Strategy |\n"
+                f"|---|---|---|---|\n"
+                f"| **CLRS Handout Worked Example** | `[13, -3, -25, 20, -3, -16, -23, 18, 20, -7, 12, -5, -22, 15, -4, 7]` | $A[8..11]$ (sum 43) | Assert computed sum == 43 |\n"
+                f"| **Edge Case: All-Negative Array** | `[-12, -5, -23, -4, -18]` | `[-4]` (sum -4) | Assert single max element [-4] |\n"
+                f"| **Edge Case: Single Element** | `[42]` | `[42]` (sum 42) | Base case boundary check |\n"
+                f"| **Uniform Positive Array** | `[10, 20, 30, 40]` | Full Array (sum 100) | Assert full span accumulated |\n\n"
+                f"### 6. Asymptotic Complexity & Growth Rate Analysis\n\n"
+                f"| Input Size ($n$) | Brute-Force $\\Theta(n^2)$ Ops | Divide-and-Conquer $\\Theta(n \\log n)$ Ops | Theoretical Ratio ($n / \\log n$) | Complexity Class |\n"
                 f"|---|---|---|---|---|\n"
-                f"| **CLRS Handout Worked Example** | `[13, -3, -25, 20, -3, -16, -23, 18, 20, -7, 12, -5, -22, 15, -4, 7]` | $A[8..11]$ (sum 43) | `A[8..11]`, Sum = 43 | **PASS ✓** |\n"
-                f"| **Edge Case: All-Negative Array** | `[-12, -5, -23, -4, -18]` | `[-4]` (sum -4) | `[-4]`, Sum = -4 | **PASS ✓** |\n"
-                f"| **Edge Case: Single Element** | `[42]` | `[42]` (sum 42) | `[42]`, Sum = 42 | **PASS ✓** |\n"
-                f"| **Uniform Positive Array** | `[10, 20, 30, 40]` | Full Array (sum 100) | Full Array, Sum = 100 | **PASS ✓** |\n\n"
-                f"### 6. Scalability & Timing Benchmark\n\n"
-                f"| Input Size ($n$) | Brute-Force $\\Theta(n^2)$ | Divide-and-Conquer $\\Theta(n \\log n)$ | Speedup Factor | Cross-Check |\n"
-                f"|---|---|---|---|---|\n"
-                f"| $n = 100$ | 0.03 ms | 0.01 ms | $3.0\\times$ | MATCH ✓ |\n"
-                f"| $n = 1,000$ | 2.15 ms | 0.12 ms | $17.9\\times$ | MATCH ✓ |\n"
-                f"| $n = 5,000$ | 54.80 ms | 0.68 ms | $80.5\\times$ | MATCH ✓ |\n"
-                f"| $n = 10,000$ | 224.50 ms | 1.45 ms | $154.8\\times$ | MATCH ✓ |\n\n"
+                f"| $n = 100$ | ~10,000 ops | ~664 ops | ~15.1x reduction | Polynomial vs Log-linear |\n"
+                f"| $n = 1,000$ | ~1,000,000 ops | ~9,966 ops | ~100.3x reduction | Polynomial vs Log-linear |\n"
+                f"| $n = 5,000$ | ~25,000,000 ops | ~61,439 ops | ~406.9x reduction | Polynomial vs Log-linear |\n"
+                f"| $n = 10,000$ | ~100,000,000 ops | ~132,877 ops | ~752.6x reduction | Polynomial vs Log-linear |\n\n"
                 f"### 7. Edge Cases & Boundary Handling Note\n"
                 f"- **All-Negative Arrays:** Initializing sums to `INT_MIN` rather than 0 ensures the maximum single negative element is returned.\n"
                 f"- **Single-Element Arrays:** Base case $low == high$ terminates without recursive calls.\n"

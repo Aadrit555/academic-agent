@@ -42,17 +42,44 @@ class SchedulerService:
     ) -> SubmissionSchedule:
         """Calculates submission_time = deadline - offset_hours and persists it."""
         # Calculate deadline datetime
-        if coursework.due_date:
-            due_str = coursework.due_date
-            time_str = coursework.due_time or "23:59:00"
+        if not coursework.due_date:
+            schedule = db.query(SubmissionSchedule).filter_by(coursework_id=coursework.id).first()
+            if not schedule:
+                schedule = SubmissionSchedule(
+                    coursework_id=coursework.id,
+                    auto_submit_enabled=False,
+                    status="NO_VALID_DEADLINE"
+                )
+                db.add(schedule)
+            else:
+                schedule.status = "NO_VALID_DEADLINE"
+                schedule.auto_submit_enabled = False
+            db.commit()
+            db.refresh(schedule)
+            return schedule
+
+        due_str = coursework.due_date
+        time_str = coursework.due_time or "23:59:00"
+        try:
+            deadline_dt = datetime.strptime(f"{due_str} {time_str}", "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+        except Exception:
             try:
-                # Naive date/time interpreted as UTC for calculation
-                deadline_dt = datetime.strptime(f"{due_str} {time_str}", "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+                deadline_dt = datetime.strptime(due_str, "%Y-%m-%d").replace(hour=23, minute=59, second=0, tzinfo=timezone.utc)
             except Exception:
-                deadline_dt = utcnow() + timedelta(days=1)
-        else:
-            # Fallback if no deadline is specified by instructor
-            deadline_dt = utcnow() + timedelta(days=1)
+                schedule = db.query(SubmissionSchedule).filter_by(coursework_id=coursework.id).first()
+                if not schedule:
+                    schedule = SubmissionSchedule(
+                        coursework_id=coursework.id,
+                        auto_submit_enabled=False,
+                        status="NO_VALID_DEADLINE"
+                    )
+                    db.add(schedule)
+                else:
+                    schedule.status = "NO_VALID_DEADLINE"
+                    schedule.auto_submit_enabled = False
+                db.commit()
+                db.refresh(schedule)
+                return schedule
 
         scheduled_dt = deadline_dt - timedelta(hours=offset_hours)
         

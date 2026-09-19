@@ -16,7 +16,7 @@ class DriveService:
 
         file_name = os.path.basename(file_path)
 
-        if not access_token or is_demo or access_token == "demo_google_classroom_token":
+        if not access_token or is_demo or access_token in ("demo_google_classroom_token", "academic_agent_google_token"):
             raise RuntimeError("A valid authenticated Google account is required to upload deliverables to Google Drive.")
 
         mime_type, _ = mimetypes.guess_type(file_path)
@@ -59,7 +59,7 @@ class DriveService:
         Handles both binary files (PDF, DOCX, TXT, code) and Google Docs/Slides (exported as PDF).
         Returns (file_bytes, file_name).
         """
-        if not access_token or access_token == "demo_google_classroom_token":
+        if not access_token or access_token in ("demo_google_classroom_token", "academic_agent_google_token"):
             raise RuntimeError("A valid authenticated Google account is required to download files from Google Drive.")
 
         headers = {"Authorization": f"Bearer {access_token}"}

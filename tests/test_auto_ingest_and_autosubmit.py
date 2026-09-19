@@ -226,7 +226,9 @@ def test_autonomous_scheduler_pipeline(test_db, sample_user):
     orig_close = test_db.close
     test_db.close = MagicMock() # Prevent finally from closing session before assertions
     try:
+        sample_py = "```python\nprint('Calculator ran successfully')\n```"
         with patch("backend.app.scheduler.scheduler_service.SessionLocal", return_value=test_db), \
+             patch("backend.app.ai.ai_service.AIService.generate_completion", return_value=sample_py), \
              patch("backend.app.drive.drive_service.DriveService.upload_file", return_value=("drv_file_999", "calculator.py")), \
              patch("requests.post") as mock_post, \
              patch("requests.get") as mock_get:

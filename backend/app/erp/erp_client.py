@@ -29,7 +29,7 @@ class ERPClient:
             headers=BROWSER_HEADERS,
             cookies=cookies,
             timeout=self.timeout,
-            verify=False,
+            verify=True,
             follow_redirects=True
         )
 
@@ -40,7 +40,7 @@ class ERPClient:
         """
         url = f"{self.base_url}/StudentLoginPage"
         try:
-            with httpx.Client(headers=BROWSER_HEADERS, timeout=self.timeout, verify=False) as client:
+            with httpx.Client(headers=BROWSER_HEADERS, timeout=self.timeout, verify=True) as client:
                 resp = client.get(url)
                 if resp.status_code != 200:
                     return False, "", f"SRM AP Portal returned HTTP {resp.status_code}"
@@ -72,7 +72,7 @@ class ERPClient:
             "Cookie": f"JSESSIONID={jsessionid}"
         }
         try:
-            with httpx.Client(headers=headers, timeout=self.timeout, verify=False) as client:
+            with httpx.Client(headers=headers, timeout=self.timeout, verify=True) as client:
                 resp = client.get(url)
                 if resp.status_code == 200 and len(resp.content) > 100:
                     return resp.content
@@ -100,7 +100,7 @@ class ERPClient:
             "ccode": captcha_code.strip().upper(),
         }
         try:
-            with httpx.Client(headers=headers, timeout=self.timeout, verify=False, follow_redirects=True) as client:
+            with httpx.Client(headers=headers, timeout=self.timeout, verify=True, follow_redirects=True) as client:
                 resp = client.post(url, data=data)
                 html = resp.text
 
@@ -154,7 +154,7 @@ class ERPClient:
         }
         data = {"ids": str(report_id)}
         try:
-            with httpx.Client(headers=headers, timeout=self.timeout, verify=False) as client:
+            with httpx.Client(headers=headers, timeout=self.timeout, verify=True) as client:
                 resp = client.post(url, data=data)
                 if resp.status_code == 200:
                     return resp.text
@@ -172,7 +172,7 @@ class ERPClient:
             "Cookie": f"JSESSIONID={jsessionid}"
         }
         try:
-            with httpx.Client(headers=headers, timeout=self.timeout, verify=False) as client:
+            with httpx.Client(headers=headers, timeout=self.timeout, verify=True) as client:
                 resp = client.post(url)
                 if resp.status_code == 200:
                     return resp.text

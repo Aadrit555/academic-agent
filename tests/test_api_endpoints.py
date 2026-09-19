@@ -82,8 +82,11 @@ def client():
         db.add(chunk)
         db.commit()
 
+    from backend.app.auth.security import create_access_token
+    token = create_access_token(user_id=user.id, email=user.email, role=user.role)
     db.close()
     with TestClient(app) as c:
+        c.headers["Authorization"] = f"Bearer {token}"
         yield c
 
 def test_health_and_manifest_endpoints(client):
@@ -94,6 +97,12 @@ def test_health_and_manifest_endpoints(client):
     m_res = client.get("/manifest.json")
     assert m_res.status_code == 200
     assert "addOns" in m_res.json()
+
+def test_unauthenticated_request_rejected():
+    with TestClient(app) as unauth_client:
+        res = unauth_client.get("/api/home")
+        assert res.status_code == 401
+        assert "Authentication required" in res.json()["detail"]
 
 def test_home_summary_endpoint(client):
     res = client.get("/api/home")
@@ -148,8 +157,19 @@ def test_assignment_lifecycle_endpoints(client):
     cw_id = target_cw["id"]
 
     # 2. Generate assignment
-    gen_res = client.post("/api/assignment/generate", json={"coursework_id": cw_id})
-    assert gen_res.status_code == 200
+    sample_c = (
+        "```c\n"
+        "#include <stdio.h>\n"
+        "int main(void) {\n"
+        "    printf(\"Merge sort verified successfully.\\n\");\n"
+        "    return 0;\n"
+        "}\n"
+        "```"
+    )
+    from unittest.mock import patch
+    with patch("backend.app.ai.ai_service.AIService.generate_completion", return_value=sample_c):
+        gen_res = client.post("/api/assignment/generate", json={"coursework_id": cw_id})
+        assert gen_res.status_code == 200
     gen_data = gen_res.json()
     assert gen_data["file_type"] == ".c"
     assert os.path.exists(gen_data["file_path"])

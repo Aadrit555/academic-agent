@@ -136,8 +136,19 @@ def test_addon_dynamic_assignment_execution(setup_addon_test_db):
     db.refresh(cw)
 
     # 1. Generate deliverable
-    gen_res = client.post("/api/assignment/generate", json={"coursework_id": cw.id}, headers=headers)
-    assert gen_res.status_code == 200
+    sample_c = (
+        "```c\n"
+        "#include <stdio.h>\n"
+        "int main(void) {\n"
+        "    printf(\"Stack operations executed cleanly.\\n\");\n"
+        "    return 0;\n"
+        "}\n"
+        "```"
+    )
+    from unittest.mock import patch
+    with patch("backend.app.ai.ai_service.AIService.generate_completion", return_value=sample_c):
+        gen_res = client.post("/api/assignment/generate", json={"coursework_id": cw.id}, headers=headers)
+        assert gen_res.status_code == 200
     gen_data = gen_res.json()
     assert gen_data["coursework_id"] == cw.id
     assert "stack" in gen_data["file_name"].lower() or gen_data["file_name"].endswith(".c")
@@ -225,19 +236,22 @@ def test_addon_course_material_ai(setup_addon_test_db):
     assert ingest_res.status_code == 200
 
     # Query summary
-    summary_res = client.post(
-        "/api/study-brain/query",
-        json={"course_id": course.id, "action": "summary", "query": ""},
-        headers=headers
-    )
-    assert summary_res.status_code == 200
-    assert "Agile" in summary_res.json()["content"] or "Scrum" in summary_res.json()["content"]
+    sample_summary = "Agile and Scrum methodology summary with sprint planning and CI/CD pipelines."
+    from unittest.mock import patch
+    with patch("backend.app.ai.ai_service.AIService.generate_completion", return_value=sample_summary):
+        summary_res = client.post(
+            "/api/study-brain/query",
+            json={"course_id": course.id, "action": "summary", "query": ""},
+            headers=headers
+        )
+        assert summary_res.status_code == 200
+        assert "Agile" in summary_res.json()["content"] or "Scrum" in summary_res.json()["content"]
 
-    # Query questions
-    q_res = client.post(
-        "/api/study-brain/query",
-        json={"course_id": course.id, "action": "questions", "query": ""},
-        headers=headers
-    )
-    assert q_res.status_code == 200
-    assert len(q_res.json()["content"]) > 0
+        # Query questions
+        q_res = client.post(
+            "/api/study-brain/query",
+            json={"course_id": course.id, "action": "questions", "query": ""},
+            headers=headers
+        )
+        assert q_res.status_code == 200
+        assert len(q_res.json()["content"]) > 0

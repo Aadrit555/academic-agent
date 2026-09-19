@@ -113,10 +113,9 @@ class RAGService:
             title = f"Structured Summary: {course_name}"
             if not context_text:
                 content = (
-                    f"### Key Concepts Overview: {course_name}\n\n"
-                    "1. **Core Data Structures & Complexity**: Analysis of divide-and-conquer algorithms, logarithmic splits, and recurrence relations.\n"
-                    "2. **Merge Sort Algorithm**: Optimal $O(n \\log n)$ sorting with stable order preservation.\n"
-                    "3. **Balanced Trees**: AVL tree invariant where balance factor $\\in \\{-1, 0, 1\\}$, requiring Single (LL, RR) or Double (LR, RL) rotations."
+                    f"### No Relevant Course Material Found for {course_name}\n\n"
+                    "Study Brain could not find uploaded materials or lecture notes for this course. "
+                    "Please upload the course syllabus, lecture slides, or lab manual in the Study Brain tab to generate verified course-specific summaries."
                 )
             else:
                 prompt = (
@@ -131,17 +130,9 @@ class RAGService:
             title = f"High-Yield Exam Questions: {course_name}"
             if not context_text:
                 content = (
-                    "### 10 Important Exam & Viva Questions\n\n"
-                    "1. **Explain the divide-and-conquer paradigm in Merge Sort.**\n"
-                    "   - *Expected Answer*: Problem divided into two subproblems of size $n/2$, solved recursively, and combined in $O(n)$ linear time.\n\n"
-                    "2. **What is the recurrence relation for Merge Sort, and what is its solution?**\n"
-                    "   - *Expected Answer*: $T(n) = 2T(n/2) + \\Theta(n)$. By Master Theorem, $T(n) = \\Theta(n \\log n)$ in Best, Average, and Worst cases.\n\n"
-                    "3. **Why is Merge Sort preferred for Linked Lists over QuickSort?**\n"
-                    "   - *Expected Answer*: Linked lists do not require contiguous memory or random access indexing, allowing $O(1)$ pointer adjustments without extra space.\n\n"
-                    "4. **Define the Balance Factor of an AVL tree node.**\n"
-                    "   - *Expected Answer*: $\\text{Balance Factor} = \\text{Height}(\\text{left}) - \\text{Height}(\\text{right})$. Must be $\\in \\{-1, 0, 1\\}$.\n\n"
-                    "5. **When is a Left-Right (LR) double rotation triggered in an AVL tree?**\n"
-                    "   - *Expected Answer*: When a node is inserted into the right subtree of the left child of an unbalanced node."
+                    f"### No Relevant Course Material Found for {course_name}\n\n"
+                    "Study Brain requires uploaded course materials to generate authentic exam questions and model answers. "
+                    "Please upload your syllabus or lecture documents to enable exam question generation."
                 )
             else:
                 prompt = (

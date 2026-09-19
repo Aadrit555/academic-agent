@@ -80,22 +80,48 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"],
 )
 
-# Authentication Dependency: Bearer JWT verification with fallback to default demo user
+# Authentication Dependency: Bearer JWT verification with strict fail-closed enforcement
 def current_user(
     authorization: Optional[str] = Header(None),
     db: Session = Depends(get_db)
 ) -> User:
-    if authorization and authorization.startswith("Bearer "):
-        token = authorization.split(" ", 1)[1].strip()
-        payload = verify_access_token(token)
-        if payload:
-            user_id = payload.get("sub")
-            if user_id:
-                user = db.query(User).filter_by(id=int(user_id), is_active=True).first()
-                if user:
-                    return user
-        logger.warning("Provided bearer token was expired, invalid, or user inactive. Falling back to default user session.")
-    return get_or_create_default_user(db)
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(
+            status_code=401,
+            detail="Authentication required: missing or invalid Bearer authorization header",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+    token = authorization.split(" ", 1)[1].strip()
+    payload = verify_access_token(token)
+    if not payload:
+        raise HTTPException(
+            status_code=401,
+            detail="Authentication required: token is invalid or expired",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+    user_id = payload.get("sub")
+    if not user_id:
+        raise HTTPException(
+            status_code=401,
+            detail="Authentication required: malformed token payload",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+    try:
+        uid_int = int(user_id)
+    except (ValueError, TypeError):
+        raise HTTPException(
+            status_code=401,
+            detail="Authentication required: invalid user identifier in token",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+    user = db.query(User).filter_by(id=uid_int, is_active=True).first()
+    if not user:
+        raise HTTPException(
+            status_code=401,
+            detail="Authentication required: active user account not found",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+    return user
 
 def require_admin(user: User = Depends(current_user)) -> User:
     if user.role != "admin":
@@ -237,26 +263,11 @@ def google_auth_callback(
         return RedirectResponse(url=f"{target}?auth_error={urllib.parse.quote(str(e))}")
 
 @app.post("/api/auth/google/quick-connect")
-def quick_connect_google(db: Session = Depends(get_db), user: User = Depends(current_user)):
-    from backend.app.models import ClassroomIntegration
-    from datetime import datetime, timezone
-    integ = db.query(ClassroomIntegration).filter_by(user_id=user.id).first()
-    if not integ:
-        integ = ClassroomIntegration(user_id=user.id)
-        db.add(integ)
-    integ.access_token = "academic_agent_google_token"
-    integ.email = "aadriteye@gmail.com"
-    integ.email = user.email or "aadrit_y@srmap.edu.in"
-    integ.is_demo_mode = False
-    integ.connected_at = datetime.now(timezone.utc)
-    integ.last_synced_at = datetime.now(timezone.utc)
-    db.commit()
-    db.refresh(integ)
-    return {
-        "message": f"Connected to Google Classroom for {integ.email}!",
-        "connected": True,
-        "email": integ.email
-    }
+def quick_connect_google():
+    raise HTTPException(
+        status_code=400,
+        detail="Simulated Quick Connect has been permanently removed. Connect via official Google OAuth (/api/auth/google/url) or submit a genuine Google access token via /api/auth/google/direct-token."
+    )
 
 @app.post("/api/auth/google/direct-token")
 def direct_token_google(req: DirectTokenRequest, db: Session = Depends(get_db), user: User = Depends(current_user)):
@@ -463,28 +474,7 @@ def configure_google_credentials(
     if openai_key:
         settings.OPENAI_API_KEY = openai_key
 
-    # Safely persist to .env file in project root if possible
-    try:
-        env_path = BASE_DIR / ".env"
-        existing_lines = []
-        if env_path.exists():
-            existing_lines = env_path.read_text(encoding="utf-8").splitlines()
-        
-        filtered = [
-            l for l in existing_lines 
-            if not l.startswith("GOOGLE_CLASSROOM_") and not l.startswith("GOOGLE_CLIENT_") 
-            and not l.startswith("GOOGLE_REDIRECT_URI") and (not openai_key or not l.startswith("OPENAI_API_KEY") and not l.startswith("CHATGPT_API_KEY"))
-        ]
-        if cid:
-            filtered.append(f"GOOGLE_CLASSROOM_CLIENT_ID={cid}")
-        if sec:
-            filtered.append(f"GOOGLE_CLASSROOM_CLIENT_SECRET={sec}")
-        filtered.append(f"GOOGLE_REDIRECT_URI={settings.GOOGLE_REDIRECT_URI}")
-        if openai_key:
-            filtered.append(f"OPENAI_API_KEY={openai_key}")
-        env_path.write_text("\n".join(filtered) + "\n", encoding="utf-8")
-    except Exception as e:
-        logger.warning(f"Could not persist credentials to .env file: {e}")
+    logger.info("Updated runtime configuration for Google OAuth / OpenAI.")
 
     auth_url = ""
     try:
