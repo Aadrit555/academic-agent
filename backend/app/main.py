@@ -285,7 +285,9 @@ def direct_token_google(req: DirectTokenRequest, db: Session = Depends(get_db), 
 
 @app.post("/api/erp/quick-connect")
 def quick_connect_erp(db: Session = Depends(get_db), user: User = Depends(current_user)):
-    return ERPService._connect_offline_fallback(db, user, "AP22110010555", "demo", "User requested Quick Connect")
+    integ = db.query(ERPIntegration).filter_by(user_id=user.id).first()
+    student_id = (integ.student_id if integ and integ.student_id and integ.student_id != "AP22110010555" else None) or user.email.split("@")[0].upper()
+    return ERPService._connect_offline_fallback(db, user, student_id, "demo", "User requested Quick Connect")
 
 @app.post("/api/auth/register", response_model=TokenResponse)
 def register_user(req: UserRegister, db: Session = Depends(get_db)):

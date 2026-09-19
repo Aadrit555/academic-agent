@@ -35,7 +35,118 @@
     document.body.appendChild(fab);
   }
 
-  // 2. Create Side Drawer Iframe
+  function escapeHtml(str) {
+    if (!str) return "";
+    return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
+  function getLivePageDetails() {
+    const h1 = document.querySelector('h1') || document.querySelector('[role="main"] h1');
+    const title = h1 ? h1.textContent.trim() : "Current Classroom Assignment";
+
+    let teacher = "";
+    const commentInput = document.querySelector('[aria-label*="Add comment to" i]');
+    if (commentInput) {
+      const match = (commentInput.getAttribute('aria-label') || '').match(/Add comment to\s+([^.]+)/i);
+      if (match) teacher = match[1].trim();
+    }
+
+    let status = "Assigned";
+    const statusBadges = Array.from(document.querySelectorAll('aside, [role="region"], .z3vRcc, .oBSRLe, .WkhuNc'));
+    for (const b of statusBadges) {
+      const t = (b.textContent || '');
+      if (t.includes('Turned in')) status = 'Turned in';
+      else if (t.includes('Assigned')) status = 'Assigned';
+      else if (t.includes('Missing')) status = 'Missing';
+    }
+
+    const attachments = Array.from(document.querySelectorAll('a[href*="drive.google.com"], a[href*="docs.google.com"]'))
+      .map(a => (a.textContent || '').trim())
+      .filter(t => t.length > 2 && !t.includes('Google Drive'))
+      .slice(0, 3);
+
+    return { title, teacher, status, attachments };
+  }
+
+  function renderDrawerContent() {
+    const bodyEl = document.getElementById("academic-agent-drawer-body");
+    if (!bodyEl) return;
+
+    const details = getLivePageDetails();
+    const storedId = localStorage.getItem("academic_real_student_id") || "";
+
+    bodyEl.innerHTML = `
+      <div class="aa-drawer-card">
+        <div class="aa-card-title">
+          <span>Active Classroom Task</span>
+          <span class="aa-pill ${details.status === 'Turned in' ? 'pill-green' : 'pill-blue'}">${details.status}</span>
+        </div>
+        <div class="aa-item-title">${escapeHtml(details.title)}</div>
+        <div class="aa-item-meta">
+          ${details.teacher ? `<span>👨‍🏫 Faculty: <b>${escapeHtml(details.teacher)}</b></span>` : ''}
+          ${details.attachments.length > 0 ? `<span>📑 Handout: <b>${escapeHtml(details.attachments[0])}</b></span>` : ''}
+        </div>
+      </div>
+
+      <div class="aa-drawer-card">
+        <div class="aa-card-title">Student Profile</div>
+        <div class="aa-item-meta">
+          <span>Google Account: <b style="color: #34d399;">aadrit_y@srmap.edu.in</b></span>
+          <span style="margin-top: 6px;">SRM AP Registration Number:</span>
+        </div>
+        <div class="aa-input-row">
+          <input type="text" class="aa-input" id="aa-student-id-input" placeholder="Enter AP Reg No (e.g. AP23...)" value="${escapeHtml(storedId)}">
+          <button class="aa-btn-save" id="aa-btn-save-id">Save</button>
+        </div>
+      </div>
+
+      <button class="aa-classroom-inline-btn" id="aa-drawer-submit-btn" style="margin: 4px 0; padding: 12px 16px; font-size: 13px;">
+        <span>⚡ Auto-Create &amp; Turn In (Zero Download)</span>
+      </button>
+
+      <button class="aa-classroom-inline-btn" id="aa-btn-open-dashboard" style="background: #334155; margin-top: 2px;">
+        <span>Open Companion Web Layer ↗</span>
+      </button>
+    `;
+
+    const saveBtn = document.getElementById("aa-btn-save-id");
+    if (saveBtn) {
+      saveBtn.addEventListener("click", () => {
+        const val = (document.getElementById("aa-student-id-input").value || "").trim().toUpperCase();
+        if (val) {
+          localStorage.setItem("academic_real_student_id", val);
+          showToast(`Saved Registration Number: ${val}`, "success");
+        }
+      });
+    }
+
+    const submitBtn = document.getElementById("aa-drawer-submit-btn");
+    if (submitBtn) {
+      submitBtn.addEventListener("click", async () => {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `<span>⏳ Ingesting &amp; Turning In to Classroom...</span>`;
+        try {
+          await performRealGoogleClassroomTurnIn();
+          submitBtn.className = "aa-classroom-inline-btn is-success";
+          submitBtn.innerHTML = `<span>✓ Turned In Successfully!</span>`;
+          renderDrawerContent();
+        } catch (e) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = `<span>⚡ Auto-Create &amp; Turn In (Zero Download)</span>`;
+          showToast(e.message, "error");
+        }
+      });
+    }
+
+    const dashBtn = document.getElementById("aa-btn-open-dashboard");
+    if (dashBtn) {
+      dashBtn.addEventListener("click", () => {
+        window.open(`${BACKEND_URL}/addon`, "_blank");
+      });
+    }
+  }
+
+  // 2. Create Side Drawer (Native DOM Component)
   function createDrawer() {
     if (document.getElementById("academic-agent-drawer")) return;
 
@@ -46,7 +157,7 @@
         <span>⚡ Academic Agent — Google Classroom Companion</span>
         <button id="academic-agent-drawer-close">&times;</button>
       </div>
-      <iframe id="academic-agent-iframe" src="${BACKEND_URL}/addon" allow="clipboard-read; clipboard-write"></iframe>
+      <div id="academic-agent-drawer-body"></div>
     `;
 
     document.body.appendChild(drawer);
@@ -56,17 +167,14 @@
     });
   }
 
-  function toggleDrawer(params = "") {
+  function toggleDrawer() {
     createDrawer();
     const drawer = document.getElementById("academic-agent-drawer");
-    const iframe = document.getElementById("academic-agent-iframe");
-
-    if (params) {
-      iframe.src = `${BACKEND_URL}/addon?${params}`;
-    }
-
     if (drawer) {
       drawer.classList.toggle("active");
+      if (drawer.classList.contains("active")) {
+        renderDrawerContent();
+      }
     }
   }
 
