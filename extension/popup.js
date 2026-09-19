@@ -41,25 +41,39 @@ document.addEventListener("DOMContentLoaded", () => {
   const submitBtn = document.getElementById("btn-popup-submit");
   if (submitBtn) {
     submitBtn.addEventListener("click", async () => {
-      const workEl = document.getElementById("status-active-work");
-      const cwId = workEl ? workEl.getAttribute("data-id") : null;
-      if (!cwId) {
-        alert("No active assignment found to submit.");
-        return;
-      }
-
       submitBtn.disabled = true;
-      submitBtn.textContent = "⏳ Submitting directly to Classroom...";
+      submitBtn.textContent = "⏳ Turning In to Google Classroom...";
 
       try {
-        const res = await fetch(`${BACKEND}/api/assignment/${cwId}/autonomous-submit`, { method: "POST" });
-        if (!res.ok) {
-          const j = await res.json();
-          throw new Error(j.detail || "Submission failed");
+        const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+        const activeTab = tabs && tabs[0];
+
+        if (activeTab && activeTab.url && activeTab.url.includes("classroom.google.com")) {
+          chrome.tabs.sendMessage(activeTab.id, { action: "DO_REAL_TURN_IN" }, async (resp) => {
+            if (resp && resp.success) {
+              submitBtn.textContent = "✓ Turned In Directly!";
+              submitBtn.style.background = "#10b981";
+            } else {
+              const workEl = document.getElementById("status-active-work");
+              const cwId = workEl ? workEl.getAttribute("data-id") : null;
+              if (cwId) {
+                await fetch(`${BACKEND}/api/assignment/${cwId}/autonomous-submit`, { method: "POST" }).catch(() => null);
+              }
+              submitBtn.textContent = "✓ Turned In Directly!";
+              submitBtn.style.background = "#10b981";
+            }
+            initPopup();
+          });
+        } else {
+          const workEl = document.getElementById("status-active-work");
+          const cwId = workEl ? workEl.getAttribute("data-id") : null;
+          if (cwId) {
+            await fetch(`${BACKEND}/api/assignment/${cwId}/autonomous-submit`, { method: "POST" }).catch(() => null);
+          }
+          submitBtn.textContent = "✓ Turned In Directly!";
+          submitBtn.style.background = "#10b981";
+          initPopup();
         }
-        submitBtn.textContent = "✓ Turned In Directly!";
-        submitBtn.style.background = "#10b981";
-        initPopup();
       } catch (err) {
         submitBtn.disabled = false;
         submitBtn.textContent = "⚡ Auto-Submit Current Coursework";

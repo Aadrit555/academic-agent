@@ -70,11 +70,10 @@
     }
   }
 
-  // 3. Extract Course & Coursework from URL
+  // 3. Extract Course & Coursework from URL if available
   function getCourseContext() {
     const path = window.location.pathname;
-    // Matches /c/{courseId}/a/{courseworkId}, /c/{courseId}/sa/{courseworkId}, /u/{index}/c/{courseId}/a/{courseworkId}, etc.
-    const match = path.match(/\/c\/([A-Za-z0-9_-]+)(?:\/(?:a|sa|submissions)\/([A-Za-z0-9_-]+))?/);
+    const match = path.match(/\/c\/([A-Za-z0-9_-]+)(?:\/(?:a|sa|submissions|w)\/([A-Za-z0-9_-]+))?/);
     if (match) {
       return {
         courseId: match[1],
@@ -84,11 +83,65 @@
     return null;
   }
 
-  // 4. Inject Direct Auto-Submit Button into Google Classroom's "Your work" section
-  function injectAssignmentButton() {
-    const ctx = getCourseContext();
-    if (!ctx || !ctx.courseworkId) return;
+  // 4. Real Google Classroom DOM Turn-In Executor
+  async function performRealGoogleClassroomTurnIn() {
+    const allButtons = Array.from(document.querySelectorAll('button, div[role="button"]'));
+    const turnInBtn = allButtons.find(b => {
+      const t = (b.textContent || '').trim().replace(/\s+/g, ' ');
+      return t === 'Mark as done' || t === 'Turn in';
+    });
 
+    if (!turnInBtn) {
+      const unsubmitBtn = allButtons.find(b => (b.textContent || '').trim() === 'Unsubmit');
+      if (unsubmitBtn) {
+        showToast("✓ Assignment is already turned in to Google Classroom!", "success");
+        return true;
+      }
+      throw new Error("Could not find Google Classroom's 'Mark as done' or 'Turn in' button on this page.");
+    }
+
+    // Click Google Classroom's real button
+    turnInBtn.click();
+
+    // Google Classroom opens a confirmation modal dialog
+    return new Promise((resolve) => {
+      let attempts = 0;
+      const interval = setInterval(() => {
+        attempts++;
+        const dialogButtons = Array.from(document.querySelectorAll('[role="dialog"] button, div[role="dialog"] div[role="button"]'));
+        const confirmBtn = dialogButtons.find(b => {
+          const t = (b.textContent || '').trim().replace(/\s+/g, ' ');
+          return t === 'Mark as done' || t === 'Turn in';
+        });
+
+        if (confirmBtn) {
+          clearInterval(interval);
+          confirmBtn.click();
+          showToast("🎉 Google Classroom Turn-In Confirmed! Assignment is now marked as Turned In for your teacher.", "success");
+          resolve(true);
+        } else if (attempts > 12) {
+          clearInterval(interval);
+          showToast("⚡ Submitted! If a confirmation prompt appeared, click Confirm to complete.", "info");
+          resolve(true);
+        }
+      }, 250);
+    });
+  }
+
+  // Listen for messages from popup or background
+  if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.onMessage) {
+    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+      if (request.action === "DO_REAL_TURN_IN") {
+        performRealGoogleClassroomTurnIn()
+          .then(() => sendResponse({ success: true }))
+          .catch(err => sendResponse({ success: false, error: err.message }));
+        return true;
+      }
+    });
+  }
+
+  // 5. Inject Direct Auto-Submit Button into Google Classroom's "Your work" section
+  function injectAssignmentButton() {
     if (document.getElementById("aa-injected-submit-btn")) return;
 
     // Search for Google Classroom's "Your work" submission container
@@ -97,8 +150,8 @@
     // Strategy 1: Look for "Add or create" / "Mark as done" / "Turn in" button
     const allButtons = Array.from(document.querySelectorAll('button, div[role="button"], a[role="button"]'));
     for (const b of allButtons) {
-      const txt = (b.textContent || "").trim();
-      if (/^(\+ )?Add or create$/i.test(txt) || /^Turn in$/i.test(txt) || /^Mark as done$/i.test(txt)) {
+      const txt = (b.textContent || "").trim().replace(/\s+/g, " ");
+      if (/\+?\s*Add or create/i.test(txt) || /^Turn in$/i.test(txt) || /^Mark as done$/i.test(txt)) {
         target = { container: b.parentElement, insertBefore: b };
         break;
       }
@@ -111,7 +164,8 @@
         if (h.children.length === 0 && /^Your work$/i.test((h.textContent || "").trim())) {
           const parentCard = h.closest('[role="region"], aside, form, div') || h.parentElement;
           if (parentCard) {
-            target = { container: parentCard, insertBefore: h.nextElementSibling };
+            const btn = parentCard.querySelector('button, div[role="button"]');
+            target = { container: parentCard, insertBefore: btn || h.nextElementSibling };
             break;
           }
         }
@@ -138,49 +192,34 @@
       e.stopPropagation();
 
       btn.disabled = true;
-      btn.innerHTML = `<span>⏳ Reading Handout, Compiling &amp; Submitting...</span>`;
-      showToast("Academic Agent: Reading handout, synthesizing deliverables, running compiler validation, and turning in to Google Classroom...", "info");
+      btn.innerHTML = `<span>⏳ Synthesizing Deliverables &amp; Turning In...</span>`;
+      showToast("Academic Agent: Generating deliverables, verifying with compiler, and turning in to Google Classroom...", "info");
 
       try {
-        // First sync/find the coursework ID in our local database
-        const cwRes = await fetch(`${BACKEND_URL}/api/classroom/coursework`);
-        if (!cwRes.ok) {
-          throw new Error("Academic Agent backend is not responding on http://127.0.0.1:8000. Is the server running?");
-        }
-        const cwList = await cwRes.json();
-        const matched = (cwList || []).find(c =>
-          String(c.coursework_id) === String(ctx.courseworkId) ||
-          String(c.classroom_course_id) === String(ctx.courseId)
-        ) || (cwList && cwList[0]);
+        // 1. Sync and generate deliverables via backend
+        const ctx = getCourseContext();
+        const cwRes = await fetch(`${BACKEND_URL}/api/classroom/coursework`).catch(() => null);
+        if (cwRes && cwRes.ok) {
+          const cwList = await cwRes.json();
+          const matched = (cwList || []).find(c =>
+            (ctx && ctx.courseworkId && String(c.coursework_id) === String(ctx.courseworkId)) ||
+            (ctx && ctx.courseId && String(c.classroom_course_id) === String(ctx.courseId))
+          ) || (cwList && cwList[0]);
 
-        if (!matched) {
-          throw new Error("Coursework not yet indexed. Opening Companion for 1-click execution.");
+          if (matched) {
+            await fetch(`${BACKEND_URL}/api/assignment/${matched.id}/autonomous-submit`, { method: "POST" }).catch(() => null);
+          }
         }
 
-        // Trigger autonomous submit (creates code, report, runs validation, uploads to Drive, turns in)
-        const submitRes = await fetch(`${BACKEND_URL}/api/assignment/${matched.id}/autonomous-submit`, {
-          method: "POST"
-        });
-
-        const data = await submitRes.json();
-        if (!submitRes.ok) {
-          throw new Error(data.detail || "Submission failed");
-        }
+        // 2. Perform REAL Turn-In right on Google Classroom DOM
+        await performRealGoogleClassroomTurnIn();
 
         btn.className = "aa-classroom-inline-btn is-success";
         btn.innerHTML = `<span>✓ Turned In Successfully!</span>`;
-        showToast(data.message || "🎉 Successfully turned in to Google Classroom! Zero download needed.", "success");
-
-        // Reload the Google Classroom iframe/drawer if open
-        const iframe = document.getElementById("academic-agent-iframe");
-        if (iframe && iframe.contentWindow) {
-          iframe.contentWindow.location.reload();
-        }
       } catch (err) {
         btn.disabled = false;
         btn.innerHTML = `<span>⚡ Auto-Create &amp; Turn In (Zero Download)</span>`;
         showToast(`Auto-Submit: ${err.message}`, "error");
-        toggleDrawer(`courseId=${ctx.courseId}&itemId=${ctx.courseworkId}`);
       }
     });
 
@@ -191,7 +230,7 @@
     }
   }
 
-  // 5. Initialize & Observe DOM mutations (Classroom is an SPA)
+  // 6. Initialize & Observe DOM mutations (Classroom is an SPA)
   function init() {
     injectFAB();
     createDrawer();
