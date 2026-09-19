@@ -16,15 +16,15 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         # Invert/inject essential enterprise security headers
         csp = (
             "default-src 'self'; "
-            "script-src 'self'; "
+            "script-src 'self' 'unsafe-inline'; "
             "style-src 'self' 'unsafe-inline'; "
-            "img-src 'self' data:; "
-            "connect-src 'self'; "
-            "font-src 'self'; "
+            "img-src 'self' data: https:; "
+            "connect-src 'self' https://classroom.googleapis.com https://accounts.google.com; "
+            "font-src 'self' data:; "
             "object-src 'none'; "
             "base-uri 'self'; "
-            "form-action 'self'; "
-            "frame-ancestors 'none';"
+            "form-action 'self' https://accounts.google.com; "
+            "frame-ancestors 'self' https://classroom.google.com https://*.google.com;"
         )
         response.headers["Content-Security-Policy"] = csp
         response.headers["X-Content-Type-Options"] = "nosniff"

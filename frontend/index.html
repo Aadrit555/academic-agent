@@ -27,19 +27,19 @@
 
       <div class="header-status">
         <button class="status-chip disconnected" id="addon-google-chip" title="Google Classroom Connection Status"
-          onclick="AddonApp.openSettingsTab('google')">
+          data-action="openSettingsTab" data-tab="google" onclick="AddonApp.openSettingsTab('google')">
           <span class="chip-dot"></span>
           <span class="chip-text">Google</span>
         </button>
 
         <button class="status-chip disconnected" id="addon-erp-chip" title="Student Portal / Timetable Status"
-          onclick="AddonApp.openSettingsTab('portal')">
+          data-action="openSettingsTab" data-tab="portal" onclick="AddonApp.openSettingsTab('portal')">
           <span class="chip-dot"></span>
           <span class="chip-text">Portal</span>
         </button>
 
-        <button class="icon-btn" id="btn-settings" title="Settings & Integrations" onclick="openModal('settings-modal')"
-          aria-label="Settings">
+        <button class="icon-btn" id="btn-settings" title="Settings & Integrations" data-action="openModal"
+          data-modal="settings-modal" onclick="openModal('settings-modal')" aria-label="Settings">
           ⚙️
         </button>
       </div>
@@ -56,9 +56,12 @@
           </div>
         </div>
         <div class="cac-actions">
-          <button class="btn btn-primary btn-sm" onclick="AddonApp.launchGoogleOAuth()">🔗 Sign in with Google</button>
-          <button class="btn btn-secondary btn-sm" onclick="AddonApp.quickConnectGoogle()">⚡ Quick Connect</button>
-          <button class="btn btn-secondary btn-sm" onclick="AddonApp.openSettingsTab('google')">Setup / Token</button>
+          <button class="btn btn-primary btn-sm" id="banner-btn-google-oauth" data-action="launchGoogleOAuth"
+            onclick="AddonApp.launchGoogleOAuth()">🔗 Sign in with Google</button>
+          <button class="btn btn-secondary btn-sm" id="banner-btn-google-quick" data-action="quickConnectGoogle"
+            onclick="AddonApp.quickConnectGoogle()">⚡ Quick Connect</button>
+          <button class="btn btn-secondary btn-sm" id="banner-btn-google-setup" data-action="openSettingsTab"
+            data-tab="google" onclick="AddonApp.openSettingsTab('google')">Setup / Token</button>
         </div>
       </div>
 
@@ -71,8 +74,10 @@
           </div>
         </div>
         <div class="cac-actions">
-          <button class="btn btn-primary btn-sm" onclick="AddonApp.openSettingsTab('portal')">Connect Student ID</button>
-          <button class="btn btn-secondary btn-sm" onclick="AddonApp.quickConnectERP()">⚡ 1-Click Schedule</button>
+          <button class="btn btn-primary btn-sm" id="banner-btn-portal-setup" data-action="openSettingsTab"
+            data-tab="portal" onclick="AddonApp.openSettingsTab('portal')">Connect Student ID</button>
+          <button class="btn btn-secondary btn-sm" id="banner-btn-portal-quick" data-action="quickConnectERP"
+            onclick="AddonApp.quickConnectERP()">⚡ 1-Click Schedule</button>
         </div>
       </div>
     </div>
@@ -171,12 +176,14 @@
               <div class="auto-title">⚡ AUTO-SUBMIT ACTIVE</div>
               <div class="auto-sub">Scheduled: <b>Default: 4 hours before deadline</b></div>
             </div>
-            <button class="btn btn-sm btn-success" onclick="AddonApp.toggleAutoSubmit()">
+            <button class="btn btn-sm btn-success" id="btn-toggle-auto" data-action="toggleAutoSubmit"
+              onclick="AddonApp.toggleAutoSubmit()">
               ENABLED (ON)
             </button>
           </div>
           <div style="display: flex; gap: 8px; margin-top: 10px;">
-            <button class="btn btn-primary btn-sm btn-block" onclick="AddonApp.submitNow()">
+            <button class="btn btn-primary btn-sm btn-block" id="btn-submit-now" data-action="submitNow"
+              onclick="AddonApp.submitNow()">
               ⚡ Auto-Submit Now (Autonomous End-to-End)
             </button>
           </div>
@@ -191,7 +198,8 @@
         <span>•</span>
         <a href="/privacy" target="_blank">Privacy</a>
         <span>•</span>
-        <a href="javascript:void(0)" onclick="AddonApp.syncClassroom()">Sync Classroom</a>
+        <a href="javascript:void(0)" id="link-sync-classroom" data-action="syncClassroom"
+          onclick="AddonApp.syncClassroom()">Sync Classroom</a>
       </div>
       <div class="footer-copy">Academic Agent • Google Classroom Native Layer</div>
     </footer>
@@ -205,18 +213,22 @@
         <div class="modal-title">
           <span>⚙️ Integrations &amp; Accounts</span>
         </div>
-        <button class="modal-close" onclick="closeModal('settings-modal')" aria-label="Close modal">&times;</button>
+        <button class="modal-close" id="btn-close-settings-modal" data-action="closeModal" data-modal="settings-modal"
+          onclick="closeModal('settings-modal')" aria-label="Close modal">&times;</button>
       </div>
 
       <!-- Modal Tabs -->
       <div class="modal-tabs">
-        <button class="modal-tab active" id="tab-btn-portal" onclick="AddonApp.switchModalTab('portal')">
+        <button class="modal-tab active" id="tab-btn-portal" data-action="switchModalTab" data-tab="portal"
+          onclick="AddonApp.switchModalTab('portal')">
           🏛️ Student Portal
         </button>
-        <button class="modal-tab" id="tab-btn-google" onclick="AddonApp.switchModalTab('google')">
+        <button class="modal-tab" id="tab-btn-google" data-action="switchModalTab" data-tab="google"
+          onclick="AddonApp.switchModalTab('google')">
           📚 Google Classroom
         </button>
-        <button class="modal-tab" id="tab-btn-config" onclick="AddonApp.switchModalTab('config')">
+        <button class="modal-tab" id="tab-btn-config" data-action="switchModalTab" data-tab="config"
+          onclick="AddonApp.switchModalTab('config')">
           🔑 OAuth Credentials
         </button>
       </div>
@@ -246,8 +258,10 @@
                 </div>
               </div>
               <div class="isc-actions">
-                <button class="btn btn-secondary btn-sm" onclick="AddonApp.refreshERP()">↻ Refresh Timetable</button>
-                <button class="btn btn-danger btn-sm" onclick="AddonApp.disconnectERP()">Disconnect Portal</button>
+                <button class="btn btn-secondary btn-sm" id="btn-erp-refresh" data-action="refreshERP"
+                  onclick="AddonApp.refreshERP()">↻ Refresh Timetable</button>
+                <button class="btn btn-danger btn-sm" id="btn-erp-disconnect" data-action="disconnectERP"
+                  onclick="AddonApp.disconnectERP()">Disconnect Portal</button>
               </div>
             </div>
           </div>
@@ -276,10 +290,12 @@
 
             <div style="text-align: center; margin: 10px 0; font-size: 11px; color: var(--text-muted);">— OR —</div>
 
-            <button class="btn btn-secondary btn-block" onclick="AddonApp.quickConnectERP()">
+            <button class="btn btn-secondary btn-block" id="btn-erp-quick" data-action="quickConnectERP"
+              onclick="AddonApp.quickConnectERP()">
               ⚡ 1-Click Load SRM AP CSE Schedule
             </button>
-            <span style="font-size: 10px; color: var(--text-muted); display: block; margin-top: 4px; text-align: center;">
+            <span
+              style="font-size: 10px; color: var(--text-muted); display: block; margin-top: 4px; text-align: center;">
               Off-campus or intranet issues? Loads the official SRM AP CSE schedule & variable classrooms instantly.
             </span>
           </div>
@@ -300,8 +316,10 @@
                 </div>
               </div>
               <div class="isc-actions">
-                <button class="btn btn-secondary btn-sm" onclick="AddonApp.syncClassroom()">↻ Sync Coursework</button>
-                <button class="btn btn-danger btn-sm" onclick="AddonApp.disconnectGoogle()">Disconnect Google</button>
+                <button class="btn btn-secondary btn-sm" id="btn-google-sync" data-action="syncClassroom"
+                  onclick="AddonApp.syncClassroom()">↻ Sync Coursework</button>
+                <button class="btn btn-danger btn-sm" id="btn-google-disconnect" data-action="disconnectGoogle"
+                  onclick="AddonApp.disconnectGoogle()">Disconnect Google</button>
               </div>
             </div>
           </div>
@@ -312,28 +330,35 @@
               instructions, deadlines, and enable direct Google Drive deliverable turn-in.
             </p>
 
-            <button class="btn btn-primary btn-block" onclick="AddonApp.launchGoogleOAuth()">
+            <button class="btn btn-primary btn-block" id="btn-google-oauth-login" data-action="launchGoogleOAuth"
+              onclick="AddonApp.launchGoogleOAuth()">
               <span>🔗 Sign In with Google (OAuth)</span>
             </button>
 
-            <div style="text-align: center; margin: 10px 0; font-size: 11px; color: var(--text-muted);">— OR QUICK TEST —</div>
+            <div style="text-align: center; margin: 10px 0; font-size: 11px; color: var(--text-muted);">— OR QUICK TEST
+              —</div>
 
-            <button class="btn btn-secondary btn-block" onclick="AddonApp.quickConnectGoogle()">
+            <button class="btn btn-secondary btn-block" id="btn-google-quick-connect" data-action="quickConnectGoogle"
+              onclick="AddonApp.quickConnectGoogle()">
               ⚡ Quick-Connect Academic Profile (1-Click)
             </button>
 
             <!-- Direct Token Section -->
             <div style="margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--border-subtle);">
-              <label class="form-label" style="font-size: 11px;" for="direct-token-input">Paste Google Bearer Access Token (Optional)</label>
+              <label class="form-label" style="font-size: 11px;" for="direct-token-input">Paste Google Bearer Access
+                Token (Optional)</label>
               <div style="display: flex; gap: 6px;">
-                <input type="password" class="form-input" id="direct-token-input" placeholder="ya29.a0A..." style="font-size: 11px;">
-                <button class="btn btn-secondary btn-sm" onclick="AddonApp.connectDirectToken()" style="white-space: nowrap;">Connect</button>
+                <input type="password" class="form-input" id="direct-token-input" placeholder="ya29.a0A..."
+                  style="font-size: 11px;">
+                <button class="btn btn-secondary btn-sm" id="btn-google-direct-token" data-action="connectDirectToken"
+                  onclick="AddonApp.connectDirectToken()" style="white-space: nowrap;">Connect</button>
               </div>
             </div>
 
             <!-- Setup & Troubleshooting Guide -->
             <div class="setup-guide-box">
-              <b style="color: var(--text-primary); display: block; margin-bottom: 4px;">🛠️ Google Cloud OAuth Setup Guide</b>
+              <b style="color: var(--text-primary); display: block; margin-bottom: 4px;">🛠️ Google Cloud OAuth Setup
+                Guide</b>
               If you see <code>redirect_uri_mismatch</code> or <code>access_denied</code> when signing in:
               <ol>
                 <li>Open <b>Google Cloud Console</b> &rarr; <b>APIs &amp; Services</b> &rarr; <b>Credentials</b>.</li>
@@ -375,7 +400,8 @@
             <input type="password" class="form-input" id="config-client-secret" placeholder="Enter Client Secret">
           </div>
 
-          <button class="btn btn-primary btn-block" onclick="AddonApp.saveGoogleCredentials()">
+          <button class="btn btn-primary btn-block" id="btn-save-credentials" data-action="saveGoogleCredentials"
+            onclick="AddonApp.saveGoogleCredentials()">
             Save Credentials
           </button>
         </div>

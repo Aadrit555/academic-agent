@@ -1227,13 +1227,136 @@ function escapeHtml(str) {
 
 function openModal(id) {
   const m = document.getElementById(id);
-  if (m) m.classList.add("active");
+  if (m) {
+    m.classList.add("active");
+    m.setAttribute("aria-hidden", "false");
+  }
 }
 
 function closeModal(id) {
   const m = document.getElementById(id);
-  if (m) m.classList.remove("active");
+  if (m) {
+    m.classList.remove("active");
+    m.setAttribute("aria-hidden", "true");
+  }
 }
+
+// ── Expose globals explicitly on window for cross-frame / inline compatibility
+window.AddonApp = AddonApp;
+window.openModal = openModal;
+window.closeModal = closeModal;
+window.Toast = Toast;
+window.api = api;
+
+// ── Global Event Delegation (Guarantees clicks work in all CSP & browser contexts)
+document.addEventListener("click", (e) => {
+  // 1. Click on modal backdrop outside card closes modal
+  if (e.target && e.target.classList && e.target.classList.contains("modal-overlay")) {
+    e.target.classList.remove("active");
+    e.target.setAttribute("aria-hidden", "true");
+    return;
+  }
+
+  // 2. Element or ancestor with data-action
+  const actionEl = e.target.closest("[data-action]");
+  if (actionEl) {
+    const action = actionEl.getAttribute("data-action");
+    switch (action) {
+      case "openSettingsTab": {
+        const tab = actionEl.getAttribute("data-tab") || "portal";
+        AddonApp.openSettingsTab(tab);
+        break;
+      }
+      case "switchModalTab": {
+        const tab = actionEl.getAttribute("data-tab") || "portal";
+        AddonApp.switchModalTab(tab);
+        break;
+      }
+      case "openModal": {
+        const mid = actionEl.getAttribute("data-modal") || "settings-modal";
+        openModal(mid);
+        break;
+      }
+      case "closeModal": {
+        const mid = actionEl.getAttribute("data-modal") || "settings-modal";
+        closeModal(mid);
+        break;
+      }
+      case "launchGoogleOAuth":
+        AddonApp.launchGoogleOAuth();
+        break;
+      case "quickConnectGoogle":
+        AddonApp.quickConnectGoogle();
+        break;
+      case "quickConnectERP":
+        AddonApp.quickConnectERP();
+        break;
+      case "connectERP":
+        AddonApp.connectERP();
+        break;
+      case "refreshERP":
+        AddonApp.refreshERP();
+        break;
+      case "disconnectERP":
+        AddonApp.disconnectERP();
+        break;
+      case "syncClassroom":
+        AddonApp.syncClassroom();
+        break;
+      case "disconnectGoogle":
+        AddonApp.disconnectGoogle();
+        break;
+      case "connectDirectToken":
+        AddonApp.connectDirectToken();
+        break;
+      case "saveGoogleCredentials":
+        AddonApp.saveGoogleCredentials();
+        break;
+      case "toggleAutoSubmit":
+        AddonApp.toggleAutoSubmit();
+        break;
+      case "submitNow":
+        AddonApp.submitNow();
+        break;
+      case "executeAssignment":
+        AddonApp.executeAssignment();
+        break;
+      case "validateDeliverable":
+        AddonApp.validateDeliverable();
+        break;
+      case "copyDeliverableCode":
+        AddonApp.copyDeliverableCode();
+        break;
+      case "downloadReport":
+        AddonApp.downloadReport();
+        break;
+      case "downloadDeliverable":
+        AddonApp.downloadDeliverable();
+        break;
+      case "downloadAll":
+        AddonApp.downloadAll();
+        break;
+      case "reclaimSubmission":
+        AddonApp.reclaimSubmission();
+        break;
+    }
+    return;
+  }
+
+  // 3. Fallback for dynamically generated tabs & buttons
+  const executeBtn = e.target.closest("#btn-execute-assignment, .btn-execute");
+  if (executeBtn) {
+    AddonApp.executeAssignment();
+    return;
+  }
+
+  const modalClose = e.target.closest(".modal-close");
+  if (modalClose) {
+    const parentModal = modalClose.closest(".modal-overlay");
+    if (parentModal) closeModal(parentModal.id);
+    return;
+  }
+});
 
 document.addEventListener("DOMContentLoaded", () => {
   AddonApp.init();
@@ -1254,4 +1377,12 @@ document.addEventListener("DOMContentLoaded", () => {
       if (e.key === "Enter") erpSubmitBtn.click();
     });
   }
+
+  // Bind settings modal close when pressing Escape
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      document.querySelectorAll(".modal-overlay.active").forEach(m => closeModal(m.id));
+    }
+  });
 });
+
