@@ -207,7 +207,6 @@ def get_google_auth_url(request: Request, target: str = "/addon", user: User = D
     scheme = request.url.scheme or "http"
     dynamic_redirect = f"{scheme}://{host}/api/auth/google/callback"
 
-    target_email = "aadriteye@gmail.com"
     target_email = user.email or "aadrit_y@srmap.edu.in"
     state_payload = json.dumps({"user_id": user.id, "target": target, "redirect_uri": dynamic_redirect})
     state = base64.urlsafe_b64encode(state_payload.encode("utf-8")).decode("utf-8")

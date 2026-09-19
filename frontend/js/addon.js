@@ -24,10 +24,16 @@ const AddonApp = {
 
   async init() {
     this.parseUrlContext();
-    await this.ensureAuthenticated();
-    await this.loadAuthStatus();
-    await this.loadNextClass();
-    await this.loadCoursework();
+    try {
+      await this.ensureAuthenticated();
+    } catch (err) {
+      console.warn("[AddonApp] Authentication check warning:", err);
+    }
+    await Promise.allSettled([
+      this.loadAuthStatus(),
+      this.loadNextClass(),
+      this.loadCoursework()
+    ]);
   },
 
   async ensureAuthenticated() {
@@ -1241,6 +1247,7 @@ const AddonApp = {
     }
   }
 };
+window.AddonApp = AddonApp;
 
 // ── Generic API & Toast Utilities ──────────────────────────────────────────
 async function api(path, options = {}) {
@@ -1323,14 +1330,14 @@ const Toast = {
   warning(m) { this.show(m, "warning", 3500); }
 };
 
-function escapeHtml(str) {
-  if (!str) return "";
-  return String(str)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+  function escapeHtml(str) {
+    if (!str) return "";
+return String(str)
+  .replace(/&/g, "&amp;")
+  .replace(/</g, "&lt;")
+  .replace(/>/g, "&gt;")
+  .replace(/"/g, "&quot;")
+  .replace(/'/g, "&#039;");
 }
 
 function openModal(id) {
@@ -1471,7 +1478,7 @@ document.addEventListener("click", (e) => {
   }
 });
 
-document.addEventListener("DOMContentLoaded", () => {
+function initializeAddonApp() {
   AddonApp.init();
 
   const selector = document.getElementById("coursework-select");
@@ -1497,5 +1504,11 @@ document.addEventListener("DOMContentLoaded", () => {
       document.querySelectorAll(".modal-overlay.active").forEach(m => closeModal(m.id));
     }
   });
-});
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initializeAddonApp);
+} else {
+  initializeAddonApp();
+}
 
