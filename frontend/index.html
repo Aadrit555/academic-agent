@@ -3,29 +3,47 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Academic Agent — Google Classroom Companion</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Academic Agent - Google Classroom Companion &amp; Desktop Workspace</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="stylesheet" href="/css/styles.css">
 </head>
 
 <body>
-  <div class="addon-container">
+  <div class="app-shell" id="app-shell">
 
-    <!-- ── Top Header & Connection Badges ───────────────────────────────────── -->
-    <header class="addon-header">
-      <div class="header-brand">
-        <div class="brand-logo" aria-hidden="true">AA</div>
-        <div class="brand-text">
-          <div class="brand-title">
+    <!-- ── Desktop Top Header Bar ─────────────────────────────────────────── -->
+    <header class="app-header">
+      <div class="header-left">
+        <div class="brand-monogram" aria-hidden="true">AA</div>
+        <div class="brand-meta">
+          <div class="brand-heading">
             <span>ACADEMIC AGENT</span>
-            <span class="brand-badge">COMPANION</span>
+            <span class="brand-pill">WORKSPACE</span>
           </div>
-          <span class="brand-sub">Google Classroom AI Layer</span>
+          <span class="brand-caption">Google Classroom AI Layer</span>
         </div>
       </div>
 
-      <div class="header-status">
+      <!-- Command Palette Trigger -->
+      <div class="header-center">
+        <button class="command-trigger-btn" id="btn-open-command-palette" onclick="AddonApp.openCommandPalette()" aria-label="Open Command Palette">
+          <div class="command-trigger-left">
+            <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <span>Search coursework, commands, shortcuts...</span>
+          </div>
+          <div class="command-shortcut-kbd">
+            <kbd>Ctrl</kbd>
+            <kbd>K</kbd>
+          </div>
+        </button>
+      </div>
+
+      <div class="header-right">
+        <!-- Live Status Chips -->
         <button class="status-chip disconnected" id="addon-google-chip" title="Google Classroom Connection Status"
           data-action="openSettingsTab" data-tab="google" onclick="AddonApp.openSettingsTab('google')">
           <span class="chip-dot"></span>
@@ -38,180 +56,496 @@
           <span class="chip-text">Portal</span>
         </button>
 
-        <button class="icon-btn" id="btn-settings" title="Settings & Integrations" data-action="openModal"
+        <!-- Theme Toggle -->
+        <button class="icon-action-btn" id="btn-theme-toggle" onclick="AddonApp.toggleTheme()" title="Toggle Light / Dark Mode" aria-label="Toggle Theme">
+          <svg class="svg-icon" id="theme-icon" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+        </button>
+
+        <!-- Settings Modal Trigger -->
+        <button class="icon-action-btn" id="btn-settings" title="Settings &amp; Integrations" data-action="openModal"
           data-modal="settings-modal" onclick="openModal('settings-modal')" aria-label="Settings">
-          ⚙️
+          <svg class="svg-icon" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
         </button>
       </div>
     </header>
 
-    <!-- ── Connection Alerts & Quick Action Bar ──────────────────────────── -->
-    <div id="connection-banner-container" style="display: none; margin: 8px 0; flex-direction: column; gap: 8px;">
-      <div class="connection-alert-card" id="banner-google-needed" style="display: none;">
-        <div class="cac-header">
-          <span class="cac-icon">📚</span>
-          <div class="cac-text">
-            <span class="cac-title">Google Classroom Disconnected</span>
-            <span class="cac-sub">Sign in with Google to sync assignments, or use 1-click quick connect.</span>
-          </div>
+    <!-- ── Body: Sidebar + Main Workspace ─────────────────────────────────── -->
+    <div class="app-body">
+
+      <!-- Left Sidebar Navigation -->
+      <aside class="app-sidebar">
+        <div class="sidebar-nav">
+          <div class="sidebar-label">Navigation</div>
+          
+          <button class="nav-link active" id="nav-tab-workspace" onclick="AddonApp.switchMainTab('workspace')">
+            <svg class="svg-icon" viewBox="0 0 24 24">
+              <polyline points="16 18 22 12 16 6"></polyline>
+              <polyline points="8 6 2 12 8 18"></polyline>
+            </svg>
+            <span>Assignment Workbench</span>
+          </button>
+
+          <button class="nav-link" id="nav-tab-overview" onclick="AddonApp.switchMainTab('overview')">
+            <svg class="svg-icon" viewBox="0 0 24 24">
+              <rect x="3" y="3" width="7" height="7"></rect>
+              <rect x="14" y="3" width="7" height="7"></rect>
+              <rect x="14" y="14" width="7" height="7"></rect>
+              <rect x="3" y="14" width="7" height="7"></rect>
+            </svg>
+            <span>Overview</span>
+          </button>
+
+          <button class="nav-link" id="nav-tab-courses" onclick="AddonApp.switchMainTab('courses')">
+            <svg class="svg-icon" viewBox="0 0 24 24">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+            </svg>
+            <span>Enrolled Courses</span>
+          </button>
+
+          <button class="nav-link" id="nav-tab-brain" onclick="AddonApp.switchMainTab('brain')">
+            <svg class="svg-icon" viewBox="0 0 24 24">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+              <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+              <line x1="12" y1="22.08" x2="12" y2="12"></line>
+            </svg>
+            <span>Study Brain &amp; Handouts</span>
+          </button>
+
+          <button class="nav-link" id="nav-tab-timetable" onclick="AddonApp.switchMainTab('timetable')">
+            <svg class="svg-icon" viewBox="0 0 24 24">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <span>Timetable &amp; Schedule</span>
+          </button>
+
+          <button class="nav-link" id="nav-tab-settings" onclick="AddonApp.openSettingsTab('portal')">
+            <svg class="svg-icon" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+            <span>Settings &amp; Accounts</span>
+          </button>
         </div>
-        <div class="cac-actions">
-          <button class="btn btn-primary btn-sm" id="banner-btn-google-oauth" data-action="launchGoogleOAuth"
-            onclick="AddonApp.launchGoogleOAuth()">🔗 Sign in with Google</button>
-          <button class="btn btn-secondary btn-sm" id="banner-btn-google-quick" data-action="quickConnectGoogle"
-            onclick="AddonApp.quickConnectGoogle()">⚡ Quick Connect</button>
-          <button class="btn btn-secondary btn-sm" id="banner-btn-google-setup" data-action="openSettingsTab"
-            data-tab="google" onclick="AddonApp.openSettingsTab('google')">Setup / Token</button>
-        </div>
-      </div>
 
-      <div class="connection-alert-card" id="banner-portal-needed" style="display: none;">
-        <div class="cac-header">
-          <span class="cac-icon">🏛️</span>
-          <div class="cac-text">
-            <span class="cac-title">Student Portal Disconnected</span>
-            <span class="cac-sub">Connect your registration number or load the SRM AP schedule.</span>
-          </div>
-        </div>
-        <div class="cac-actions">
-          <button class="btn btn-primary btn-sm" id="banner-btn-portal-setup" data-action="openSettingsTab"
-            data-tab="portal" onclick="AddonApp.openSettingsTab('portal')">Connect Student ID</button>
-          <button class="btn btn-secondary btn-sm" id="banner-btn-portal-quick" data-action="quickConnectERP"
-            onclick="AddonApp.quickConnectERP()">⚡ 1-Click Schedule</button>
-        </div>
-      </div>
-    </div>
-
-
-    <!-- ── Section 1: Next Class Widget (Real Timetable & Room) ───────────── -->
-    <section class="addon-section" id="section-next-class">
-      <div class="section-label">UPCOMING CLASS SCHEDULE</div>
-      <div id="next-class-content">
-        <div class="loading-compact">
-          <span class="spinner-dot"></span>
-          <span>Resolving timetable schedule...</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- ── Section 2: Current Assignment Context ──────────────────────────── -->
-    <section class="addon-section" id="section-current-assignment">
-      <div class="section-header-row">
-        <div class="section-label">CURRENT ASSIGNMENT</div>
-        <select class="form-select-compact" id="coursework-select" aria-label="Select Assignment">
-          <option value="">Loading coursework...</option>
-        </select>
-      </div>
-
-      <div id="assignment-details-box">
-        <div class="loading-compact">
-          <span class="spinner-dot"></span>
-          <span>Fetching assignment requirements...</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- ── Section 3: Progress State Machine Stepper ──────────────────────── -->
-    <section class="addon-section" id="section-progress">
-      <div class="section-label">EXECUTION PROGRESS</div>
-      <div id="progress-tracker-box">
-        <div class="progress-stepper">
-          <div class="step-item"><span class="step-icon">○</span><span class="step-label">Analyzed</span></div>
-          <div class="step-item"><span class="step-icon">○</span><span class="step-label">Generated</span></div>
-          <div class="step-item"><span class="step-icon">○</span><span class="step-label">Validated</span></div>
-          <div class="step-item"><span class="step-icon">○</span><span class="step-label">Scheduled</span></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ── Section 4: Student Deliverables & Real Compiler Validation ──── -->
-    <section class="addon-section" id="section-deliverables">
-      <div class="section-label">STUDENT SUBMISSION DELIVERABLES (PREPARED FROM PROFESSOR'S HANDOUT)</div>
-      <div id="deliverables-box">
-        <div class="empty-compact">
-          <span>Deliverables not yet generated. Execute the assignment above to create code and complete the lab
-            report.</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- ── Section 5: Professor's Course Material & Handouts ──────────────── -->
-    <section class="addon-section" id="section-material">
-      <div class="section-label">PROFESSOR'S ASSIGNMENT HANDOUTS &amp; SYLLABUS (INGESTED)</div>
-
-      <div id="course-ingested-materials" class="course-ingested-materials">
-        <div class="ingested-notice-card">
-          <span>✓ <b>Professor's Handout Ingested:</b> Assignment handout PDF and course syllabus are pre-indexed into
-            Study Brain.</span>
-        </div>
-      </div>
-
-      <div class="material-actions-bar">
-        <button class="btn btn-secondary btn-sm" id="btn-summarize-material"
-          onclick="AddonApp.queryMaterial('summary')">
-          📖 Summarize Syllabus
-        </button>
-        <button class="btn btn-secondary btn-sm" id="btn-questions-material"
-          onclick="AddonApp.queryMaterial('questions')">
-          ❓ Viva / Exam Questions
-        </button>
-        <label class="btn btn-secondary btn-sm btn-upload-label"
-          title="Classroom PDFs are automatically pre-ingested. Use this only to add supplementary documents.">
-          <span>📎 + Add Extra File (Optional)</span>
-          <input type="file" id="material-file-upload" accept=".pdf,.docx,.txt,.md" style="display: none;"
-            onchange="AddonApp.handleMaterialUpload(this)">
-        </label>
-      </div>
-
-      <div id="material-output-box" class="material-output-box" style="display: none;"></div>
-    </section>
-
-    <!-- ── Section 6: Automation & Auto-Submit ────────────────────────────── -->
-    <section class="addon-section" id="section-automation">
-      <div class="section-label">AUTONOMOUS SUBMISSION &amp; TURN IN</div>
-      <div id="automation-details-box">
-        <div class="auto-box">
-          <div class="auto-row">
-            <div>
-              <div class="auto-title">⚡ AUTO-SUBMIT ACTIVE</div>
-              <div class="auto-sub">Scheduled: <b>Default: 4 hours before deadline</b></div>
+        <div class="sidebar-bottom">
+          <div class="sidebar-autopilot-card">
+            <div class="autopilot-info">
+              <span class="autopilot-title">Autonomous Mode</span>
+              <span class="autopilot-sub" id="sidebar-autopilot-label">Zero-touch submit</span>
             </div>
-            <button class="btn btn-sm btn-success" id="btn-toggle-auto" data-action="toggleAutoSubmit"
-              onclick="AddonApp.toggleAutoSubmit()">
-              ENABLED (ON)
+            <button class="btn btn-secondary btn-xs" id="sidebar-btn-autopilot" onclick="AddonApp.toggleAutoPilot()">
+              Toggle
             </button>
           </div>
-          <div style="display: flex; gap: 8px; margin-top: 10px;">
-            <button class="btn btn-primary btn-sm btn-block" id="btn-submit-now" data-action="submitNow"
-              onclick="AddonApp.submitNow()">
-              ⚡ Auto-Submit Now (Autonomous End-to-End)
-            </button>
+
+          <button class="btn btn-secondary btn-sm btn-block" onclick="AddonApp.syncClassroom()">
+            <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <polyline points="1 20 1 14 7 14"></polyline>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+            <span>Sync Classroom</span>
+          </button>
+        </div>
+      </aside>
+
+      <!-- Main Viewport Area -->
+      <main class="app-main">
+
+        <!-- Connection Alerts Bar -->
+        <div id="connection-banner-container" style="display: none; padding: 12px 16px 0; flex-direction: column; gap: 8px;">
+          <div class="connection-alert-card" id="banner-google-needed" style="display: none;">
+            <div class="cac-header">
+              <svg class="svg-icon" viewBox="0 0 24 24" style="stroke: #fbbf24;">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <div class="cac-text">
+                <span class="cac-title">Google Classroom Disconnected</span>
+                <span class="cac-sub">Sign in with Google to sync active courses and coursework directly.</span>
+              </div>
+            </div>
+            <div class="cac-actions">
+              <button class="btn btn-primary btn-sm" id="banner-btn-google-oauth" data-action="launchGoogleOAuth"
+                onclick="AddonApp.launchGoogleOAuth()">Sign in with Google (OAuth)</button>
+              <button class="btn btn-secondary btn-sm" id="banner-btn-google-setup" data-action="openSettingsTab"
+                data-tab="google" onclick="AddonApp.openSettingsTab('google')">Direct Token Setup</button>
+            </div>
+          </div>
+
+          <div class="connection-alert-card" id="banner-portal-needed" style="display: none;">
+            <div class="cac-header">
+              <svg class="svg-icon" viewBox="0 0 24 24" style="stroke: #fbbf24;">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <div class="cac-text">
+                <span class="cac-title">Student Portal Disconnected</span>
+                <span class="cac-sub">Connect your registration number or load the SRM AP schedule.</span>
+              </div>
+            </div>
+            <div class="cac-actions">
+              <button class="btn btn-primary btn-sm" id="banner-btn-portal-setup" data-action="openSettingsTab"
+                data-tab="portal" onclick="AddonApp.openSettingsTab('portal')">Connect Student ID</button>
+              <button class="btn btn-secondary btn-sm" id="banner-btn-portal-quick" data-action="quickConnectERP"
+                onclick="AddonApp.quickConnectERP()">1-Click Schedule</button>
+            </div>
           </div>
         </div>
-      </div>
-    </section>
 
-    <!-- ── Footer ────────────────────────────────────────────────────────── -->
-    <footer class="addon-footer">
-      <div class="footer-links">
-        <a href="/terms" target="_blank">Terms</a>
-        <span>•</span>
-        <a href="/privacy" target="_blank">Privacy</a>
-        <span>•</span>
-        <a href="javascript:void(0)" id="link-sync-classroom" data-action="syncClassroom"
-          onclick="AddonApp.syncClassroom()">Sync Classroom</a>
-      </div>
-      <div class="footer-copy">Academic Agent • Google Classroom Native Layer</div>
-    </footer>
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <!-- VIEW 1: ASSIGNMENT WORKBENCH (DEFAULT)                             -->
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <div class="view-pane active" id="view-workspace">
+          <div class="workbench-container">
+            
+            <!-- Workbench Header Toolbar -->
+            <div class="view-header-bar">
+              <div class="view-heading-group">
+                <span class="view-heading-title">Assignment Workbench</span>
+                <span class="view-heading-sub">Multi-Column Verification &amp; Turn-in Engine</span>
+              </div>
+              <div class="view-actions-group">
+                <label for="coursework-select" style="font-size: 11px; font-weight: 600; color: var(--text-secondary);">Select Task:</label>
+                <select class="form-select-compact" id="coursework-select" aria-label="Select Assignment" style="min-width: 280px;">
+                  <option value="">Loading coursework...</option>
+                </select>
+                <button class="btn btn-secondary btn-sm" onclick="AddonApp.loadCoursework()" title="Refresh coursework list">
+                  <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <polyline points="1 20 1 14 7 14"></polyline>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                  </svg>
+                  <span>Reload</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- 3-Column Desktop Grid -->
+            <div class="workbench-grid">
+
+              <!-- Column 1: Assignment Brief & Professor's Ingested Handout -->
+              <div class="workbench-column">
+                <div class="col-header">
+                  <span class="col-title">
+                    <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <polyline points="14 2 14 8 20 8"></polyline>
+                      <line x1="16" y1="13" x2="8" y2="13"></line>
+                      <line x1="16" y1="17" x2="8" y2="17"></line>
+                      <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                    Requirements &amp; Handout
+                  </span>
+                </div>
+                <div class="col-body">
+                  <section id="section-current-assignment">
+                    <div id="assignment-details-box">
+                      <div class="loading-compact">
+                        <span class="spinner-dot"></span>
+                        <span>Fetching assignment requirements...</span>
+                      </div>
+                    </div>
+                  </section>
+
+                  <section id="section-material">
+                    <div class="section-label">INGESTED CLASSROOM HANDOUTS</div>
+                    <div id="course-ingested-materials" class="course-ingested-materials">
+                      <div class="ingested-notice-card">
+                        <span>Professor handout PDF and syllabus are indexed into Study Brain.</span>
+                      </div>
+                    </div>
+                  </section>
+                </div>
+              </div>
+
+              <!-- Column 2: Deliverables & Code / Report Viewer -->
+              <div class="workbench-column">
+                <div class="col-header">
+                  <span class="col-title">
+                    <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+                      <polyline points="16 18 22 12 16 6"></polyline>
+                      <polyline points="8 6 2 12 8 18"></polyline>
+                    </svg>
+                    Student Deliverables
+                  </span>
+                </div>
+                <div class="col-body">
+                  <section id="section-deliverables">
+                    <div id="deliverables-box">
+                      <div class="empty-compact">
+                        <span>Deliverables not yet generated. Execute the assignment to create code and complete the lab report.</span>
+                      </div>
+                    </div>
+                  </section>
+                </div>
+              </div>
+
+              <!-- Column 3: Real Compiler Validation & Verification Oracle -->
+              <div class="workbench-column">
+                <div class="col-header">
+                  <span class="col-title">
+                    <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                      <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                    Verification Oracle &amp; Logs
+                  </span>
+                </div>
+                <div class="col-body">
+                  <div id="workbench-validation-panel">
+                    <div class="empty-compact">
+                      <span>Validation evidence will appear here when tests are executed.</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Full Width Bottom Gatekeeper Bar -->
+            <div class="gatekeeper-bar">
+              <section id="section-progress">
+                <div class="section-label">EXECUTION PROGRESS STATE MACHINE</div>
+                <div id="progress-tracker-box">
+                  <div class="progress-stepper">
+                    <div class="step-item"><span class="step-icon">&#9675;</span><span class="step-label">Analyzed</span></div>
+                    <div class="step-item"><span class="step-icon">&#9675;</span><span class="step-label">Generated</span></div>
+                    <div class="step-item"><span class="step-icon">&#9675;</span><span class="step-label">Validated</span></div>
+                    <div class="step-item"><span class="step-icon">&#9675;</span><span class="step-label">Scheduled</span></div>
+                  </div>
+                </div>
+              </section>
+
+              <section id="section-automation">
+                <div id="automation-details-box">
+                  <div class="auto-box">
+                    <div class="gatekeeper-row">
+                      <div>
+                        <div class="auto-title">AUTONOMOUS AUTO-SUBMIT</div>
+                        <div class="auto-sub">Scheduled: <b>Default: 4 hours before deadline</b></div>
+                      </div>
+                      <div style="display: flex; gap: 8px;">
+                        <button class="btn btn-sm btn-success" id="btn-toggle-auto" data-action="toggleAutoSubmit"
+                          onclick="AddonApp.toggleAutoSubmit()">
+                          Enabled (ON)
+                        </button>
+                        <button class="btn btn-primary btn-sm" id="btn-submit-now" data-action="submitNow"
+                          onclick="AddonApp.submitNow()">
+                          Direct Turn-In (No Download)
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <!-- VIEW 2: OVERVIEW DASHBOARD                                         -->
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <div class="view-pane" id="view-overview">
+          <div class="view-header-bar">
+            <div class="view-heading-group">
+              <span class="view-heading-title">System Overview &amp; Schedule</span>
+              <span class="view-heading-sub">Institutional context and timetable state</span>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="AddonApp.refreshERP()">
+              <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <polyline points="1 20 1 14 7 14"></polyline>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+              </svg>
+              <span>Refresh Schedule</span>
+            </button>
+          </div>
+
+          <div class="overview-stats-grid">
+            <div class="stat-card">
+              <div class="stat-header">
+                <span class="stat-label">Google Classroom Courses</span>
+                <svg class="svg-icon" viewBox="0 0 24 24">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                </svg>
+              </div>
+              <div class="stat-value" id="stat-courses-count">--</div>
+              <span class="stat-sub">Enrolled active classes</span>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-header">
+                <span class="stat-label">Active Coursework</span>
+                <svg class="svg-icon" viewBox="0 0 24 24">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                </svg>
+              </div>
+              <div class="stat-value" id="stat-coursework-count">--</div>
+              <span class="stat-sub">Assignments tracked in database</span>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-header">
+                <span class="stat-label">Oracle Validations</span>
+                <svg class="svg-icon" viewBox="0 0 24 24">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </div>
+              <div class="stat-value" id="stat-validated-count">100%</div>
+              <span class="stat-sub">Automated verification rate</span>
+            </div>
+          </div>
+
+          <!-- Section 1: Next Class Widget (Real Timetable & Room) -->
+          <section class="addon-section" id="section-next-class" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px;">
+            <div class="section-label">UPCOMING CLASS SCHEDULE (REAL ERP TIMETABLE)</div>
+            <div id="next-class-content">
+              <div class="loading-compact">
+                <span class="spinner-dot"></span>
+                <span>Resolving timetable schedule...</span>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <!-- VIEW 3: ENROLLED COURSES                                           -->
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <div class="view-pane" id="view-courses">
+          <div class="view-header-bar">
+            <div class="view-heading-group">
+              <span class="view-heading-title">Enrolled Courses</span>
+              <span class="view-heading-sub">Active Google Classroom courses</span>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="AddonApp.syncClassroom()">
+              <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <polyline points="1 20 1 14 7 14"></polyline>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+              </svg>
+              <span>Sync from Classroom</span>
+            </button>
+          </div>
+
+          <div id="courses-list-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
+            <div class="empty-compact">
+              <span>Connect Google Classroom to load enrolled courses.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <!-- VIEW 4: STUDY BRAIN & HANDOUTS                                     -->
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <div class="view-pane" id="view-brain">
+          <div class="view-header-bar">
+            <div class="view-heading-group">
+              <span class="view-heading-title">Study Brain &amp; Handout RAG</span>
+              <span class="view-heading-sub">Institutional course materials and syllabus indexing</span>
+            </div>
+          </div>
+
+          <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; display: flex; flex-direction: column; gap: 12px;">
+            <div class="material-actions-bar" style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button class="btn btn-secondary btn-sm" id="btn-summarize-material" onclick="AddonApp.queryMaterial('summary')">
+                Summarize Syllabus
+              </button>
+              <button class="btn btn-secondary btn-sm" id="btn-questions-material" onclick="AddonApp.queryMaterial('questions')">
+                Viva / Exam Questions
+              </button>
+              <label class="btn btn-secondary btn-sm btn-upload-label" title="Upload supplementary course material">
+                <span>+ Upload Extra Document</span>
+                <input type="file" id="material-file-upload" accept=".pdf,.docx,.txt,.md" style="display: none;"
+                  onchange="AddonApp.handleMaterialUpload(this)">
+              </label>
+            </div>
+
+            <div id="material-output-box" class="material-output-box" style="display: none; background: var(--bg-surface); padding: 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);"></div>
+          </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <!-- VIEW 5: TIMETABLE & ERP                                            -->
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <div class="view-pane" id="view-timetable">
+          <div class="view-header-bar">
+            <div class="view-heading-group">
+              <span class="view-heading-title">Timetable &amp; Variable Classrooms</span>
+              <span class="view-heading-sub">SRM University AP Dynamic Room Matrix</span>
+            </div>
+            <div class="view-actions-group">
+              <button class="btn btn-secondary btn-sm" onclick="AddonApp.quickConnectERP()">
+                Load SRM AP Schedule
+              </button>
+              <button class="btn btn-secondary btn-sm" onclick="AddonApp.refreshERP()">
+                Refresh Timetable
+              </button>
+            </div>
+          </div>
+
+          <div id="timetable-schedule-container" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px;">
+            <div class="empty-compact">
+              <span>Connect Student Portal to view full weekly schedule.</span>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
 
   </div>
 
-  <!-- ── Settings & Account Integrations Modal ────────────────────────────── -->
+  <!-- ── Command Palette Modal (Ctrl+K) ─────────────────────────────────── -->
+  <div class="command-palette-overlay" id="command-palette" role="dialog" aria-modal="true">
+    <div class="command-palette-card">
+      <div class="command-palette-search">
+        <svg class="svg-icon" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" class="command-palette-input" id="command-palette-input"
+          placeholder="Type a command or search coursework..." autocomplete="off">
+        <kbd style="font-size: 10px; font-family: var(--font-mono); color: var(--text-muted); background: var(--bg-card); padding: 2px 6px; border: 1px solid var(--border-strong); border-radius: 3px;">ESC</kbd>
+      </div>
+      <div class="command-palette-results" id="command-palette-results">
+        <!-- Dynamically rendered commands -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Settings & Account Integrations Modal ──────────────────────────── -->
   <div class="modal-overlay" id="settings-modal" role="dialog" aria-modal="true">
     <div class="modal-card">
       <div class="modal-header">
         <div class="modal-title">
-          <span>⚙️ Integrations &amp; Accounts</span>
+          <svg class="svg-icon" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+          <span>Integrations &amp; Accounts</span>
         </div>
         <button class="modal-close" id="btn-close-settings-modal" data-action="closeModal" data-modal="settings-modal"
           onclick="closeModal('settings-modal')" aria-label="Close modal">&times;</button>
@@ -221,15 +555,15 @@
       <div class="modal-tabs">
         <button class="modal-tab active" id="tab-btn-portal" data-action="switchModalTab" data-tab="portal"
           onclick="AddonApp.switchModalTab('portal')">
-          🏛️ Student Portal
+          Student Portal
         </button>
         <button class="modal-tab" id="tab-btn-google" data-action="switchModalTab" data-tab="google"
           onclick="AddonApp.switchModalTab('google')">
-          📚 Google Classroom
+          Google Classroom
         </button>
         <button class="modal-tab" id="tab-btn-config" data-action="switchModalTab" data-tab="config"
           onclick="AddonApp.switchModalTab('config')">
-          🔑 OAuth Credentials
+          OAuth Credentials
         </button>
       </div>
 
@@ -243,23 +577,23 @@
                 <span class="chip-dot"></span>
                 <b>Connected to Student Portal</b>
               </div>
-              <div class="isc-meta">
-                <div class="isc-row">
-                  <span class="isc-label">Student ID:</span>
-                  <span class="isc-val" id="portal-info-id">—</span>
+              <div class="isc-meta" style="display: flex; flex-direction: column; gap: 4px; margin: 10px 0; font-size: 11px;">
+                <div class="isc-row" style="display: flex; justify-content: space-between;">
+                  <span class="isc-label" style="color: var(--text-muted);">Student ID:</span>
+                  <span class="isc-val" id="portal-info-id" style="font-weight: 600;">Not available</span>
                 </div>
-                <div class="isc-row">
-                  <span class="isc-label">Student Name:</span>
-                  <span class="isc-val" id="portal-info-name">—</span>
+                <div class="isc-row" style="display: flex; justify-content: space-between;">
+                  <span class="isc-label" style="color: var(--text-muted);">Student Name:</span>
+                  <span class="isc-val" id="portal-info-name" style="font-weight: 600;">Student</span>
                 </div>
-                <div class="isc-row">
-                  <span class="isc-label">Last Synced:</span>
-                  <span class="isc-val" id="portal-info-synced">—</span>
+                <div class="isc-row" style="display: flex; justify-content: space-between;">
+                  <span class="isc-label" style="color: var(--text-muted);">Last Synced:</span>
+                  <span class="isc-val" id="portal-info-synced" style="font-weight: 600;">Just now</span>
                 </div>
               </div>
-              <div class="isc-actions">
+              <div class="isc-actions" style="display: flex; gap: 8px;">
                 <button class="btn btn-secondary btn-sm" id="btn-erp-refresh" data-action="refreshERP"
-                  onclick="AddonApp.refreshERP()">↻ Refresh Timetable</button>
+                  onclick="AddonApp.refreshERP()">Refresh Timetable</button>
                 <button class="btn btn-danger btn-sm" id="btn-erp-disconnect" data-action="disconnectERP"
                   onclick="AddonApp.disconnectERP()">Disconnect Portal</button>
               </div>
@@ -288,15 +622,14 @@
               Connect Student Portal
             </button>
 
-            <div style="text-align: center; margin: 10px 0; font-size: 11px; color: var(--text-muted);">— OR —</div>
+            <div style="text-align: center; margin: 10px 0; font-size: 11px; color: var(--text-muted);">OR</div>
 
             <button class="btn btn-secondary btn-block" id="btn-erp-quick" data-action="quickConnectERP"
               onclick="AddonApp.quickConnectERP()">
-              ⚡ 1-Click Load SRM AP CSE Schedule
+              1-Click Load SRM AP CSE Schedule
             </button>
-            <span
-              style="font-size: 10px; color: var(--text-muted); display: block; margin-top: 4px; text-align: center;">
-              Off-campus or intranet issues? Loads the official SRM AP CSE schedule & variable classrooms instantly.
+            <span style="font-size: 10px; color: var(--text-muted); display: block; margin-top: 4px; text-align: center;">
+              Loads the official SRM AP CSE schedule and variable classrooms instantly.
             </span>
           </div>
         </div>
@@ -309,15 +642,15 @@
                 <span class="chip-dot"></span>
                 <b>Connected to Google Classroom</b>
               </div>
-              <div class="isc-meta">
-                <div class="isc-row">
-                  <span class="isc-label">Google Account:</span>
-                  <span class="isc-val" id="google-info-email">—</span>
+              <div class="isc-meta" style="margin: 10px 0; font-size: 11px;">
+                <div class="isc-row" style="display: flex; justify-content: space-between;">
+                  <span class="isc-label" style="color: var(--text-muted);">Google Account:</span>
+                  <span class="isc-val" id="google-info-email" style="font-weight: 600;">Active Session</span>
                 </div>
               </div>
-              <div class="isc-actions">
+              <div class="isc-actions" style="display: flex; gap: 8px;">
                 <button class="btn btn-secondary btn-sm" id="btn-google-sync" data-action="syncClassroom"
-                  onclick="AddonApp.syncClassroom()">↻ Sync Coursework</button>
+                  onclick="AddonApp.syncClassroom()">Sync Coursework</button>
                 <button class="btn btn-danger btn-sm" id="btn-google-disconnect" data-action="disconnectGoogle"
                   onclick="AddonApp.disconnectGoogle()">Disconnect Google</button>
               </div>
@@ -332,39 +665,18 @@
 
             <button class="btn btn-primary btn-block" id="btn-google-oauth-login" data-action="launchGoogleOAuth"
               onclick="AddonApp.launchGoogleOAuth()">
-              <span>🔗 Sign In with Google (OAuth)</span>
+              <span>Sign In with Google (OAuth)</span>
             </button>
-
 
             <!-- Direct Token Section -->
             <div style="margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--border-subtle);">
-              <label class="form-label" style="font-size: 11px;" for="direct-token-input">Paste Google Bearer Access
-                Token (Optional)</label>
+              <label class="form-label" style="font-size: 11px;" for="direct-token-input">Paste Google Bearer Access Token (Optional)</label>
               <div style="display: flex; gap: 6px;">
                 <input type="password" class="form-input" id="direct-token-input" placeholder="ya29.a0A..."
                   style="font-size: 11px;">
                 <button class="btn btn-secondary btn-sm" id="btn-google-direct-token" data-action="connectDirectToken"
                   onclick="AddonApp.connectDirectToken()" style="white-space: nowrap;">Connect</button>
               </div>
-            </div>
-
-            <!-- Setup & Troubleshooting Guide -->
-            <div class="setup-guide-box">
-              <b style="color: var(--text-primary); display: block; margin-bottom: 4px;">🛠️ Google Cloud OAuth Setup
-                Guide</b>
-              If you see <code>redirect_uri_mismatch</code> or <code>access_denied</code> when signing in:
-              <ol>
-                <li>Open <b>Google Cloud Console</b> &rarr; <b>APIs &amp; Services</b> &rarr; <b>Credentials</b>.</li>
-                <li>Edit your <b>Web Client ID</b> and add these to <b>Authorized redirect URIs</b>:
-                  <div class="code-copy-row">
-                    <span>http://localhost:8000/api/auth/google/callback</span>
-                  </div>
-                  <div class="code-copy-row">
-                    <span>http://127.0.0.1:8000/api/auth/google/callback</span>
-                  </div>
-                </li>
-                <li>Under <b>OAuth consent screen</b> &rarr; <b>Test users</b>, ensure your Gmail is added.</li>
-              </ol>
             </div>
           </div>
         </div>
@@ -382,7 +694,7 @@
               intelligent deliverable synthesis and Study Brain course-material RAG.</span>
           </div>
 
-          <div class="form-group" style="margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border);">
+          <div class="form-group" style="margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border-color);">
             <label class="form-label" for="config-client-id">Google Client ID</label>
             <input type="text" class="form-input" id="config-client-id"
               placeholder="e.g. 123456789.apps.googleusercontent.com">

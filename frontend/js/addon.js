@@ -1,6 +1,6 @@
 // ==========================================================================
-// ACADEMIC AGENT — Google Classroom Add-On Native Controller
-// Clean, zero-simulation, production runtime
+// ACADEMIC AGENT - Google Classroom Desktop Workspace Controller
+// Clean, zero-simulation, production runtime (Skiper UI)
 // ==========================================================================
 
 const AddonApp = {
@@ -19,14 +19,53 @@ const AddonApp = {
     erpStatus: null,
     googleStatus: null,
     isExecuting: false,
-    isValidating: false
+    isValidating: false,
+    currentTab: "workspace",
+    delivTab: "report",
+    cmdSelectedIndex: 0,
+    commands: []
   },
 
   async init() {
+    this.initTheme();
+    this.setupCommandPalette();
     this.parseUrlContext();
     await this.loadAuthStatus();
     await this.loadNextClass();
+    await this.loadCourses();
     await this.loadCoursework();
+  },
+
+  // ── Theme Management ───────────────────────────────────────────────────
+  initTheme() {
+    const savedTheme = localStorage.getItem("academic_theme") || "dark";
+    document.documentElement.setAttribute("data-theme", savedTheme);
+  },
+
+  toggleTheme() {
+    const current = document.documentElement.getAttribute("data-theme") || "dark";
+    const nextTheme = current === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", nextTheme);
+    localStorage.setItem("academic_theme", nextTheme);
+    Toast.info(`Switched to ${nextTheme} theme`);
+  },
+
+  // ── Desktop Navigation ─────────────────────────────────────────────────
+  switchMainTab(tabName) {
+    this.state.currentTab = tabName;
+    const tabs = ["workspace", "overview", "courses", "brain", "timetable"];
+    tabs.forEach(t => {
+      const btn = document.getElementById(`nav-tab-${t}`);
+      const pane = document.getElementById(`view-${t}`);
+      if (btn) btn.classList.toggle("active", t === tabName);
+      if (pane) pane.classList.toggle("active", t === tabName);
+    });
+
+    if (tabName === "courses") {
+      this.renderCoursesView();
+    } else if (tabName === "timetable") {
+      this.renderTimetableView();
+    }
   },
 
   parseUrlContext() {
@@ -149,7 +188,7 @@ const AddonApp = {
       const pane = document.getElementById(`tab-pane-${t}`);
       if (btn) btn.classList.toggle("active", t === tabName);
       if (pane) {
-        pane.style.display = (t === tabName) ? "flex" : "none";
+        pane.style.display = (t === tabName) ? "block" : "none";
         pane.classList.toggle("active", t === tabName);
       }
     });
@@ -194,24 +233,81 @@ const AddonApp = {
       }
 
       const statusBadge = isOngoing
-        ? '<span class="pill pill-green">IN SESSION NOW</span>'
-        : '<span class="pill pill-blue">NEXT CLASS</span>';
+        ? '<span class="status-pill status-submitted">IN SESSION NOW</span>'
+        : '<span class="status-pill status-ready_for_submission">NEXT CLASS</span>';
 
       card.innerHTML = `
         <div class="next-class-box ${isOngoing ? 'is-ongoing' : ''}">
           <div class="nc-top">
             ${statusBadge}
-            <span class="nc-time">${escapeHtml(classObj.start_time)} – ${escapeHtml(classObj.end_time)}</span>
+            <span class="nc-time">${escapeHtml(classObj.start_time)} - ${escapeHtml(classObj.end_time)}</span>
           </div>
           <div class="nc-subject">${escapeHtml(classObj.subject)}</div>
           <div class="nc-meta">
             <span class="nc-room">Room: <b>${escapeHtml(classObj.classroom || 'TBD')}</b></span>
-            ${classObj.faculty ? `<span class="nc-faculty">• ${escapeHtml(classObj.faculty)}</span>` : ''}
+            ${classObj.faculty ? `<span class="nc-faculty">| ${escapeHtml(classObj.faculty)}</span>` : ''}
           </div>
         </div>
       `;
     } catch (e) {
       card.innerHTML = `<div class="empty-compact text-danger">Failed to load timetable slot: ${escapeHtml(e.message)}</div>`;
+    }
+  },
+
+  // ── Courses List ───────────────────────────────────────────────────────
+  async loadCourses() {
+    try {
+      const courses = await api("/classroom/courses").catch(() => []);
+      this.state.courses = courses || [];
+      const statEl = document.getElementById("stat-courses-count");
+      if (statEl) statEl.textContent = this.state.courses.length;
+      this.renderCoursesView();
+    } catch (e) {
+      console.warn("Failed to load courses:", e);
+    }
+  },
+
+  renderCoursesView() {
+    const container = document.getElementById("courses-list-container");
+    if (!container) return;
+
+    if (!this.state.courses || this.state.courses.length === 0) {
+      container.innerHTML = `
+        <div class="empty-compact" style="grid-column: 1 / -1;">
+          <span>No enrolled Google Classroom courses found. Connect your Google account or click Sync from Classroom.</span>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = this.state.courses.map(c => `
+      <div class="stat-card" style="cursor: pointer;" onclick="AddonApp.filterCourseworkByCourse('${escapeHtml(c.course_id)}')">
+        <div class="stat-header">
+          <span class="stat-label">${escapeHtml(c.section || 'Course')}</span>
+          <span class="status-pill status-submitted">ENROLLED</span>
+        </div>
+        <div style="font-size: 14px; font-weight: 700; color: var(--text-primary); margin: 6px 0;">
+          ${escapeHtml(c.name)}
+        </div>
+        <div class="stat-sub">
+          Teacher: ${escapeHtml(c.teacher_name || 'Department Faculty')}
+        </div>
+        <div style="margin-top: 10px; display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted);">
+          <span>ID: ${escapeHtml(c.course_id)}</span>
+          <span style="color: var(--accent);">View Assignments &rarr;</span>
+        </div>
+      </div>
+    `).join("");
+  },
+
+  filterCourseworkByCourse(courseId) {
+    const matched = this.state.coursework.find(cw => String(cw.course_id) === String(courseId));
+    if (matched) {
+      this.switchMainTab("workspace");
+      this.selectCoursework(matched.id);
+    } else {
+      this.switchMainTab("workspace");
+      Toast.info("No active coursework currently loaded for this course.");
     }
   },
 
@@ -221,6 +317,9 @@ const AddonApp = {
     try {
       const coursework = await api("/classroom/coursework");
       this.state.coursework = coursework || [];
+
+      const statEl = document.getElementById("stat-coursework-count");
+      if (statEl) statEl.textContent = this.state.coursework.length;
 
       if (!coursework || coursework.length === 0) {
         if (selector) selector.innerHTML = `<option value="">No assignments found</option>`;
@@ -266,6 +365,7 @@ const AddonApp = {
 
     this.renderAssignmentSection();
     this.renderProgressTracker();
+    this.renderValidationPanel();
 
     // Auto-pilot check: "user does nothing"
     if (triggerAutoPilot && localStorage.getItem("academic_autopilot") === "true") {
@@ -279,7 +379,7 @@ const AddonApp = {
     const listEl = document.getElementById("course-ingested-materials");
     if (!listEl) return;
     if (!courseId) {
-      listEl.innerHTML = `<div class="ingested-notice-card"><span>✓ <b>Classroom PDFs Auto-Ingested:</b> Materials are pre-indexed into Study Brain.</span></div>`;
+      listEl.innerHTML = `<div class="ingested-notice-card"><span>Classroom PDFs are auto-ingested into Study Brain.</span></div>`;
       return;
     }
 
@@ -287,25 +387,25 @@ const AddonApp = {
       const docs = await api(`/documents/course/${courseId}`);
       if (docs && docs.length > 0) {
         listEl.innerHTML = `
-          <div class="ingested-notice-card" style="flex-direction: column; align-items: flex-start; gap: 6px;">
-            <div style="display: flex; align-items: center; gap: 6px; width: 100%;">
-              <span>✓ <b>Professor's Assignment Handouts Grounded:</b> ${docs.length} handout/syllabus document(s) pre-indexed in Study Brain:</span>
+          <div class="ingested-notice-card" style="display: flex; flex-direction: column; gap: 6px;">
+            <div style="font-size: 11px; font-weight: 600; color: var(--text-primary);">
+              Grounded Materials (${docs.length} indexed document):
             </div>
-            <div style="display: flex; flex-wrap: wrap; gap: 4px; width: 100%;">
+            <div style="display: flex; flex-wrap: wrap; gap: 4px;">
               ${docs.map(d => `
                 <span class="attachment-chip" style="font-size: 10px; padding: 2px 6px;">
-                  📄 ${escapeHtml(d.filename)} (${d.page_count}p)
-                  <span class="att-badge">Handout Read</span>
+                  ${escapeHtml(d.filename)} (${d.page_count}p)
+                  <span class="att-badge">Read</span>
                 </span>
               `).join('')}
             </div>
           </div>
         `;
       } else {
-        listEl.innerHTML = `<div class="ingested-notice-card"><span>✓ <b>Professor's Assignment Handouts:</b> Materials are pre-indexed into Study Brain.</span></div>`;
+        listEl.innerHTML = `<div class="ingested-notice-card"><span>Assignment handouts and syllabus are indexed into Study Brain.</span></div>`;
       }
     } catch {
-      listEl.innerHTML = `<div class="ingested-notice-card"><span>✓ <b>Professor's Assignment Handouts:</b> Materials are pre-indexed into Study Brain.</span></div>`;
+      listEl.innerHTML = `<div class="ingested-notice-card"><span>Assignment handouts and syllabus are indexed into Study Brain.</span></div>`;
     }
   },
 
@@ -322,7 +422,6 @@ const AddonApp = {
       const deliv = await api(`/assignment/${cwId}/deliverable`);
       this.state.deliverable = deliv;
       if (deliv && deliv.code_or_content) {
-        // Attempt to load validation report
         try {
           this.state.validation = await api(`/assignment/${cwId}/validation`);
         } catch {
@@ -369,13 +468,12 @@ const AddonApp = {
     if (materials.length > 0) {
       materialsHtml = `
         <div class="classroom-attachments-panel">
-          <div class="attachments-label">📎 PROFESSOR'S ASSIGNMENT HANDOUT &amp; BRIEF (READ BY AI):</div>
+          <div class="attachments-label">PROFESSOR HANDOUT ATTACHMENTS:</div>
           <div class="attachments-chips">
             ${materials.map(m => `
-              <a href="${escapeHtml(m.alternateLink || m.url || 'javascript:void(0)')}" target="_blank" class="attachment-chip" title="Open Professor's Handout in Google Classroom / Drive">
-                <span class="att-icon">${m.type === 'driveFile' ? '📄' : '🔗'}</span>
-                <span class="att-title">${escapeHtml(m.title || 'Document')}</span>
-                <span class="att-badge">✓ Read by AI</span>
+              <a href="${escapeHtml(m.alternateLink || m.url || 'javascript:void(0)')}" target="_blank" class="attachment-chip" title="Open attachment">
+                <span class="att-title">${escapeHtml(m.title || 'Attachment Document')}</span>
+                <span class="att-badge">Handout Read</span>
               </a>
             `).join('')}
           </div>
@@ -396,34 +494,34 @@ const AddonApp = {
         
         <div class="meta-footer">
           <div class="due-tag">
-            <span class="tag-label">Due:</span>
+            <span class="tag-label">Due: </span>
             <span class="tag-val">${escapeHtml(deadlineStr)}</span>
           </div>
           <div class="req-tag">
-            <span class="tag-label">Requirements:</span>
-            <span class="tag-val">${reqCount > 0 ? `${reqCount} detected` : 'Analyze to detect'}</span>
+            <span class="tag-label">Specs: </span>
+            <span class="tag-val">${reqCount > 0 ? `${reqCount} detected` : 'Direct analysis'}</span>
           </div>
         </div>
 
         <button class="btn btn-primary btn-block btn-execute" id="btn-execute-assignment" data-action="submitNow" onclick="AddonApp.submitNow()">
-          ${this.state.isExecuting ? '⚡ Ingesting, Generating & Turning in to Classroom...' : (item.status === 'SUBMITTED' ? '✓ TURNED IN TO GOOGLE CLASSROOM (RE-SUBMIT)' : '⚡ 1-CLICK CREATE & DIRECT TURN-IN (NO DOWNLOAD)')}
+          ${this.state.isExecuting ? 'Synthesizing and turning in to Classroom...' : (item.status === 'SUBMITTED' ? 'Turned in to Google Classroom (Re-Submit)' : '1-Click Create & Direct Turn-In (No Download)')}
         </button>
       </div>
     `;
 
     this.renderDeliverablesBox();
     this.renderAutomationSection();
+    this.renderValidationPanel();
   },
 
   renderEmptyAssignmentState(errMsg = null) {
     const container = document.getElementById("assignment-details-box");
     if (!container) return;
     container.innerHTML = `
-      <div class="empty-state-box">
-        <div class="empty-icon">📋</div>
-        <div class="empty-title">NO ASSIGNMENTS FOUND</div>
-        <div class="empty-desc">${errMsg ? escapeHtml(errMsg) : 'No Google Classroom assignments were found. Sign in with Google or click Sync Classroom below.'}</div>
-        <button class="btn btn-secondary btn-sm" onclick="AddonApp.syncClassroom()">Sync Classroom</button>
+      <div class="empty-compact">
+        <div style="font-weight: 700; margin-bottom: 4px;">NO ASSIGNMENTS FOUND</div>
+        <div>${errMsg ? escapeHtml(errMsg) : 'No Google Classroom assignments were found. Sign in with Google or click Sync Classroom.'}</div>
+        <button class="btn btn-secondary btn-sm" style="margin-top: 8px;" onclick="AddonApp.syncClassroom()">Sync Classroom</button>
       </div>
     `;
   },
@@ -442,20 +540,20 @@ const AddonApp = {
     container.innerHTML = `
       <div class="progress-stepper">
         <div class="step-item ${hasSpec ? 'step-done' : (this.state.isExecuting ? 'step-active' : '')}">
-          <span class="step-icon">${hasSpec ? '✓' : '○'}</span>
+          <span class="step-icon">${hasSpec ? '[x]' : '[ ]'}</span>
           <span class="step-label">Assignment analyzed</span>
         </div>
         <div class="step-item ${hasFiles ? 'step-done' : ''}">
-          <span class="step-icon">${hasFiles ? '✓' : '○'}</span>
-          <span class="step-label">Files generated</span>
+          <span class="step-icon">${hasFiles ? '[x]' : '[ ]'}</span>
+          <span class="step-label">Files synthesized</span>
         </div>
         <div class="step-item ${isValidated ? 'step-done' : (this.state.isValidating ? 'step-active' : '')}">
-          <span class="step-icon">${isValidated ? '✓' : '○'}</span>
+          <span class="step-icon">${isValidated ? '[x]' : '[ ]'}</span>
           <span class="step-label">Validation passed</span>
         </div>
         <div class="step-item ${isSubmitted ? 'step-done' : (isScheduled ? 'step-scheduled' : '')}">
-          <span class="step-icon">${isSubmitted ? '✓' : (isScheduled ? '⏰' : '○')}</span>
-          <span class="step-label">${isSubmitted ? 'Turned in to Classroom' : (isScheduled ? 'Submission scheduled' : 'Submission pending')}</span>
+          <span class="step-icon">${isSubmitted ? '[x]' : (isScheduled ? '[sched]' : '[ ]')}</span>
+          <span class="step-label">${isSubmitted ? 'Turned in to Classroom' : (isScheduled ? 'Submission scheduled' : 'Submission ready')}</span>
         </div>
       </div>
     `;
@@ -478,13 +576,11 @@ const AddonApp = {
 
       Toast.success(`Generated deliverable: ${genRes.file_name}`);
 
-      // Refresh spec and deliverable
       await Promise.all([
         this.loadAssignmentSpec(this.state.selectedId),
         this.loadAssignmentDeliverable(this.state.selectedId)
       ]);
 
-      // Automatically run validation
       await this.validateDeliverable();
     } catch (e) {
       Toast.error(`Execution Failed: ${e.message}`);
@@ -500,6 +596,7 @@ const AddonApp = {
     if (!this.state.selectedId || this.state.isValidating) return;
     this.state.isValidating = true;
     this.renderDeliverablesBox();
+    this.renderValidationPanel();
 
     try {
       Toast.info("Executing compiler and running verification test suite...");
@@ -518,6 +615,7 @@ const AddonApp = {
     } finally {
       this.state.isValidating = false;
       this.renderDeliverablesBox();
+      this.renderValidationPanel();
       this.renderProgressTracker();
     }
   },
@@ -537,7 +635,7 @@ const AddonApp = {
     if (!deliv) {
       box.innerHTML = `
         <div class="empty-compact">
-          <span>Deliverables not yet generated. Click <b>⚡ EXECUTE ASSIGNMENT</b> above.</span>
+          <span>Deliverables not yet generated. Click <b>Execute Assignment</b> or Turn-In.</span>
         </div>
       `;
       return;
@@ -548,7 +646,6 @@ const AddonApp = {
       this.state.delivTab = hasReport ? 'report' : 'code';
     }
     const currentTab = this.state.delivTab;
-    const checklist = val && val.checklist ? val.checklist : [];
     const reportContent = deliv.report_content || "";
     const codeSnippet = deliv.code_or_content || "";
     const reportName = deliv.report_file_name || "Academic_Lab_Report.docx";
@@ -560,15 +657,15 @@ const AddonApp = {
       tabBodyHtml = `
         <div class="report-view-container">
           <div class="report-header-banner">
-            <div class="rep-badge">SRM UNIVERSITY AP • STUDENT SUBMISSION RECORD • PREPARED FROM PROFESSOR'S HANDOUT</div>
+            <div class="rep-badge">STUDENT LAB REPORT - PREPARED FROM PROFESSOR HANDOUT</div>
             <div class="rep-title">${escapeHtml(reportName)}</div>
           </div>
           <div class="report-body-content">
-            ${this.renderMarkdownHtml(reportContent || 'Student Academic Lab Report generated from professor assignment handout. Click "Student Report (.docx)" above to download the Word document.')}
+            ${this.renderMarkdownHtml(reportContent || 'Student Academic Lab Report generated from professor assignment handout.')}
           </div>
         </div>
       `;
-    } else if (currentTab === 'code') {
+    } else {
       tabBodyHtml = `
         <div class="code-view-container">
           <div class="code-header-bar">
@@ -576,48 +673,11 @@ const AddonApp = {
               <span class="file-ext">${escapeHtml(deliv.file_type || '.c')}</span>
               <b>${escapeHtml(codeName)}</b>
             </div>
-            <button class="btn btn-secondary btn-xs" onclick="AddonApp.copyDeliverableCode()">📋 Copy Source Code</button>
+            <button class="btn btn-secondary btn-xs" onclick="AddonApp.copyDeliverableCode()">Copy Code</button>
           </div>
-          <div class="code-preview-wrap" style="max-height: 320px;">
+          <div class="code-preview-wrap">
             <pre class="code-preview"><code>${escapeHtml(codeSnippet)}</code></pre>
           </div>
-        </div>
-      `;
-    } else if (currentTab === 'validation') {
-      tabBodyHtml = `
-        <div class="validation-view-container">
-          <div class="val-header-bar">
-            <div class="val-status-badge ${val && val.passed ? 'status-pass' : 'status-fail'}">
-              ${val && val.passed ? '✓ COMPILER &amp; HANDOUT TEST VERIFICATION PASSED' : '⚡ VALIDATION PENDING / FLAGGED'}
-            </div>
-            <button class="btn btn-success btn-xs" onclick="AddonApp.validateDeliverable()" ${this.state.isValidating ? 'disabled' : ''}>
-              ${this.state.isValidating ? 'Compiling...' : '⚡ Re-Run Compiler'}
-            </button>
-          </div>
-
-          <div class="val-checklist">
-            <div class="val-title">AUTOMATED TEST &amp; COMPILER CHECKLIST:</div>
-            ${checklist.length > 0 ? checklist.map(c => `
-              <div class="check-item ${c.passed ? 'check-pass' : 'check-fail'}">
-                <span>${c.passed ? '✓' : '✗'}</span>
-                <span class="check-text"><b>${escapeHtml(c.title)}:</b> ${escapeHtml(c.details || '')}</span>
-              </div>
-            `).join('') : '<div class="empty-compact">No validation run yet. Click Re-Run Compiler above.</div>'}
-          </div>
-
-          ${val && val.compiler_output ? `
-            <div class="terminal-log-wrap" style="margin-top: 8px;">
-              <div class="log-title" style="font-size: 9px; font-weight: 700; color: var(--text-muted); margin-bottom: 3px;">COMPILER OUTPUT (gcc -Wall -Wextra):</div>
-              <pre class="terminal-log" style="background: #020617; border: 1px solid var(--border-color); border-radius: 4px; padding: 6px; font-size: 10px; color: #a5f3fc; overflow: auto; max-height: 100px;"><code>${escapeHtml(val.compiler_output)}</code></pre>
-            </div>
-          ` : ''}
-
-          ${val && val.test_output ? `
-            <div class="terminal-log-wrap" style="margin-top: 8px;">
-              <div class="log-title" style="font-size: 9px; font-weight: 700; color: var(--text-muted); margin-bottom: 3px;">EXECUTION TEST SUITE OUTPUT:</div>
-              <pre class="terminal-log" style="background: #020617; border: 1px solid var(--border-color); border-radius: 4px; padding: 6px; font-size: 10px; color: #86efac; overflow: auto; max-height: 120px;"><code>${escapeHtml(val.test_output)}</code></pre>
-            </div>
-          ` : ''}
         </div>
       `;
     }
@@ -628,32 +688,78 @@ const AddonApp = {
           <div class="deliv-tabs-nav">
             ${hasReport ? `
               <button class="deliv-nav-tab ${currentTab === 'report' ? 'active' : ''}" onclick="AddonApp.switchDelivTab('report')">
-                📄 Student Lab Report (.docx)
+                Lab Report (.docx)
               </button>
             ` : ''}
             <button class="deliv-nav-tab ${currentTab === 'code' ? 'active' : ''}" onclick="AddonApp.switchDelivTab('code')">
-              💻 Student Code (${escapeHtml(deliv.file_type || '.c')})
-            </button>
-            <button class="deliv-nav-tab ${currentTab === 'validation' ? 'active' : ''}" onclick="AddonApp.switchDelivTab('validation')">
-              ⚡ Compiler &amp; Test Validation ${val && val.passed ? '<span class="pill-pass">✓ PASS</span>' : ''}
+              Source Code (${escapeHtml(deliv.file_type || '.c')})
             </button>
           </div>
           
           <div class="deliv-export-actions">
-            ${this.state.activeItem && this.state.activeItem.status === 'SUBMITTED' ? `
-              <span class="pill pill-green" style="font-size: 10px; font-weight: 700;">✓ Turned In Directly to Classroom</span>
-            ` : `
-              <button class="btn btn-success btn-xs" data-action="submitNow" onclick="AddonApp.submitNow()" title="Submit directly to Google Classroom without any downloads">
-                ⚡ Direct Turn-In to Classroom
-              </button>
-            `}
-            <button class="btn btn-secondary btn-xs" onclick="AddonApp.downloadAll()" title="Download Full Student Submission Package (Optional Backup)">
-              💾 Offline Backup (.zip)
+            <button class="btn btn-secondary btn-xs" onclick="AddonApp.downloadAll()" title="Download Full Student Submission Package">
+              Backup (.zip)
             </button>
           </div>
         </div>
 
         ${tabBodyHtml}
+      </div>
+    `;
+  },
+
+  renderValidationPanel() {
+    const container = document.getElementById("workbench-validation-panel");
+    if (!container) return;
+
+    const val = this.state.validation;
+    if (!val) {
+      container.innerHTML = `
+        <div class="empty-compact">
+          <span>Validation oracle has not been executed yet. Click below to verify syntax, compilation, and test assertions in an isolated sandbox.</span>
+          <button class="btn btn-secondary btn-sm" style="margin-top: 10px;" onclick="AddonApp.validateDeliverable()" ${this.state.isValidating ? 'disabled' : ''}>
+            ${this.state.isValidating ? 'Compiling in sandbox...' : 'Run Validation Oracle'}
+          </button>
+        </div>
+      `;
+      return;
+    }
+
+    const checklist = val.checklist || [];
+    container.innerHTML = `
+      <div class="validation-view-container">
+        <div class="val-header-bar">
+          <div class="val-status-badge ${val.passed ? 'status-pass' : 'status-fail'}">
+            ${val.passed ? 'VERIFICATION PASSED (EXIT CODE 0)' : 'VALIDATION FLAGGED ISSUES'}
+          </div>
+          <button class="btn btn-secondary btn-xs" onclick="AddonApp.validateDeliverable()" ${this.state.isValidating ? 'disabled' : ''}>
+            ${this.state.isValidating ? 'Running...' : 'Re-Run Compiler'}
+          </button>
+        </div>
+
+        <div class="val-checklist">
+          <div class="val-title">AUTOMATED TEST &amp; COMPILER CHECKLIST:</div>
+          ${checklist.length > 0 ? checklist.map(c => `
+            <div class="check-item ${c.passed ? 'check-pass' : 'check-fail'}">
+              <span style="font-family: var(--font-mono); font-weight: 700;">${c.passed ? '[PASS]' : '[FAIL]'}</span>
+              <span class="check-text"><b>${escapeHtml(c.title)}:</b> ${escapeHtml(c.details || '')}</span>
+            </div>
+          `).join('') : '<div class="empty-compact">No checklist items recorded.</div>'}
+        </div>
+
+        ${val.compiler_output ? `
+          <div class="terminal-log-wrap" style="margin-top: 8px;">
+            <div class="log-title" style="font-size: 10px; font-weight: 700; color: var(--text-muted);">COMPILER OUTPUT (gcc / javac):</div>
+            <pre class="terminal-log"><code>${escapeHtml(val.compiler_output)}</code></pre>
+          </div>
+        ` : ''}
+
+        ${val.test_output ? `
+          <div class="terminal-log-wrap" style="margin-top: 8px;">
+            <div class="log-title" style="font-size: 10px; font-weight: 700; color: var(--text-muted);">EXECUTION TEST SUITE STDOUT:</div>
+            <pre class="terminal-log" style="color: #86efac;"><code>${escapeHtml(val.test_output)}</code></pre>
+          </div>
+        ` : ''}
       </div>
     `;
   },
@@ -718,7 +824,7 @@ const AddonApp = {
           tableHtml = '<div class="report-table-wrap"><table class="report-table"><tbody>';
         }
         if (line.includes('---')) {
-          continue; // Separator row
+          continue;
         }
         const cells = line.split('|').slice(1, -1);
         const isHeader = !tableHtml.includes('<tr>');
@@ -739,29 +845,15 @@ const AddonApp = {
     }
 
     let out = processed.join('\n');
-
-    // Headings
     out = out.replace(/^### (.*$)/gim, '<h4 class="rep-h4">$1</h4>');
     out = out.replace(/^## (.*$)/gim, '<h3 class="rep-h3">$1</h3>');
     out = out.replace(/^# (.*$)/gim, '<h2 class="rep-h2">$1</h2>');
-
-    // Bold & Italics
     out = out.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
     out = out.replace(/\*(.*?)\*/g, '<i>$1</i>');
-
-    // Inline code
     out = out.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
-
-    // Horizontal rules
     out = out.replace(/^---$/gim, '<hr class="rep-hr" />');
-
-    // Bullet points
-    out = out.replace(/^\• (.*$)/gim, '<div class="rep-bullet">• $1</div>');
-    out = out.replace(/^\- (.*$)/gim, '<div class="rep-bullet">• $1</div>');
-
-    // Paragraph breaks
+    out = out.replace(/^(\*|\-) (.*$)/gim, '<div class="rep-bullet">- $2</div>');
     out = out.replace(/\n\n+/g, '<div class="rep-spacer"></div>');
-
     return out;
   },
 
@@ -794,7 +886,7 @@ const AddonApp = {
         Toast.info("Copying enabled. Select from preview.");
       });
     } else {
-      Toast.info("Clipboard access restricted in current iframe sandbox.");
+      Toast.info("Clipboard access restricted in current browser context.");
     }
   },
 
@@ -808,7 +900,7 @@ const AddonApp = {
     const outputEl = document.getElementById("material-output-box");
     if (outputEl) {
       outputEl.style.display = "block";
-      outputEl.innerHTML = `<div class="loading-pulse">Querying course material with AI...</div>`;
+      outputEl.innerHTML = `<div class="loading-compact"><span class="spinner-dot"></span>Querying course material with AI...</div>`;
     }
 
     try {
@@ -825,11 +917,11 @@ const AddonApp = {
       if (outputEl) {
         outputEl.innerHTML = `
           <div class="material-ai-result">
-            <div class="result-header">
-              <b>${actionType === 'summary' ? '📖 Course Syllabus Summary' : '❓ Grounded Practice Questions'}</b>
-              <button class="btn-icon" onclick="document.getElementById('material-output-box').style.display='none'">&times;</button>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <b>${actionType === 'summary' ? 'Course Syllabus Summary' : 'Grounded Viva Questions'}</b>
+              <button class="btn btn-secondary btn-xs" onclick="document.getElementById('material-output-box').style.display='none'">&times; Close</button>
             </div>
-            <div class="result-body">${escapeHtml(res.content)}</div>
+            <div class="result-body" style="font-size: 12px; line-height: 1.5;">${escapeHtml(res.content)}</div>
           </div>
         `;
       }
@@ -871,22 +963,23 @@ const AddonApp = {
     const isSubmitted = this.state.activeItem && this.state.activeItem.status === "SUBMITTED";
     const isAutoPilot = localStorage.getItem("academic_autopilot") === "true";
 
+    const sidebarLabel = document.getElementById("sidebar-autopilot-label");
+    if (sidebarLabel) sidebarLabel.textContent = isAutoPilot ? "Active (ON)" : "Paused (OFF)";
+
     if (isSubmitted) {
       container.innerHTML = `
-        <div class="auto-box" style="border: 1px solid rgba(16, 185, 129, 0.35); background: rgba(16, 185, 129, 0.06);">
-          <div class="auto-row">
-            <div>
-              <div class="auto-title" style="color: #34d399; font-size: 13px; display: flex; align-items: center; gap: 6px;">
-                <span>✓ TURNED IN DIRECTLY TO GOOGLE CLASSROOM</span>
-              </div>
-              <div class="auto-sub" style="color: #cbd5e1; margin-top: 3px;">
-                Deliverables attached to coursework and turned in. Zero download or manual file handling needed.
-              </div>
+        <div class="gatekeeper-row">
+          <div>
+            <div class="auto-title" style="color: #34d399; font-size: 13px;">
+              TURNED IN DIRECTLY TO GOOGLE CLASSROOM
             </div>
-            <button class="btn btn-secondary btn-sm" data-action="reclaimSubmission" onclick="AddonApp.reclaimSubmission()">
-              Unsubmit / Reclaim
-            </button>
+            <div class="auto-sub" style="color: var(--text-secondary); margin-top: 3px;">
+              Deliverables attached to coursework in Google Drive and turned in.
+            </div>
           </div>
+          <button class="btn btn-secondary btn-sm" data-action="reclaimSubmission" onclick="AddonApp.reclaimSubmission()">
+            Unsubmit / Reclaim
+          </button>
         </div>
       `;
       return;
@@ -899,28 +992,23 @@ const AddonApp = {
       : 'Default: 4 hours before deadline';
 
     container.innerHTML = `
-      <div class="auto-box">
-        <div class="auto-row">
-          <div>
-            <div class="auto-title" style="display: flex; align-items: center; gap: 6px;">
-              <span>⚡ AUTONOMOUS AUTO-SUBMIT</span>
-              <span style="background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.4); font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 4px;">
-                ${isAutoPilot ? '🤖 AUTOPILOT ACTIVE' : (isAutoOn ? 'SCHEDULED' : 'READY')}
-              </span>
-            </div>
-            <div class="auto-sub">Scheduled Execution: <b>${escapeHtml(schedTimeStr)}</b></div>
-            <div style="font-size: 10px; color: var(--text-muted); margin-top: 3px;">
-              Direct submission: AI ingests handout PDF, creates code &amp; report, compiles, and turns in to Classroom.
-            </div>
+      <div class="gatekeeper-row">
+        <div>
+          <div class="auto-title" style="display: flex; align-items: center; gap: 8px;">
+            <span>AUTONOMOUS AUTO-SUBMIT</span>
+            <span class="status-pill ${isAutoPilot ? 'status-submitted' : (isAutoOn ? 'status-ready_for_submission' : 'status-not_started')}">
+              ${isAutoPilot ? 'AUTOPILOT ACTIVE' : (isAutoOn ? 'SCHEDULED' : 'READY')}
+            </span>
           </div>
-          <button class="btn btn-sm ${isAutoPilot ? 'btn-success' : 'btn-secondary'}" data-action="toggleAutoPilot" onclick="AddonApp.toggleAutoPilot()">
-            ${isAutoPilot ? '🤖 AUTOPILOT: ON' : 'ENABLE AUTOPILOT'}
-          </button>
+          <div class="auto-sub">Scheduled Execution: <b>${escapeHtml(schedTimeStr)}</b></div>
         </div>
 
-        <div style="display: flex; gap: 8px; margin-top: 10px;">
-          <button class="btn btn-primary btn-sm btn-block" id="btn-submit-now" data-action="submitNow" onclick="AddonApp.submitNow()">
-            ⚡ 1-Click Auto Submit (Zero-Touch Direct Turn-In)
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <button class="btn btn-sm ${isAutoPilot ? 'btn-success' : 'btn-secondary'}" data-action="toggleAutoPilot" onclick="AddonApp.toggleAutoPilot()">
+            ${isAutoPilot ? 'Autopilot: ON' : 'Enable Autopilot'}
+          </button>
+          <button class="btn btn-primary btn-sm" id="btn-submit-now" data-action="submitNow" onclick="AddonApp.submitNow()">
+            Direct Turn-In (No Download)
           </button>
         </div>
       </div>
@@ -931,7 +1019,7 @@ const AddonApp = {
     const current = localStorage.getItem("academic_autopilot") === "true";
     const nextVal = !current;
     localStorage.setItem("academic_autopilot", nextVal ? "true" : "false");
-    Toast.success(nextVal ? "⚡ Auto-Pilot ON: Assignments submit automatically upon selection! User does nothing." : "Auto-Pilot paused.");
+    Toast.success(nextVal ? "Auto-Pilot ON: Assignments submit automatically upon selection." : "Auto-Pilot paused.");
     this.renderAutomationSection();
     if (nextVal && this.state.activeItem && this.state.activeItem.status !== "SUBMITTED" && !this.state.isExecuting) {
       this.submitNow();
@@ -964,7 +1052,7 @@ const AddonApp = {
     const newStatus = !currentlyOn;
 
     try {
-      const res = await api(`/assignment/${this.state.selectedId}/schedule`, {
+      await api(`/assignment/${this.state.selectedId}/schedule`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -990,12 +1078,12 @@ const AddonApp = {
       this.state.isExecuting = true;
       this.renderProgressTracker();
       this.renderAssignmentSection();
-      Toast.info("⚡ Ingesting handout, creating code & report, and turning in directly to Google Classroom...");
+      Toast.info("Synthesizing deliverables, running verification, and turning in to Google Classroom...");
       const res = await api(`/assignment/${this.state.selectedId}/autonomous-submit`, {
         method: "POST"
       });
 
-      Toast.success(res.message || "🎉 Assignment turned in directly to Google Classroom! Zero download needed.");
+      Toast.success(res.message || "Assignment turned in directly to Google Classroom. Zero download needed.");
       await this.loadCoursework();
       await this.selectCoursework(this.state.selectedId, false);
     } catch (e) {
@@ -1014,6 +1102,7 @@ const AddonApp = {
       const res = await api("/classroom/sync", { method: "POST" });
       Toast.success(res.message || "Classroom synchronized!");
       await this.loadAuthStatus();
+      await this.loadCourses();
       await this.loadCoursework();
     } catch (e) {
       Toast.error(`Sync Failed: ${e.message}`);
@@ -1045,7 +1134,7 @@ const AddonApp = {
 
     const btn = document.getElementById("btn-erp-submit");
     if (btn) {
-      btn.textContent = "Solving Captcha & Authenticating...";
+      btn.textContent = "Authenticating...";
       btn.disabled = true;
     }
 
@@ -1093,6 +1182,9 @@ const AddonApp = {
       Toast.success("Timetable refreshed successfully!");
       await this.loadAuthStatus();
       await this.loadNextClass();
+      if (this.state.currentTab === "timetable") {
+        this.renderTimetableView();
+      }
     } catch (e) {
       Toast.error(`Refresh failed: ${e.message}`);
     }
@@ -1103,6 +1195,7 @@ const AddonApp = {
       await api("/auth/disconnect", { method: "POST" });
       Toast.success("Google Classroom disconnected.");
       await this.loadAuthStatus();
+      await this.loadCourses();
       await this.loadCoursework();
     } catch (e) {
       Toast.error(`Disconnect failed: ${e.message}`);
@@ -1133,7 +1226,6 @@ const AddonApp = {
     }
   },
 
-
   async quickConnectERP() {
     try {
       Toast.info("Loading SRM AP CSE schedule & variable classrooms...");
@@ -1141,6 +1233,9 @@ const AddonApp = {
       Toast.success(res.message || "Timetable connected!");
       await this.loadAuthStatus();
       await this.loadNextClass();
+      if (this.state.currentTab === "timetable") {
+        this.renderTimetableView();
+      }
       closeModal("settings-modal");
     } catch (e) {
       Toast.error(`Timetable Error: ${e.message}`);
@@ -1164,10 +1259,179 @@ const AddonApp = {
       Toast.success(res.message || "Connected successfully!");
       if (input) input.value = "";
       await this.loadAuthStatus();
+      await this.loadCourses();
       await this.loadCoursework();
       closeModal("settings-modal");
     } catch (e) {
       Toast.error(`Direct token failed: ${e.message}`);
+    }
+  },
+
+  // ── Timetable View ─────────────────────────────────────────────────────
+  async renderTimetableView() {
+    const container = document.getElementById("timetable-schedule-container");
+    if (!container) return;
+
+    try {
+      const schedule = await api("/timetable/weekly").catch(() => []);
+      if (!schedule || schedule.length === 0) {
+        container.innerHTML = `
+          <div class="empty-compact">
+            <span>No weekly timetable entries loaded yet. Click <b>Load SRM AP Schedule</b> above to load official schedule.</span>
+          </div>
+        `;
+        return;
+      }
+
+      const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+      container.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          ${schedule.map(slot => `
+            <div class="next-class-box" style="padding: 10px 14px;">
+              <div class="nc-top">
+                <span class="status-pill status-ready_for_submission">${days[slot.day_of_week] || 'Day ' + slot.day_of_week}</span>
+                <span class="nc-time">${escapeHtml(slot.start_time)} - ${escapeHtml(slot.end_time)}</span>
+              </div>
+              <div class="nc-subject">${escapeHtml(slot.subject)}</div>
+              <div class="nc-meta">
+                <span class="nc-room">Room: <b>${escapeHtml(slot.classroom || 'TBD')}</b></span>
+                ${slot.faculty ? `<span class="nc-faculty">| ${escapeHtml(slot.faculty)}</span>` : ''}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    } catch (e) {
+      container.innerHTML = `<div class="empty-compact text-danger">Error loading timetable: ${escapeHtml(e.message)}</div>`;
+    }
+  },
+
+  // ── 9. Command Palette (Ctrl+K) ─────────────────────────────────────────
+  setupCommandPalette() {
+    const input = document.getElementById("command-palette-input");
+    if (input) {
+      input.addEventListener("input", () => this.filterCommands(input.value));
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          this.moveCommandSelection(1);
+        } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          this.moveCommandSelection(-1);
+        } else if (e.key === "Enter") {
+          e.preventDefault();
+          this.executeSelectedCommand();
+        } else if (e.key === "Escape") {
+          this.closeCommandPalette();
+        }
+      });
+    }
+
+    // Global keyboard shortcut
+    document.addEventListener("keydown", (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        this.openCommandPalette();
+      }
+    });
+  },
+
+  openCommandPalette() {
+    const palette = document.getElementById("command-palette");
+    const input = document.getElementById("command-palette-input");
+    if (palette) {
+      palette.classList.add("active");
+      if (input) {
+        input.value = "";
+        input.focus();
+      }
+      this.filterCommands("");
+    }
+  },
+
+  closeCommandPalette() {
+    const palette = document.getElementById("command-palette");
+    if (palette) palette.classList.remove("active");
+  },
+
+  getAvailableCommands() {
+    const baseCommands = [
+      { id: "nav_workspace", title: "Go to Assignment Workbench", badge: "Navigation", run: () => this.switchMainTab("workspace") },
+      { id: "nav_overview", title: "Go to System Overview & Schedule", badge: "Navigation", run: () => this.switchMainTab("overview") },
+      { id: "nav_courses", title: "Go to Enrolled Courses", badge: "Navigation", run: () => this.switchMainTab("courses") },
+      { id: "nav_brain", title: "Go to Study Brain & Handouts", badge: "Navigation", run: () => this.switchMainTab("brain") },
+      { id: "nav_timetable", title: "Go to Timetable & Variable Rooms", badge: "Navigation", run: () => this.switchMainTab("timetable") },
+      { id: "act_submit", title: "1-Click Direct Turn-In (No Download)", badge: "Action", run: () => this.submitNow() },
+      { id: "act_validate", title: "Run Validation Oracle & Compiler", badge: "Action", run: () => this.validateDeliverable() },
+      { id: "act_sync", title: "Sync Google Classroom Enrolled Data", badge: "Classroom", run: () => this.syncClassroom() },
+      { id: "act_refresh_erp", title: "Refresh Timetable & Schedule", badge: "Portal", run: () => this.refreshERP() },
+      { id: "act_theme", title: "Toggle Light / Dark Theme", badge: "Appearance", run: () => this.toggleTheme() },
+      { id: "act_settings", title: "Open Settings & Credentials Modal", badge: "Settings", run: () => openModal("settings-modal") },
+      { id: "act_autopilot", title: "Toggle Autonomous Autopilot Mode", badge: "Automation", run: () => this.toggleAutoPilot() }
+    ];
+
+    // Append active coursework items
+    const cwCommands = (this.state.coursework || []).map(cw => ({
+      id: `cw_${cw.id}`,
+      title: `Assignment: ${cw.title}`,
+      badge: cw.course_name || "Coursework",
+      run: () => {
+        this.switchMainTab("workspace");
+        this.selectCoursework(cw.id);
+      }
+    }));
+
+    return [...baseCommands, ...cwCommands];
+  },
+
+  filterCommands(query) {
+    const all = this.getAvailableCommands();
+    const q = (query || "").toLowerCase().trim();
+    const filtered = q
+      ? all.filter(c => c.title.toLowerCase().includes(q) || c.badge.toLowerCase().includes(q))
+      : all;
+
+    this.state.commands = filtered;
+    this.state.cmdSelectedIndex = 0;
+    this.renderCommandResults();
+  },
+
+  renderCommandResults() {
+    const container = document.getElementById("command-palette-results");
+    if (!container) return;
+
+    if (this.state.commands.length === 0) {
+      container.innerHTML = `<div class="empty-compact"><span>No matching commands or coursework.</span></div>`;
+      return;
+    }
+
+    container.innerHTML = this.state.commands.map((cmd, idx) => `
+      <div class="command-palette-item ${idx === this.state.cmdSelectedIndex ? 'selected' : ''}"
+        onclick="AddonApp.executeCommand(${idx})">
+        <div class="command-palette-item-left">
+          <span>${escapeHtml(cmd.title)}</span>
+        </div>
+        <span class="command-palette-badge">${escapeHtml(cmd.badge)}</span>
+      </div>
+    `).join("");
+  },
+
+  moveCommandSelection(dir) {
+    const len = this.state.commands.length;
+    if (len === 0) return;
+    this.state.cmdSelectedIndex = (this.state.cmdSelectedIndex + dir + len) % len;
+    this.renderCommandResults();
+  },
+
+  executeSelectedCommand() {
+    this.executeCommand(this.state.cmdSelectedIndex);
+  },
+
+  executeCommand(idx) {
+    const cmd = this.state.commands[idx];
+    if (cmd && typeof cmd.run === "function") {
+      this.closeCommandPalette();
+      cmd.run();
     }
   }
 };
@@ -1265,16 +1529,15 @@ window.closeModal = closeModal;
 window.Toast = Toast;
 window.api = api;
 
-// ── Global Event Delegation (Guarantees clicks work in all CSP & browser contexts)
+// ── Global Event Delegation ────────────────────────────────────────────────
 document.addEventListener("click", (e) => {
-  // 1. Click on modal backdrop outside card closes modal
-  if (e.target && e.target.classList && e.target.classList.contains("modal-overlay")) {
+  // Modal backdrop click
+  if (e.target && e.target.classList && (e.target.classList.contains("modal-overlay") || e.target.classList.contains("command-palette-overlay"))) {
     e.target.classList.remove("active");
     e.target.setAttribute("aria-hidden", "true");
     return;
   }
 
-  // 2. Element or ancestor with data-action
   const actionEl = e.target.closest("[data-action]");
   if (actionEl) {
     const action = actionEl.getAttribute("data-action");
@@ -1301,9 +1564,6 @@ document.addEventListener("click", (e) => {
       }
       case "launchGoogleOAuth":
         AddonApp.launchGoogleOAuth();
-        break;
-      case "quickConnectGoogle":
-        AddonApp.quickConnectGoogle();
         break;
       case "quickConnectERP":
         AddonApp.quickConnectERP();
@@ -1363,7 +1623,6 @@ document.addEventListener("click", (e) => {
     return;
   }
 
-  // 3. Fallback for dynamically generated tabs & buttons
   const executeBtn = e.target.closest("#btn-execute-assignment, .btn-execute");
   if (executeBtn) {
     AddonApp.executeAssignment();
@@ -1398,11 +1657,13 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Bind settings modal close when pressing Escape
+  // Bind Escape to close any open modal
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
-      document.querySelectorAll(".modal-overlay.active").forEach(m => closeModal(m.id));
+      document.querySelectorAll(".modal-overlay.active, .command-palette-overlay.active").forEach(m => {
+        m.classList.remove("active");
+        m.setAttribute("aria-hidden", "true");
+      });
     }
   });
 });
-

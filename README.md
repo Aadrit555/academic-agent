@@ -212,10 +212,10 @@ Open your browser at **`http://localhost:8000`**.
 ## 📜 Attribution & Open-Source Licenses
 
 Academic Agent reuses and adapts implementations from:
-- **IntelliPlan** ([https://github.com/UAnirudh/IntelliPlan](https://github.com/UAnirudh/IntelliPlan)) — MIT License
-- **Srmap-Api** ([https://github.com/StoreVia/Srmap-Api](https://github.com/StoreVia/Srmap-Api)) — MIT License
-- **claude-classroom-submit** ([https://github.com/yolo-labz/claude-classroom-submit](https://github.com/yolo-labz/claude-classroom-submit)) — MIT License
-- **PaperBrain** ([https://github.com/Apyhtml20/PaperBrain](https://github.com/Apyhtml20/PaperBrain)) — MIT License
+- **IntelliPlan** ([https://github.com/UAnirudh/IntelliPlan](https://github.com/UAnirudh/IntelliPlan)) - MIT License
+- **Srmap-Api** ([https://github.com/StoreVia/Srmap-Api](https://github.com/StoreVia/Srmap-Api)) - MIT License
+- **claude-classroom-submit** ([https://github.com/yolo-labz/claude-classroom-submit](https://github.com/yolo-labz/claude-classroom-submit)) - MIT License
+- **PaperBrain** ([https://github.com/Apyhtml20/PaperBrain](https://github.com/Apyhtml20/PaperBrain)) - MIT License
 
 See [`ATTRIBUTION.md`](ATTRIBUTION.md) and [`LICENSE`](LICENSE) for complete copyright notices.
 

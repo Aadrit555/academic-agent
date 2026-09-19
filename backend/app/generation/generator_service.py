@@ -513,9 +513,9 @@ class GeneratorService:
             )
             doc.add_paragraph(
                 "The program architecture consists of three cooperating routines:\n"
-                "• Routine 1: find_max_crossing_subarray(A, low, mid, high) — Scans leftward from mid to low and rightward from mid+1 to high, identifying peak prefix and suffix sums in Theta(n) time.\n"
-                "• Routine 2: find_maximum_subarray(A, low, high) — Base case (low == high); otherwise recurses on both halves, executes Routine 1, and returns the maximum of the three candidates.\n"
-                "• Routine 3: brute_force_max_subarray(A, n) — Direct baseline examining all O(n^2) index pairs to validate accuracy and measure empirical speedup."
+                "• Routine 1: find_max_crossing_subarray(A, low, mid, high) - Scans leftward from mid to low and rightward from mid+1 to high, identifying peak prefix and suffix sums in Theta(n) time.\n"
+                "• Routine 2: find_maximum_subarray(A, low, high) - Base case (low == high); otherwise recurses on both halves, executes Routine 1, and returns the maximum of the three candidates.\n"
+                "• Routine 3: brute_force_max_subarray(A, n) - Direct baseline examining all O(n^2) index pairs to validate accuracy and measure empirical speedup."
             )
 
             # 4. Complexity Analysis
@@ -596,7 +596,7 @@ class GeneratorService:
             doc.add_heading("9. References", level=1)
             doc.add_paragraph(
                 "1. Cormen, T. H., Leiserson, C. E., Rivest, R. L., & Stein, C. (2022). Introduction to Algorithms (4th ed.). MIT Press. Chapter 4: Divide-and-Conquer.\n"
-                "2. SRM University AP, Department of Computer Science and Engineering. 21CSC204J — Design and Analysis of Algorithms Laboratory Manual."
+                "2. SRM University AP, Department of Computer Science and Engineering. 21CSC204J - Design and Analysis of Algorithms Laboratory Manual."
             )
 
             doc.save(target_path)
@@ -605,7 +605,7 @@ class GeneratorService:
             return (
                 f"# SRM UNIVERSITY, ANDHRA PRADESH\n"
                 f"## Department of Computer Science and Engineering\n"
-                f"### {course_title} — Laboratory Record\n"
+                f"### {course_title} - Laboratory Record\n"
                 f"**{coursework.title}**\n\n"
                 f"*Course Learning Outcome:* **CLO 2: Describe how the choice of data structures and algorithm design methods impact the performance of programs.**\n\n"
                 f"---\n\n"
@@ -623,9 +623,9 @@ class GeneratorService:
                 f"**Target Result:** The maximum subarray is $A[8..11]$ (`[18, 20, -7, 12]`) with maximum sum **43** (a crossing subarray).\n\n"
                 f"### 3. Divide-and-Conquer Strategy (Three Cooperating Routines)\n"
                 f"Any subarray of $A[low..high]$ falls into three mutually exclusive cases relative to $mid = \\lfloor(low + high)/2\\rfloor$:\n"
-                f"1. **Entirely within left half** $A[low..mid]$ — solved by recursing on left.\n"
-                f"2. **Entirely within right half** $A[mid+1..high]$ — solved by recursing on right.\n"
-                f"3. **Crossing the midpoint** $A[i..mid..j]$ ($low \\le i \\le mid < j \\le high$) — solved in $\\Theta(n)$ time via linear outward scans.\n\n"
+                f"1. **Entirely within left half** $A[low..mid]$ - solved by recursing on left.\n"
+                f"2. **Entirely within right half** $A[mid+1..high]$ - solved by recursing on right.\n"
+                f"3. **Crossing the midpoint** $A[i..mid..j]$ ($low \\le i \\le mid < j \\le high$) - solved in $\\Theta(n)$ time via linear outward scans.\n\n"
                 f"- **Routine 1 (Crossing Subroutine):** `find_max_crossing_subarray` conducts independent leftward and rightward scans from $mid$, achieving $\\Theta(n)$ time.\n"
                 f"- **Routine 2 (Recursive Divide-and-Conquer):** `find_maximum_subarray` recurses on left and right halves, calls Routine 1, and returns the maximum of the three.\n"
                 f"- **Routine 3 (Comparative Driver):** `brute_force_max_subarray` checks all $O(n^2)$ pairs as a validation baseline and timing reference.\n\n"
@@ -655,7 +655,7 @@ class GeneratorService:
                 f"- **Midpoint Calculation:** Safe formula `low + (high - low) / 2` avoids integer overflow.\n\n"
                 f"### 8. References\n"
                 f"1. Cormen, T. H., Leiserson, C. E., Rivest, R. L., & Stein, C. (2022). *Introduction to Algorithms* (4th ed.). MIT Press. Chapter 4: Divide-and-Conquer.\n"
-                f"2. SRM University AP, Department of Computer Science and Engineering. *21CSC204J — Design and Analysis of Algorithms Laboratory Manual*.\n"
+                f"2. SRM University AP, Department of Computer Science and Engineering. *21CSC204J - Design and Analysis of Algorithms Laboratory Manual*.\n"
             )
 
         else:

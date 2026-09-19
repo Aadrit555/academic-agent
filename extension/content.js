@@ -1,4 +1,4 @@
-// Academic Agent — Google Classroom Autonomous Extension Content Script
+// Academic Agent - Google Classroom Autonomous Extension Content Script
 
 (function () {
   const BACKEND_URL = "http://127.0.0.1:8000";
@@ -200,7 +200,7 @@
     drawer.id = "academic-agent-drawer";
     drawer.innerHTML = `
       <div id="academic-agent-drawer-header">
-        <span>⚡ Academic Agent — Google Classroom Companion</span>
+        <span>⚡ Academic Agent - Google Classroom Companion</span>
         <button id="academic-agent-drawer-close">&times;</button>
       </div>
       <div id="academic-agent-drawer-body"></div>

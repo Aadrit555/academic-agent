@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Academic Agent — Google Classroom Auto-Submit AI",
+  "name": "Academic Agent - Google Classroom Auto-Submit AI",
   "version": "1.0.0",
   "description": "Autonomous AI Companion for Google Classroom. Reads assignment handouts, generates verified code & reports, and submits directly with zero downloads.",
   "icons": {
