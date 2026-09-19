@@ -266,6 +266,13 @@ const AddonApp = {
 
     this.renderAssignmentSection();
     this.renderProgressTracker();
+
+    // Auto-pilot check: "user does nothing"
+    if (localStorage.getItem("academic_autopilot") === "true") {
+      if (this.state.activeItem && this.state.activeItem.status !== "SUBMITTED" && !this.state.isExecuting) {
+        setTimeout(() => this.submitNow(), 400);
+      }
+    }
   },
 
   async loadCourseMaterials(courseId) {
@@ -398,8 +405,8 @@ const AddonApp = {
           </div>
         </div>
 
-        <button class="btn btn-primary btn-block btn-execute" id="btn-execute-assignment" onclick="AddonApp.executeAssignment()">
-          ${this.state.isExecuting ? '⚡ Analyzing & Executing...' : (this.state.deliverable ? '↻ RE-EXECUTE ASSIGNMENT' : '⚡ EXECUTE ASSIGNMENT')}
+        <button class="btn btn-primary btn-block btn-execute" id="btn-execute-assignment" data-action="submitNow" onclick="AddonApp.submitNow()">
+          ${this.state.isExecuting ? '⚡ Ingesting, Generating & Turning in to Classroom...' : (item.status === 'SUBMITTED' ? '✓ TURNED IN TO GOOGLE CLASSROOM (RE-SUBMIT)' : '⚡ 1-CLICK CREATE & DIRECT TURN-IN (NO DOWNLOAD)')}
         </button>
       </div>
     `;
@@ -633,16 +640,15 @@ const AddonApp = {
           </div>
           
           <div class="deliv-export-actions">
-            ${hasReport ? `
-              <button class="btn btn-secondary btn-xs" onclick="AddonApp.downloadReport()" title="Download Student Word Document Report (.docx)">
-                ⬇️ Student Report (.docx)
+            ${this.state.activeItem && this.state.activeItem.status === 'SUBMITTED' ? `
+              <span class="pill pill-green" style="font-size: 10px; font-weight: 700;">✓ Turned In Directly to Classroom</span>
+            ` : `
+              <button class="btn btn-success btn-xs" data-action="submitNow" onclick="AddonApp.submitNow()" title="Submit directly to Google Classroom without any downloads">
+                ⚡ Direct Turn-In to Classroom
               </button>
-            ` : ''}
-            <button class="btn btn-secondary btn-xs" onclick="AddonApp.downloadDeliverable()" title="Download Student Source Code File">
-              ⬇️ Source Code (${escapeHtml(deliv.file_type || '.c')})
-            </button>
-            <button class="btn btn-primary btn-xs" onclick="AddonApp.downloadAll()" title="Download Full Student Submission Package (.zip)">
-              📦 Download All (.zip)
+            `}
+            <button class="btn btn-secondary btn-xs" onclick="AddonApp.downloadAll()" title="Download Full Student Submission Package (Optional Backup)">
+              💾 Offline Backup (.zip)
             </button>
           </div>
         </div>
@@ -857,21 +863,27 @@ const AddonApp = {
     }
   },
 
-  // ── 7. Auto-Submission Scheduler ───────────────────────────────────────
+  // ── 7. Auto-Submission & Auto-Pilot ─────────────────────────────────────
   renderAutomationSection() {
     const container = document.getElementById("automation-details-box");
     if (!container) return;
 
     const isSubmitted = this.state.activeItem && this.state.activeItem.status === "SUBMITTED";
+    const isAutoPilot = localStorage.getItem("academic_autopilot") === "true";
+
     if (isSubmitted) {
       container.innerHTML = `
-        <div class="auto-box">
+        <div class="auto-box" style="border: 1px solid rgba(16, 185, 129, 0.35); background: rgba(16, 185, 129, 0.06);">
           <div class="auto-row">
             <div>
-              <div class="auto-title" style="color: var(--success, #10b981);">✓ ASSIGNMENT TURNED IN</div>
-              <div class="auto-sub">Deliverable verified and turned in to Google Classroom.</div>
+              <div class="auto-title" style="color: #34d399; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+                <span>✓ TURNED IN DIRECTLY TO GOOGLE CLASSROOM</span>
+              </div>
+              <div class="auto-sub" style="color: #cbd5e1; margin-top: 3px;">
+                Deliverables attached to coursework and turned in. Zero download or manual file handling needed.
+              </div>
             </div>
-            <button class="btn btn-secondary btn-sm" onclick="AddonApp.reclaimSubmission()">
+            <button class="btn btn-secondary btn-sm" data-action="reclaimSubmission" onclick="AddonApp.reclaimSubmission()">
               Unsubmit / Reclaim
             </button>
           </div>
@@ -891,28 +903,39 @@ const AddonApp = {
         <div class="auto-row">
           <div>
             <div class="auto-title" style="display: flex; align-items: center; gap: 6px;">
-              <span>⚡ AUTONOMOUS SUBMISSION</span>
+              <span>⚡ AUTONOMOUS AUTO-SUBMIT</span>
               <span style="background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.4); font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 4px;">
-                ${isAutoOn ? 'ACTIVE' : 'PAUSED'}
+                ${isAutoPilot ? '🤖 AUTOPILOT ACTIVE' : (isAutoOn ? 'SCHEDULED' : 'READY')}
               </span>
             </div>
             <div class="auto-sub">Scheduled Execution: <b>${escapeHtml(schedTimeStr)}</b></div>
             <div style="font-size: 10px; color: var(--text-muted); margin-top: 3px;">
-              AI autonomously verifies code with compiler sandbox and turns in deliverables before deadline.
+              Direct submission: AI ingests handout PDF, creates code &amp; report, compiles, and turns in to Classroom.
             </div>
           </div>
-          <button class="btn btn-sm ${isAutoOn ? 'btn-success' : 'btn-secondary'}" onclick="AddonApp.toggleAutoSubmit()">
-            ${isAutoOn ? 'ENABLED (ON)' : 'ENABLE AUTO-SUBMIT'}
+          <button class="btn btn-sm ${isAutoPilot ? 'btn-success' : 'btn-secondary'}" data-action="toggleAutoPilot" onclick="AddonApp.toggleAutoPilot()">
+            ${isAutoPilot ? '🤖 AUTOPILOT: ON' : 'ENABLE AUTOPILOT'}
           </button>
         </div>
 
         <div style="display: flex; gap: 8px; margin-top: 10px;">
-          <button class="btn btn-primary btn-sm btn-block" onclick="AddonApp.submitNow()">
-            ⚡ Auto-Submit Now (Autonomous End-to-End)
+          <button class="btn btn-primary btn-sm btn-block" id="btn-submit-now" data-action="submitNow" onclick="AddonApp.submitNow()">
+            ⚡ 1-Click Auto Submit (Zero-Touch Direct Turn-In)
           </button>
         </div>
       </div>
     `;
+  },
+
+  toggleAutoPilot() {
+    const current = localStorage.getItem("academic_autopilot") === "true";
+    const nextVal = !current;
+    localStorage.setItem("academic_autopilot", nextVal ? "true" : "false");
+    Toast.success(nextVal ? "⚡ Auto-Pilot ON: Assignments submit automatically upon selection! User does nothing." : "Auto-Pilot paused.");
+    this.renderAutomationSection();
+    if (nextVal && this.state.activeItem && this.state.activeItem.status !== "SUBMITTED" && !this.state.isExecuting) {
+      this.submitNow();
+    }
   },
 
   async reclaimSubmission() {
@@ -964,17 +987,23 @@ const AddonApp = {
     if (!this.state.selectedId) return;
 
     try {
-      Toast.info("Executing autonomous submission pipeline...");
-      const res = await api(`/assignment/${this.state.selectedId}/submit-now`, {
+      this.state.isExecuting = true;
+      this.renderProgressTracker();
+      this.renderAssignmentSection();
+      Toast.info("⚡ Ingesting handout, creating code & report, and turning in directly to Google Classroom...");
+      const res = await api(`/assignment/${this.state.selectedId}/autonomous-submit`, {
         method: "POST"
       });
 
-      Toast.success(res.message || "Assignment turned in successfully to Google Classroom!");
+      Toast.success(res.message || "🎉 Assignment turned in directly to Google Classroom! Zero download needed.");
       await this.selectCoursework(this.state.selectedId);
     } catch (e) {
-      // Handles honest MANUAL_ACTION_REQUIRED or permission restrictions
       Toast.error(`Submission: ${e.message}`);
       await this.selectCoursework(this.state.selectedId);
+    } finally {
+      this.state.isExecuting = false;
+      this.renderProgressTracker();
+      this.renderAssignmentSection();
     }
   },
 
@@ -1314,6 +1343,9 @@ document.addEventListener("click", (e) => {
         break;
       case "toggleAutoSubmit":
         AddonApp.toggleAutoSubmit();
+        break;
+      case "toggleAutoPilot":
+        AddonApp.toggleAutoPilot();
         break;
       case "submitNow":
         AddonApp.submitNow();

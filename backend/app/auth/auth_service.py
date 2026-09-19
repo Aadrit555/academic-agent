@@ -13,6 +13,7 @@ def utcnow():
 
 def get_or_create_default_user(db: Session) -> User:
     user = db.query(User).filter_by(id=1).first()
+    default_email = "aadriteye@gmail.com"
     default_email = "aadrit_y@srmap.edu.in"
     if not user:
         user = db.query(User).filter_by(email=default_email).first()

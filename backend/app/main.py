@@ -178,6 +178,7 @@ def get_google_auth_url(request: Request, target: str = "/addon", user: User = D
     scheme = request.url.scheme or "http"
     dynamic_redirect = f"{scheme}://{host}/api/auth/google/callback"
 
+    target_email = "aadriteye@gmail.com"
     target_email = user.email or "aadrit_y@srmap.edu.in"
     state_payload = json.dumps({"user_id": user.id, "target": target, "redirect_uri": dynamic_redirect})
     state = base64.urlsafe_b64encode(state_payload.encode("utf-8")).decode("utf-8")
@@ -243,6 +244,7 @@ def quick_connect_google(db: Session = Depends(get_db), user: User = Depends(cur
         integ = ClassroomIntegration(user_id=user.id)
         db.add(integ)
     integ.access_token = "academic_agent_google_token"
+    integ.email = "aadriteye@gmail.com"
     integ.email = user.email or "aadrit_y@srmap.edu.in"
     integ.is_demo_mode = False
     integ.connected_at = datetime.now(timezone.utc)
@@ -878,10 +880,15 @@ def submit_now(coursework_id: int, db: Session = Depends(get_db), user: User = D
             state=sub.verified_state,
             drive_file_id=sub.drive_file_id,
             turned_in_at=sub.turned_in_at,
-            message="Assignment turned in successfully to Google Classroom."
+            message="Assignment turned in successfully to Google Classroom directly."
         )
     except (ValueError, RuntimeError) as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/api/assignment/{coursework_id}/autonomous-submit", response_model=SubmissionResultResponse)
+def autonomous_submit(coursework_id: int, db: Session = Depends(get_db), user: User = Depends(current_user)):
+    """Full autonomous pipeline: ensures generation, compiler validation, Drive upload & Classroom turn-in."""
+    return submit_now(coursework_id, db, user)
 
 @app.post("/api/submission/reclaim")
 def reclaim_submission(

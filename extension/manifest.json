@@ -1,0 +1,39 @@
+{
+  "manifest_version": 3,
+  "name": "Academic Agent — Google Classroom Auto-Submit AI",
+  "version": "1.0.0",
+  "description": "Autonomous AI Companion for Google Classroom. Reads assignment handouts, generates verified code & reports, and submits directly with zero downloads.",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "permissions": [
+    "storage",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "https://classroom.google.com/*",
+    "http://127.0.0.1:8000/*",
+    "http://localhost:8000/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Academic Agent Companion"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://classroom.google.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "css": [
+        "content.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}
