@@ -3,6 +3,38 @@
 (function () {
   const BACKEND_URL = "http://127.0.0.1:8000";
 
+  let cachedJwt = null;
+  async function getAuthToken() {
+    if (cachedJwt) return cachedJwt;
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/auth/session`, { method: "POST" });
+      if (res.ok) {
+        const data = await res.json();
+        cachedJwt = data.access_token;
+        return cachedJwt;
+      }
+    } catch (e) {
+      console.warn("Could not get auth token:", e);
+    }
+    return null;
+  }
+
+  async function authedFetch(url, options = {}) {
+    let token = await getAuthToken();
+    const headers = Object.assign({}, options.headers || {});
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+    let res = await fetch(url, { ...options, headers });
+    if (res.status === 401) {
+      cachedJwt = null;
+      token = await getAuthToken();
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+        res = await fetch(url, { ...options, headers });
+      }
+    }
+    return res;
+  }
+
   function showToast(message, type = "info") {
     const existing = document.querySelector(".aa-classroom-toast");
     if (existing) existing.remove();
@@ -132,11 +164,11 @@
       drawerDlBtn.addEventListener("click", async () => {
         drawerDlBtn.innerHTML = `<span>⏳ Preparing Solution Package...</span>`;
         try {
-          const cwRes = await fetch(`${BACKEND_URL}/api/classroom/coursework`).catch(() => null);
+          const cwRes = await authedFetch(`${BACKEND_URL}/api/classroom/coursework`).catch(() => null);
           if (cwRes && cwRes.ok) {
             const cwList = await cwRes.json();
             if (cwList && cwList[0]) {
-              await fetch(`${BACKEND_URL}/api/assignment/generate`, {
+              await authedFetch(`${BACKEND_URL}/api/assignment/generate`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ coursework_id: cwList[0].id })
@@ -368,7 +400,7 @@
         let cwId = null;
 
         if (details.title && details.title !== "Current Classroom Assignment") {
-          const regRes = await fetch(`${BACKEND_URL}/api/classroom/register-live`, {
+          const regRes = await authedFetch(`${BACKEND_URL}/api/classroom/register-live`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -389,7 +421,7 @@
 
         // Fallback to existing indexed coursework if needed
         if (!cwId) {
-          const cwRes = await fetch(`${BACKEND_URL}/api/classroom/coursework`).catch(() => null);
+          const cwRes = await authedFetch(`${BACKEND_URL}/api/classroom/coursework`).catch(() => null);
           if (cwRes && cwRes.ok) {
             const cwList = await cwRes.json();
             const matched = (cwList || []).find(c =>
@@ -402,7 +434,7 @@
 
         // 2. Synthesize deliverables tailored to this assignment
         if (cwId) {
-          await fetch(`${BACKEND_URL}/api/assignment/${cwId}/autonomous-submit`, { method: "POST" }).catch(() => null);
+          await authedFetch(`${BACKEND_URL}/api/assignment/${cwId}/autonomous-submit`, { method: "POST" }).catch(() => null);
         }
 
         // 3. Perform REAL Turn-In right on Google Classroom DOM
@@ -429,7 +461,7 @@
         let cwId = null;
 
         if (details.title && details.title !== "Current Classroom Assignment") {
-          const regRes = await fetch(`${BACKEND_URL}/api/classroom/register-live`, {
+          const regRes = await authedFetch(`${BACKEND_URL}/api/classroom/register-live`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -449,7 +481,7 @@
         }
 
         if (!cwId) {
-          const cwRes = await fetch(`${BACKEND_URL}/api/classroom/coursework`).catch(() => null);
+          const cwRes = await authedFetch(`${BACKEND_URL}/api/classroom/coursework`).catch(() => null);
           if (cwRes && cwRes.ok) {
             const cwList = await cwRes.json();
             if (cwList && cwList[0]) cwId = cwList[0].id;
@@ -457,7 +489,7 @@
         }
 
         if (cwId) {
-          await fetch(`${BACKEND_URL}/api/assignment/generate`, {
+          await authedFetch(`${BACKEND_URL}/api/assignment/generate`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ coursework_id: cwId })

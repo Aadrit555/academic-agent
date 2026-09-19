@@ -51,7 +51,15 @@
       }
 
       try {
-        const token = localStorage.getItem("academic_agent_jwt");
+        let token = localStorage.getItem("academic_agent_jwt");
+        if (!token) {
+          const sessRes = await fetch("/api/auth/session", { method: "POST" }).catch(() => null);
+          if (sessRes && sessRes.ok) {
+            const sData = await sessRes.json();
+            token = sData.access_token;
+            if (token) localStorage.setItem("academic_agent_jwt", token);
+          }
+        }
         const headers = token ? { "Authorization": `Bearer ${token}` } : {};
 
         // Fetch coursework list and locate matching item

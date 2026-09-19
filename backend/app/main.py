@@ -352,8 +352,42 @@ def register_user(req: UserRegister, db: Session = Depends(get_db)):
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+@app.get("/api/auth/session", response_model=TokenResponse)
+@app.post("/api/auth/session", response_model=TokenResponse)
+def get_or_create_showcase_session(db: Session = Depends(get_db)):
+    """Provides instant seamless auto-login for showcase demo account (aadrit_y@srmap.edu.in)."""
+    user = get_or_create_default_user(db)
+    token = create_access_token(user_id=user.id, email=user.email, role=user.role)
+    return TokenResponse(
+        access_token=token,
+        token_type="Bearer",
+        user=UserResponse(
+            id=user.id,
+            email=user.email,
+            name=user.name,
+            role=user.role,
+            created_at=user.created_at
+        )
+    )
+
 @app.post("/api/auth/login", response_model=TokenResponse)
 def login_user(req: UserLogin, db: Session = Depends(get_db)):
+    # Auto-login default showcase account if empty credentials supplied
+    if not (req.email and req.email.strip()) and not (req.password and req.password.strip()):
+        user = get_or_create_default_user(db)
+        token = create_access_token(user_id=user.id, email=user.email, role=user.role)
+        return TokenResponse(
+            access_token=token,
+            token_type="Bearer",
+            user=UserResponse(
+                id=user.id,
+                email=user.email,
+                name=user.name,
+                role=user.role,
+                created_at=user.created_at
+            )
+        )
+
     clean_identifier = req.email.strip().lower()
     
     # 1. Match by ERP Student Registration Number (e.g. AP23000000001)

@@ -24,9 +24,56 @@ const AddonApp = {
 
   async init() {
     this.parseUrlContext();
+    await this.ensureAuthenticated();
     await this.loadAuthStatus();
     await this.loadNextClass();
     await this.loadCoursework();
+  },
+
+  async ensureAuthenticated() {
+    let token = localStorage.getItem("academic_agent_jwt");
+    if (token) {
+      try {
+        const res = await fetch("/api/auth/me", {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const user = await res.json();
+          this.updateUserBadge(user);
+          return token;
+        }
+      } catch (e) {
+        console.warn("[Auth] Session check warning:", e);
+      }
+    }
+
+    // Auto-login showcase demo account (Aadrit Y - aadrit_y@srmap.edu.in)
+    try {
+      const res = await fetch("/api/auth/session", { method: "POST" });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.access_token) {
+          localStorage.setItem("academic_agent_jwt", data.access_token);
+          if (data.user) {
+            localStorage.setItem("academic_agent_user", JSON.stringify(data.user));
+            this.updateUserBadge(data.user);
+          }
+          return data.access_token;
+        }
+      }
+    } catch (err) {
+      console.warn("[Auth] Auto-login error:", err);
+    }
+    return null;
+  },
+
+  updateUserBadge(user) {
+    if (!user) return;
+    const nameEl = document.getElementById("account-display-name");
+    const chip = document.getElementById("addon-user-chip");
+    const displayName = user.name || (user.email ? user.email.split("@")[0] : "Aadrit Y");
+    if (nameEl) nameEl.textContent = displayName;
+    if (chip) chip.title = `Active Account: ${user.email} (${user.role})`;
   },
 
   parseUrlContext() {
@@ -1174,7 +1221,11 @@ const AddonApp = {
 
 // ── Generic API & Toast Utilities ──────────────────────────────────────────
 async function api(path, options = {}) {
-  const token = localStorage.getItem("academic_agent_jwt");
+  let token = localStorage.getItem("academic_agent_jwt");
+  if (!token && !path.startsWith("/auth/session") && !path.startsWith("/auth/login")) {
+    token = await AddonApp.ensureAuthenticated();
+  }
+
   const headers = Object.assign({}, options.headers || {});
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
@@ -1182,10 +1233,13 @@ async function api(path, options = {}) {
 
   let res = await fetch(`/api${path}`, { ...options, headers });
 
-  if (res.status === 401 && token) {
+  if (res.status === 401 && !path.startsWith("/auth/session") && !path.startsWith("/auth/login")) {
     localStorage.removeItem("academic_agent_jwt");
-    delete headers["Authorization"];
-    res = await fetch(`/api${path}`, { ...options, headers });
+    token = await AddonApp.ensureAuthenticated();
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+      res = await fetch(`/api${path}`, { ...options, headers });
+    }
   }
 
   if (!res.ok) {

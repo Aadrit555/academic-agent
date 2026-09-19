@@ -16,8 +16,8 @@ class UserRegister(BaseModel):
     password: str
 
 class UserLogin(BaseModel):
-    email: str
-    password: str
+    email: Optional[str] = None
+    password: Optional[str] = None
 
 class UserResponse(UserBase):
     id: int
