@@ -41,15 +41,29 @@
   }
 
   function getLivePageDetails() {
-    const h1 = document.querySelector('h1') || document.querySelector('[role="main"] h1');
+    const h1 = document.querySelector('h1') || document.querySelector('[role="main"] h1') || document.querySelector('.YVvGBb');
     const title = h1 ? h1.textContent.trim() : "Current Classroom Assignment";
 
+    // Course Name from breadcrumb or navigation header
+    let courseName = "";
+    const courseLink = document.querySelector('header a[href*="/c/"], nav a[href*="/c/"], .onKcGd, .QRiHXd');
+    if (courseLink) courseName = courseLink.textContent.trim();
+
+    // Teacher name
     let teacher = "";
     const commentInput = document.querySelector('[aria-label*="Add comment to" i]');
     if (commentInput) {
       const match = (commentInput.getAttribute('aria-label') || '').match(/Add comment to\s+([^.]+)/i);
       if (match) teacher = match[1].trim();
     }
+    if (!teacher) {
+      const authorEl = document.querySelector('.tLDEHd, .wfdNvd');
+      if (authorEl) teacher = authorEl.textContent.trim();
+    }
+
+    // Assignment instructions / description
+    const descEl = document.querySelector('.W2K01b, .bFjUmb-rsqaee, [role="article"]');
+    const description = descEl ? descEl.textContent.trim() : "";
 
     let status = "Assigned";
     const statusBadges = Array.from(document.querySelectorAll('aside, [role="region"], .z3vRcc, .oBSRLe, .WkhuNc'));
@@ -65,7 +79,7 @@
       .filter(t => t.length > 2 && !t.includes('Google Drive'))
       .slice(0, 3);
 
-    return { title, teacher, status, attachments };
+    return { title, courseName, teacher, description, status, attachments };
   }
 
   function renderDrawerContent() {
@@ -304,22 +318,50 @@
       showToast("Academic Agent: Generating deliverables, verifying with compiler, and turning in to Google Classroom...", "info");
 
       try {
-        // 1. Sync and generate deliverables via backend
+        // 1. Sync live assignment details to backend
+        const details = getLivePageDetails();
         const ctx = getCourseContext();
-        const cwRes = await fetch(`${BACKEND_URL}/api/classroom/coursework`).catch(() => null);
-        if (cwRes && cwRes.ok) {
-          const cwList = await cwRes.json();
-          const matched = (cwList || []).find(c =>
-            (ctx && ctx.courseworkId && String(c.coursework_id) === String(ctx.courseworkId)) ||
-            (ctx && ctx.courseId && String(c.classroom_course_id) === String(ctx.courseId))
-          ) || (cwList && cwList[0]);
+        let cwId = null;
 
-          if (matched) {
-            await fetch(`${BACKEND_URL}/api/assignment/${matched.id}/autonomous-submit`, { method: "POST" }).catch(() => null);
+        if (details.title && details.title !== "Current Classroom Assignment") {
+          const regRes = await fetch(`${BACKEND_URL}/api/classroom/register-live`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              title: details.title,
+              description: details.description || "",
+              course_name: details.courseName || "Google Classroom Course",
+              classroom_course_id: ctx ? ctx.courseId : "c_live",
+              coursework_id: ctx ? ctx.courseworkId : "",
+              materials: details.attachments.map(a => ({ driveFile: { title: a, id: "live_handout" } }))
+            })
+          }).catch(() => null);
+
+          if (regRes && regRes.ok) {
+            const regData = await regRes.json();
+            cwId = regData.id;
           }
         }
 
-        // 2. Perform REAL Turn-In right on Google Classroom DOM
+        // Fallback to existing indexed coursework if needed
+        if (!cwId) {
+          const cwRes = await fetch(`${BACKEND_URL}/api/classroom/coursework`).catch(() => null);
+          if (cwRes && cwRes.ok) {
+            const cwList = await cwRes.json();
+            const matched = (cwList || []).find(c =>
+              (ctx && ctx.courseworkId && String(c.coursework_id) === String(ctx.courseworkId)) ||
+              (ctx && ctx.courseId && String(c.classroom_course_id) === String(ctx.courseId))
+            ) || (cwList && cwList[0]);
+            if (matched) cwId = matched.id;
+          }
+        }
+
+        // 2. Synthesize deliverables tailored to this assignment
+        if (cwId) {
+          await fetch(`${BACKEND_URL}/api/assignment/${cwId}/autonomous-submit`, { method: "POST" }).catch(() => null);
+        }
+
+        // 3. Perform REAL Turn-In right on Google Classroom DOM
         await performRealGoogleClassroomTurnIn();
 
         btn.className = "aa-classroom-inline-btn is-success";

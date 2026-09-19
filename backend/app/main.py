@@ -564,6 +564,66 @@ def get_coursework_list(db: Session = Depends(get_db), user: User = Depends(curr
         })
     return results
 
+class RegisterLiveCourseworkRequest(BaseModel):
+    title: str
+    description: Optional[str] = ""
+    course_name: Optional[str] = "Current Google Classroom Course"
+    classroom_course_id: Optional[str] = ""
+    coursework_id: Optional[str] = ""
+    materials: Optional[list] = []
+
+@app.post("/api/classroom/register-live")
+def register_live_coursework(
+    req: RegisterLiveCourseworkRequest,
+    db: Session = Depends(get_db),
+    user: User = Depends(current_user)
+):
+    """Dynamically registers or updates any assignment visited in Google Classroom by the extension."""
+    course_id_str = req.classroom_course_id or "c_live"
+    cw_id_str = req.coursework_id or f"cw_{abs(hash(req.title)) % 100000}"
+
+    course = db.query(Course).filter_by(user_id=user.id, classroom_id=course_id_str).first()
+    if not course:
+        course = Course(
+            user_id=user.id,
+            name=req.course_name or "Active Course",
+            code="ACAD",
+            classroom_id=course_id_str
+        )
+        db.add(course)
+        db.commit()
+        db.refresh(course)
+
+    cw = db.query(Coursework).filter_by(user_id=user.id, coursework_id=cw_id_str).first()
+    if not cw:
+        cw = db.query(Coursework).filter_by(user_id=user.id, title=req.title).first()
+
+    if not cw:
+        cw = Coursework(
+            user_id=user.id,
+            course_id=course.id,
+            classroom_course_id=course_id_str,
+            coursework_id=cw_id_str,
+            title=req.title,
+            description=req.description or "",
+            due_date=(date.today() + timedelta(days=2)).isoformat(),
+            due_time="23:59:00",
+            status="READY",
+            materials_json=json.dumps(req.materials or [])
+        )
+        db.add(cw)
+        db.commit()
+        db.refresh(cw)
+    else:
+        if req.description and not cw.description:
+            cw.description = req.description
+        if req.materials:
+            cw.materials_json = json.dumps(req.materials)
+        db.commit()
+        db.refresh(cw)
+
+    return {"id": cw.id, "title": cw.title, "status": cw.status}
+
 @app.post("/api/classroom/attachments")
 def create_addon_attachment(
     req: CreateAddonAttachmentRequest,
