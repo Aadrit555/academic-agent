@@ -847,6 +847,19 @@ def submit_now(coursework_id: int, db: Session = Depends(get_db), user: User = D
     cw = db.query(Coursework).filter_by(id=coursework_id, user_id=user.id).first()
     if not cw:
         raise HTTPException(status_code=404, detail="Coursework not found")
+
+    # If already turned in, return the existing verified submission details idempotently
+    if cw.status == "SUBMITTED":
+        sub = db.query(Submission).filter_by(coursework_id=cw.id).order_by(Submission.id.desc()).first()
+        return SubmissionResultResponse(
+            coursework_id=cw.id,
+            submission_id=sub.classroom_submission_id if sub else (cw.submission_id or f"sub_{cw.classroom_course_id}_{cw.coursework_id}"),
+            state=sub.verified_state if sub else "TURNED_IN",
+            drive_file_id=sub.drive_file_id if sub else None,
+            turned_in_at=sub.turned_in_at if sub else None,
+            message=f"Assignment '{cw.title}' is already turned in to Google Classroom."
+        )
+
     try:
         # Autonomous preparation: generate deliverable if not yet generated
         assignment = (

@@ -248,7 +248,7 @@ const AddonApp = {
     }
   },
 
-  async selectCoursework(id) {
+  async selectCoursework(id, triggerAutoPilot = true) {
     if (!id) return;
     this.state.selectedId = Number(id);
     this.state.activeItem = this.state.coursework.find(c => c.id === this.state.selectedId);
@@ -268,7 +268,7 @@ const AddonApp = {
     this.renderProgressTracker();
 
     // Auto-pilot check: "user does nothing"
-    if (localStorage.getItem("academic_autopilot") === "true") {
+    if (triggerAutoPilot && localStorage.getItem("academic_autopilot") === "true") {
       if (this.state.activeItem && this.state.activeItem.status !== "SUBMITTED" && !this.state.isExecuting) {
         setTimeout(() => this.submitNow(), 400);
       }
@@ -984,7 +984,7 @@ const AddonApp = {
   },
 
   async submitNow() {
-    if (!this.state.selectedId) return;
+    if (!this.state.selectedId || this.state.isExecuting) return;
 
     try {
       this.state.isExecuting = true;
@@ -996,10 +996,10 @@ const AddonApp = {
       });
 
       Toast.success(res.message || "🎉 Assignment turned in directly to Google Classroom! Zero download needed.");
-      await this.selectCoursework(this.state.selectedId);
+      await this.loadCoursework();
+      await this.selectCoursework(this.state.selectedId, false);
     } catch (e) {
       Toast.error(`Submission: ${e.message}`);
-      await this.selectCoursework(this.state.selectedId);
     } finally {
       this.state.isExecuting = false;
       this.renderProgressTracker();

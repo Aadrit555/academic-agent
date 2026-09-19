@@ -73,8 +73,8 @@
   // 3. Extract Course & Coursework from URL
   function getCourseContext() {
     const path = window.location.pathname;
-    // Format: /c/{courseId}/a/{courseworkId}/details or /u/{index}/c/{courseId}/a/{courseworkId}
-    const match = path.match(/\/c\/([A-Za-z0-9_-]+)(?:\/a\/([A-Za-z0-9_-]+))?/);
+    // Matches /c/{courseId}/a/{courseworkId}, /c/{courseId}/sa/{courseworkId}, /u/{index}/c/{courseId}/a/{courseworkId}, etc.
+    const match = path.match(/\/c\/([A-Za-z0-9_-]+)(?:\/(?:a|sa|submissions)\/([A-Za-z0-9_-]+))?/);
     if (match) {
       return {
         courseId: match[1],
@@ -92,15 +92,41 @@
     if (document.getElementById("aa-injected-submit-btn")) return;
 
     // Search for Google Classroom's "Your work" submission container
-    const yourWorkContainers = document.querySelectorAll(
-      '[aria-label*="Your work" i], [aria-label*="submission" i], .z3vRcc, .oBSRLe, .WkhuNc'
-    );
+    let target = null;
 
-    const targetContainer = yourWorkContainers.length > 0
-      ? yourWorkContainers[0]
-      : document.querySelector('aside') || document.querySelector('form');
+    // Strategy 1: Look for "Add or create" / "Mark as done" / "Turn in" button
+    const allButtons = Array.from(document.querySelectorAll('button, div[role="button"], a[role="button"]'));
+    for (const b of allButtons) {
+      const txt = (b.textContent || "").trim();
+      if (/^(\+ )?Add or create$/i.test(txt) || /^Turn in$/i.test(txt) || /^Mark as done$/i.test(txt)) {
+        target = { container: b.parentElement, insertBefore: b };
+        break;
+      }
+    }
 
-    if (!targetContainer) return;
+    // Strategy 2: Look for heading or element with text "Your work"
+    if (!target) {
+      const headings = Array.from(document.querySelectorAll('h2, h3, div, span'));
+      for (const h of headings) {
+        if (h.children.length === 0 && /^Your work$/i.test((h.textContent || "").trim())) {
+          const parentCard = h.closest('[role="region"], aside, form, div') || h.parentElement;
+          if (parentCard) {
+            target = { container: parentCard, insertBefore: h.nextElementSibling };
+            break;
+          }
+        }
+      }
+    }
+
+    // Strategy 3: Standard Google Classroom container classes
+    if (!target) {
+      const fallback = document.querySelector('[aria-label*="Your work" i], [aria-label*="submission" i], .z3vRcc, .oBSRLe, .WkhuNc, aside');
+      if (fallback) {
+        target = { container: fallback, insertBefore: fallback.firstElementChild };
+      }
+    }
+
+    if (!target || !target.container) return;
 
     const btn = document.createElement("button");
     btn.id = "aa-injected-submit-btn";
@@ -112,12 +138,15 @@
       e.stopPropagation();
 
       btn.disabled = true;
-      btn.innerHTML = `<span>⏳ Ingesting &amp; Turning in to Classroom...</span>`;
-      showToast("Academic Agent: Reading handout, compiling code, and submitting to Google Classroom...", "info");
+      btn.innerHTML = `<span>⏳ Reading Handout, Compiling &amp; Submitting...</span>`;
+      showToast("Academic Agent: Reading handout, synthesizing deliverables, running compiler validation, and turning in to Google Classroom...", "info");
 
       try {
         // First sync/find the coursework ID in our local database
         const cwRes = await fetch(`${BACKEND_URL}/api/classroom/coursework`);
+        if (!cwRes.ok) {
+          throw new Error("Academic Agent backend is not responding on http://127.0.0.1:8000. Is the server running?");
+        }
         const cwList = await cwRes.json();
         const matched = (cwList || []).find(c =>
           String(c.coursework_id) === String(ctx.courseworkId) ||
@@ -125,27 +154,28 @@
         ) || (cwList && cwList[0]);
 
         if (!matched) {
-          throw new Error("Could not find matching coursework. Opening Companion for manual selection.");
+          throw new Error("Coursework not yet indexed. Opening Companion for 1-click execution.");
         }
 
-        // Trigger autonomous submit
+        // Trigger autonomous submit (creates code, report, runs validation, uploads to Drive, turns in)
         const submitRes = await fetch(`${BACKEND_URL}/api/assignment/${matched.id}/autonomous-submit`, {
           method: "POST"
         });
 
+        const data = await submitRes.json();
         if (!submitRes.ok) {
-          const errData = await submitRes.json();
-          throw new Error(errData.detail || "Submission failed");
+          throw new Error(data.detail || "Submission failed");
         }
 
-        const data = await submitRes.json();
         btn.className = "aa-classroom-inline-btn is-success";
         btn.innerHTML = `<span>✓ Turned In Successfully!</span>`;
-        showToast("🎉 Successfully turned in to Google Classroom! Zero download needed.", "success");
+        showToast(data.message || "🎉 Successfully turned in to Google Classroom! Zero download needed.", "success");
 
         // Reload the Google Classroom iframe/drawer if open
         const iframe = document.getElementById("academic-agent-iframe");
-        if (iframe) iframe.contentWindow.location.reload();
+        if (iframe && iframe.contentWindow) {
+          iframe.contentWindow.location.reload();
+        }
       } catch (err) {
         btn.disabled = false;
         btn.innerHTML = `<span>⚡ Auto-Create &amp; Turn In (Zero Download)</span>`;
@@ -154,7 +184,11 @@
       }
     });
 
-    targetContainer.prepend(btn);
+    if (target.insertBefore) {
+      target.container.insertBefore(btn, target.insertBefore);
+    } else {
+      target.container.prepend(btn);
+    }
   }
 
   // 5. Initialize & Observe DOM mutations (Classroom is an SPA)
@@ -176,3 +210,4 @@
     init();
   }
 })();
+
