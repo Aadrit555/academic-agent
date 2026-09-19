@@ -12,20 +12,19 @@
 <body>
   <div class="app-shell" id="app-shell">
 
-    <!-- ── Desktop Top Header Bar ─────────────────────────────────────────── -->
+    <!-- ── Minimal Top Header ─────────────────────────────────────────────── -->
     <header class="app-header">
       <div class="header-left">
         <div class="brand-monogram" aria-hidden="true">AA</div>
         <div class="brand-meta">
           <div class="brand-heading">
-            <span>ACADEMIC AGENT</span>
-            <span class="brand-pill">WORKSPACE</span>
+            <span>Academic Agent</span>
+            <span class="brand-pill">Workspace</span>
           </div>
-          <span class="brand-caption">Google Classroom AI Layer</span>
         </div>
       </div>
 
-      <!-- Command Palette Trigger -->
+      <!-- Command Palette Trigger (Raycast style) -->
       <div class="header-center">
         <button class="command-trigger-btn" id="btn-open-command-palette" onclick="AddonApp.openCommandPalette()" aria-label="Open Command Palette">
           <div class="command-trigger-left">
@@ -33,7 +32,7 @@
               <circle cx="11" cy="11" r="8"></circle>
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
-            <span>Search coursework, commands, shortcuts...</span>
+            <span>Search coursework or commands...</span>
           </div>
           <div class="command-shortcut-kbd">
             <kbd>Ctrl</kbd>
@@ -43,7 +42,7 @@
       </div>
 
       <div class="header-right">
-        <!-- Live Status Chips -->
+        <!-- Live Connection Status Chips -->
         <button class="status-chip disconnected" id="addon-google-chip" title="Google Classroom Connection Status"
           data-action="openSettingsTab" data-tab="google" onclick="AddonApp.openSettingsTab('google')">
           <span class="chip-dot"></span>
@@ -57,7 +56,7 @@
         </button>
 
         <!-- Theme Toggle -->
-        <button class="icon-action-btn" id="btn-theme-toggle" onclick="AddonApp.toggleTheme()" title="Toggle Light / Dark Mode" aria-label="Toggle Theme">
+        <button class="icon-action-btn" id="btn-theme-toggle" onclick="AddonApp.toggleTheme()" title="Toggle Theme" aria-label="Toggle Theme">
           <svg class="svg-icon" id="theme-icon" viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="5"></circle>
             <line x1="12" y1="1" x2="12" y2="3"></line>
@@ -71,8 +70,8 @@
           </svg>
         </button>
 
-        <!-- Settings Modal Trigger -->
-        <button class="icon-action-btn" id="btn-settings" title="Settings &amp; Integrations" data-action="openModal"
+        <!-- Settings Trigger -->
+        <button class="icon-action-btn" id="btn-settings" title="Settings" data-action="openModal"
           data-modal="settings-modal" onclick="openModal('settings-modal')" aria-label="Settings">
           <svg class="svg-icon" viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="3"></circle>
@@ -95,7 +94,7 @@
               <polyline points="16 18 22 12 16 6"></polyline>
               <polyline points="8 6 2 12 8 18"></polyline>
             </svg>
-            <span>Assignment Workbench</span>
+            <span>Workbench</span>
           </button>
 
           <button class="nav-link" id="nav-tab-overview" onclick="AddonApp.switchMainTab('overview')">
@@ -113,7 +112,7 @@
               <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
               <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
             </svg>
-            <span>Enrolled Courses</span>
+            <span>Courses</span>
           </button>
 
           <button class="nav-link" id="nav-tab-brain" onclick="AddonApp.switchMainTab('brain')">
@@ -122,7 +121,7 @@
               <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
               <line x1="12" y1="22.08" x2="12" y2="12"></line>
             </svg>
-            <span>Study Brain &amp; Handouts</span>
+            <span>Study Brain</span>
           </button>
 
           <button class="nav-link" id="nav-tab-timetable" onclick="AddonApp.switchMainTab('timetable')">
@@ -132,7 +131,7 @@
               <line x1="8" y1="2" x2="8" y2="6"></line>
               <line x1="3" y1="10" x2="21" y2="10"></line>
             </svg>
-            <span>Timetable &amp; Schedule</span>
+            <span>Timetable</span>
           </button>
 
           <button class="nav-link" id="nav-tab-settings" onclick="AddonApp.openSettingsTab('portal')">
@@ -140,7 +139,7 @@
               <circle cx="12" cy="12" r="3"></circle>
               <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
             </svg>
-            <span>Settings &amp; Accounts</span>
+            <span>Settings</span>
           </button>
         </div>
 
@@ -170,17 +169,17 @@
       <main class="app-main">
 
         <!-- Connection Alerts Bar -->
-        <div id="connection-banner-container" style="display: none; padding: 12px 16px 0; flex-direction: column; gap: 8px;">
+        <div id="connection-banner-container" style="display: none; padding: 10px 14px 0; flex-direction: column; gap: 8px;">
           <div class="connection-alert-card" id="banner-google-needed" style="display: none;">
             <div class="cac-header">
-              <svg class="svg-icon" viewBox="0 0 24 24" style="stroke: #fbbf24;">
+              <svg class="svg-icon" viewBox="0 0 24 24" style="stroke: var(--warning);">
                 <circle cx="12" cy="12" r="10"></circle>
                 <line x1="12" y1="8" x2="12" y2="12"></line>
                 <line x1="12" y1="16" x2="12.01" y2="16"></line>
               </svg>
               <div class="cac-text">
                 <span class="cac-title">Google Classroom Disconnected</span>
-                <span class="cac-sub">Sign in with Google to sync active courses and coursework directly.</span>
+                <span class="cac-sub">Sign in with Google to sync courses and coursework directly.</span>
               </div>
             </div>
             <div class="cac-actions">
@@ -193,7 +192,7 @@
 
           <div class="connection-alert-card" id="banner-portal-needed" style="display: none;">
             <div class="cac-header">
-              <svg class="svg-icon" viewBox="0 0 24 24" style="stroke: #fbbf24;">
+              <svg class="svg-icon" viewBox="0 0 24 24" style="stroke: var(--warning);">
                 <circle cx="12" cy="12" r="10"></circle>
                 <line x1="12" y1="8" x2="12" y2="12"></line>
                 <line x1="12" y1="16" x2="12.01" y2="16"></line>
@@ -222,14 +221,14 @@
             <div class="view-header-bar">
               <div class="view-heading-group">
                 <span class="view-heading-title">Assignment Workbench</span>
-                <span class="view-heading-sub">Multi-Column Verification &amp; Turn-in Engine</span>
+                <span class="view-heading-sub">Verification &amp; turn-in engine</span>
               </div>
               <div class="view-actions-group">
-                <label for="coursework-select" style="font-size: 11px; font-weight: 600; color: var(--text-secondary);">Select Task:</label>
-                <select class="form-select-compact" id="coursework-select" aria-label="Select Assignment" style="min-width: 280px;">
+                <label for="coursework-select" style="font-size: 11px; font-weight: 500; color: var(--text-secondary);">Task:</label>
+                <select class="form-select-compact" id="coursework-select" aria-label="Select Assignment" style="min-width: 260px;">
                   <option value="">Loading coursework...</option>
                 </select>
-                <button class="btn btn-secondary btn-sm" onclick="AddonApp.loadCoursework()" title="Refresh coursework list">
+                <button class="btn btn-secondary btn-sm" onclick="AddonApp.loadCoursework()" title="Reload list">
                   <svg class="svg-icon svg-icon-sm" viewBox="0 0 24 24">
                     <polyline points="23 4 23 10 17 10"></polyline>
                     <polyline points="1 20 1 14 7 14"></polyline>
@@ -240,10 +239,10 @@
               </div>
             </div>
 
-            <!-- 3-Column Desktop Grid -->
+            <!-- Minimal 3-Column Desktop Grid -->
             <div class="workbench-grid">
 
-              <!-- Column 1: Assignment Brief & Professor's Ingested Handout -->
+              <!-- Column 1: Assignment Brief & Handouts -->
               <div class="workbench-column">
                 <div class="col-header">
                   <span class="col-title">
@@ -252,7 +251,6 @@
                       <polyline points="14 2 14 8 20 8"></polyline>
                       <line x1="16" y1="13" x2="8" y2="13"></line>
                       <line x1="16" y1="17" x2="8" y2="17"></line>
-                      <polyline points="10 9 9 9 8 9"></polyline>
                     </svg>
                     Requirements &amp; Handout
                   </span>
@@ -262,16 +260,16 @@
                     <div id="assignment-details-box">
                       <div class="loading-compact">
                         <span class="spinner-dot"></span>
-                        <span>Fetching assignment requirements...</span>
+                        <span>Fetching requirements...</span>
                       </div>
                     </div>
                   </section>
 
                   <section id="section-material">
-                    <div class="section-label">INGESTED CLASSROOM HANDOUTS</div>
+                    <div class="section-label">INGESTED HANDOUTS</div>
                     <div id="course-ingested-materials" class="course-ingested-materials">
                       <div class="ingested-notice-card">
-                        <span>Professor handout PDF and syllabus are indexed into Study Brain.</span>
+                        <span>Course materials are indexed into Study Brain.</span>
                       </div>
                     </div>
                   </section>
@@ -286,14 +284,14 @@
                       <polyline points="16 18 22 12 16 6"></polyline>
                       <polyline points="8 6 2 12 8 18"></polyline>
                     </svg>
-                    Student Deliverables
+                    Deliverables
                   </span>
                 </div>
                 <div class="col-body">
                   <section id="section-deliverables">
                     <div id="deliverables-box">
                       <div class="empty-compact">
-                        <span>Deliverables not yet generated. Execute the assignment to create code and complete the lab report.</span>
+                        <span>Deliverables not yet generated. Execute the assignment to generate code and the lab report.</span>
                       </div>
                     </div>
                   </section>
@@ -308,7 +306,7 @@
                       <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                       <polyline points="22 4 12 14.01 9 11.01"></polyline>
                     </svg>
-                    Verification Oracle &amp; Logs
+                    Validation Oracle
                   </span>
                 </div>
                 <div class="col-body">
@@ -322,16 +320,16 @@
 
             </div>
 
-            <!-- Full Width Bottom Gatekeeper Bar -->
+            <!-- Minimal Bottom Gatekeeper Bar -->
             <div class="gatekeeper-bar">
               <section id="section-progress">
-                <div class="section-label">EXECUTION PROGRESS STATE MACHINE</div>
+                <div class="section-label">PROGRESS STATE MACHINE</div>
                 <div id="progress-tracker-box">
                   <div class="progress-stepper">
-                    <div class="step-item"><span class="step-icon">&#9675;</span><span class="step-label">Analyzed</span></div>
-                    <div class="step-item"><span class="step-icon">&#9675;</span><span class="step-label">Generated</span></div>
-                    <div class="step-item"><span class="step-icon">&#9675;</span><span class="step-label">Validated</span></div>
-                    <div class="step-item"><span class="step-icon">&#9675;</span><span class="step-label">Scheduled</span></div>
+                    <div class="step-item"><span class="step-icon">[ ]</span><span class="step-label">Analyzed</span></div>
+                    <div class="step-item"><span class="step-icon">[ ]</span><span class="step-label">Generated</span></div>
+                    <div class="step-item"><span class="step-icon">[ ]</span><span class="step-label">Validated</span></div>
+                    <div class="step-item"><span class="step-icon">[ ]</span><span class="step-label">Scheduled</span></div>
                   </div>
                 </div>
               </section>
@@ -341,10 +339,10 @@
                   <div class="auto-box">
                     <div class="gatekeeper-row">
                       <div>
-                        <div class="auto-title">AUTONOMOUS AUTO-SUBMIT</div>
+                        <div class="auto-title">Autonomous Auto-Submit</div>
                         <div class="auto-sub">Scheduled: <b>Default: 4 hours before deadline</b></div>
                       </div>
-                      <div style="display: flex; gap: 8px;">
+                      <div style="display: flex; gap: 6px;">
                         <button class="btn btn-sm btn-success" id="btn-toggle-auto" data-action="toggleAutoSubmit"
                           onclick="AddonApp.toggleAutoSubmit()">
                           Enabled (ON)
@@ -369,7 +367,7 @@
         <div class="view-pane" id="view-overview">
           <div class="view-header-bar">
             <div class="view-heading-group">
-              <span class="view-heading-title">System Overview &amp; Schedule</span>
+              <span class="view-heading-title">System Overview</span>
               <span class="view-heading-sub">Institutional context and timetable state</span>
             </div>
             <button class="btn btn-secondary btn-sm" onclick="AddonApp.refreshERP()">
@@ -385,7 +383,7 @@
           <div class="overview-stats-grid">
             <div class="stat-card">
               <div class="stat-header">
-                <span class="stat-label">Google Classroom Courses</span>
+                <span class="stat-label">Google Classroom</span>
                 <svg class="svg-icon" viewBox="0 0 24 24">
                   <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
                   <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
@@ -397,7 +395,7 @@
 
             <div class="stat-card">
               <div class="stat-header">
-                <span class="stat-label">Active Coursework</span>
+                <span class="stat-label">Active Tasks</span>
                 <svg class="svg-icon" viewBox="0 0 24 24">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                   <polyline points="14 2 14 8 20 8"></polyline>
@@ -419,8 +417,7 @@
             </div>
           </div>
 
-          <!-- Section 1: Next Class Widget (Real Timetable & Room) -->
-          <section class="addon-section" id="section-next-class" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px;">
+          <section class="addon-section" id="section-next-class" style="background: var(--bg-canvas); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 14px;">
             <div class="section-label">UPCOMING CLASS SCHEDULE (REAL ERP TIMETABLE)</div>
             <div id="next-class-content">
               <div class="loading-compact">
@@ -450,7 +447,7 @@
             </button>
           </div>
 
-          <div id="courses-list-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
+          <div id="courses-list-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px;">
             <div class="empty-compact">
               <span>Connect Google Classroom to load enrolled courses.</span>
             </div>
@@ -463,27 +460,27 @@
         <div class="view-pane" id="view-brain">
           <div class="view-header-bar">
             <div class="view-heading-group">
-              <span class="view-heading-title">Study Brain &amp; Handout RAG</span>
+              <span class="view-heading-title">Study Brain &amp; Handouts</span>
               <span class="view-heading-sub">Institutional course materials and syllabus indexing</span>
             </div>
           </div>
 
-          <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; display: flex; flex-direction: column; gap: 12px;">
-            <div class="material-actions-bar" style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <div style="background: var(--bg-canvas); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 14px; display: flex; flex-direction: column; gap: 10px;">
+            <div class="material-actions-bar" style="display: flex; gap: 6px; flex-wrap: wrap;">
               <button class="btn btn-secondary btn-sm" id="btn-summarize-material" onclick="AddonApp.queryMaterial('summary')">
                 Summarize Syllabus
               </button>
               <button class="btn btn-secondary btn-sm" id="btn-questions-material" onclick="AddonApp.queryMaterial('questions')">
-                Viva / Exam Questions
+                Viva Questions
               </button>
-              <label class="btn btn-secondary btn-sm btn-upload-label" title="Upload supplementary course material">
-                <span>+ Upload Extra Document</span>
+              <label class="btn btn-secondary btn-sm btn-upload-label" title="Upload document">
+                <span>+ Upload Document</span>
                 <input type="file" id="material-file-upload" accept=".pdf,.docx,.txt,.md" style="display: none;"
                   onchange="AddonApp.handleMaterialUpload(this)">
               </label>
             </div>
 
-            <div id="material-output-box" class="material-output-box" style="display: none; background: var(--bg-surface); padding: 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);"></div>
+            <div id="material-output-box" class="material-output-box" style="display: none; background: var(--bg-subtle); padding: 12px; border-radius: var(--radius-xs); border: 1px solid var(--border-color);"></div>
           </div>
         </div>
 
@@ -493,8 +490,8 @@
         <div class="view-pane" id="view-timetable">
           <div class="view-header-bar">
             <div class="view-heading-group">
-              <span class="view-heading-title">Timetable &amp; Variable Classrooms</span>
-              <span class="view-heading-sub">SRM University AP Dynamic Room Matrix</span>
+              <span class="view-heading-title">Timetable &amp; Classrooms</span>
+              <span class="view-heading-sub">SRM University AP schedule</span>
             </div>
             <div class="view-actions-group">
               <button class="btn btn-secondary btn-sm" onclick="AddonApp.quickConnectERP()">
@@ -506,7 +503,7 @@
             </div>
           </div>
 
-          <div id="timetable-schedule-container" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px;">
+          <div id="timetable-schedule-container" style="background: var(--bg-canvas); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 14px;">
             <div class="empty-compact">
               <span>Connect Student Portal to view full weekly schedule.</span>
             </div>
@@ -518,7 +515,7 @@
 
   </div>
 
-  <!-- ── Command Palette Modal (Ctrl+K) ─────────────────────────────────── -->
+  <!-- ── Raycast-Style Command Palette Modal (Ctrl+K) ───────────────────── -->
   <div class="command-palette-overlay" id="command-palette" role="dialog" aria-modal="true">
     <div class="command-palette-card">
       <div class="command-palette-search">
@@ -528,7 +525,7 @@
         </svg>
         <input type="text" class="command-palette-input" id="command-palette-input"
           placeholder="Type a command or search coursework..." autocomplete="off">
-        <kbd style="font-size: 10px; font-family: var(--font-mono); color: var(--text-muted); background: var(--bg-card); padding: 2px 6px; border: 1px solid var(--border-strong); border-radius: 3px;">ESC</kbd>
+        <kbd style="font-size: 10px; font-family: var(--font-mono); color: var(--text-muted); background: var(--bg-surface); padding: 1px 5px; border: 1px solid var(--border-color); border-radius: 2px;">ESC</kbd>
       </div>
       <div class="command-palette-results" id="command-palette-results">
         <!-- Dynamically rendered commands -->
@@ -536,7 +533,7 @@
     </div>
   </div>
 
-  <!-- ── Settings & Account Integrations Modal ──────────────────────────── -->
+  <!-- ── Settings Modal ─────────────────────────────────────────────────── -->
   <div class="modal-overlay" id="settings-modal" role="dialog" aria-modal="true">
     <div class="modal-card">
       <div class="modal-header">
@@ -577,21 +574,21 @@
                 <span class="chip-dot"></span>
                 <b>Connected to Student Portal</b>
               </div>
-              <div class="isc-meta" style="display: flex; flex-direction: column; gap: 4px; margin: 10px 0; font-size: 11px;">
+              <div class="isc-meta" style="display: flex; flex-direction: column; gap: 4px; margin: 8px 0; font-size: 11px;">
                 <div class="isc-row" style="display: flex; justify-content: space-between;">
                   <span class="isc-label" style="color: var(--text-muted);">Student ID:</span>
-                  <span class="isc-val" id="portal-info-id" style="font-weight: 600;">Not available</span>
+                  <span class="isc-val" id="portal-info-id" style="font-weight: 500;">Not available</span>
                 </div>
                 <div class="isc-row" style="display: flex; justify-content: space-between;">
                   <span class="isc-label" style="color: var(--text-muted);">Student Name:</span>
-                  <span class="isc-val" id="portal-info-name" style="font-weight: 600;">Student</span>
+                  <span class="isc-val" id="portal-info-name" style="font-weight: 500;">Student</span>
                 </div>
                 <div class="isc-row" style="display: flex; justify-content: space-between;">
                   <span class="isc-label" style="color: var(--text-muted);">Last Synced:</span>
-                  <span class="isc-val" id="portal-info-synced" style="font-weight: 600;">Just now</span>
+                  <span class="isc-val" id="portal-info-synced" style="font-weight: 500;">Just now</span>
                 </div>
               </div>
-              <div class="isc-actions" style="display: flex; gap: 8px;">
+              <div class="isc-actions" style="display: flex; gap: 6px;">
                 <button class="btn btn-secondary btn-sm" id="btn-erp-refresh" data-action="refreshERP"
                   onclick="AddonApp.refreshERP()">Refresh Timetable</button>
                 <button class="btn btn-danger btn-sm" id="btn-erp-disconnect" data-action="disconnectERP"
@@ -622,14 +619,14 @@
               Connect Student Portal
             </button>
 
-            <div style="text-align: center; margin: 10px 0; font-size: 11px; color: var(--text-muted);">OR</div>
+            <div style="text-align: center; margin: 8px 0; font-size: 11px; color: var(--text-muted);">OR</div>
 
             <button class="btn btn-secondary btn-block" id="btn-erp-quick" data-action="quickConnectERP"
               onclick="AddonApp.quickConnectERP()">
               1-Click Load SRM AP CSE Schedule
             </button>
             <span style="font-size: 10px; color: var(--text-muted); display: block; margin-top: 4px; text-align: center;">
-              Loads the official SRM AP CSE schedule and variable classrooms instantly.
+              Loads the official SRM AP CSE schedule and classrooms instantly.
             </span>
           </div>
         </div>
@@ -642,13 +639,13 @@
                 <span class="chip-dot"></span>
                 <b>Connected to Google Classroom</b>
               </div>
-              <div class="isc-meta" style="margin: 10px 0; font-size: 11px;">
+              <div class="isc-meta" style="margin: 8px 0; font-size: 11px;">
                 <div class="isc-row" style="display: flex; justify-content: space-between;">
                   <span class="isc-label" style="color: var(--text-muted);">Google Account:</span>
-                  <span class="isc-val" id="google-info-email" style="font-weight: 600;">Active Session</span>
+                  <span class="isc-val" id="google-info-email" style="font-weight: 500;">Active Session</span>
                 </div>
               </div>
-              <div class="isc-actions" style="display: flex; gap: 8px;">
+              <div class="isc-actions" style="display: flex; gap: 6px;">
                 <button class="btn btn-secondary btn-sm" id="btn-google-sync" data-action="syncClassroom"
                   onclick="AddonApp.syncClassroom()">Sync Coursework</button>
                 <button class="btn btn-danger btn-sm" id="btn-google-disconnect" data-action="disconnectGoogle"
@@ -669,8 +666,8 @@
             </button>
 
             <!-- Direct Token Section -->
-            <div style="margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--border-subtle);">
-              <label class="form-label" style="font-size: 11px;" for="direct-token-input">Paste Google Bearer Access Token (Optional)</label>
+            <div style="margin-top: 12px; padding-top: 8px; border-top: 1px solid var(--border-color);">
+              <label class="form-label" style="font-size: 11px;" for="direct-token-input">Paste Google Access Token (Optional)</label>
               <div style="display: flex; gap: 6px;">
                 <input type="password" class="form-input" id="direct-token-input" placeholder="ya29.a0A..."
                   style="font-size: 11px;">
@@ -684,17 +681,17 @@
         <!-- Tab 3: OAuth & AI Credentials Config -->
         <div class="tab-pane" id="tab-pane-config" style="display: none;">
           <p class="modal-intro">
-            Configure your institutional Google Cloud OAuth credentials and OpenAI / ChatGPT API Key.
+            Configure your Google Cloud OAuth credentials and OpenAI API Key.
           </p>
 
           <div class="form-group">
-            <label class="form-label" for="config-openai-key">OpenAI / ChatGPT API Key</label>
+            <label class="form-label" for="config-openai-key">OpenAI API Key</label>
             <input type="password" class="form-input" id="config-openai-key" placeholder="sk-proj-...">
-            <span style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 4px;">Used for
-              intelligent deliverable synthesis and Study Brain course-material RAG.</span>
+            <span style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 3px;">Used for
+              intelligent deliverable synthesis and Study Brain RAG.</span>
           </div>
 
-          <div class="form-group" style="margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border-color);">
+          <div class="form-group" style="margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border-color);">
             <label class="form-label" for="config-client-id">Google Client ID</label>
             <input type="text" class="form-input" id="config-client-id"
               placeholder="e.g. 123456789.apps.googleusercontent.com">
