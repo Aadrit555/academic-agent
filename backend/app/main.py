@@ -178,7 +178,7 @@ def get_google_auth_url(request: Request, target: str = "/addon", user: User = D
     scheme = request.url.scheme or "http"
     dynamic_redirect = f"{scheme}://{host}/api/auth/google/callback"
 
-    target_email = "aadriteye@gmail.com"
+    target_email = user.email or "aadrit_y@srmap.edu.in"
     state_payload = json.dumps({"user_id": user.id, "target": target, "redirect_uri": dynamic_redirect})
     state = base64.urlsafe_b64encode(state_payload.encode("utf-8")).decode("utf-8")
     return {"url": AuthService.get_auth_url(redirect_uri=dynamic_redirect, state=state, login_hint=target_email)}
@@ -243,7 +243,7 @@ def quick_connect_google(db: Session = Depends(get_db), user: User = Depends(cur
         integ = ClassroomIntegration(user_id=user.id)
         db.add(integ)
     integ.access_token = "academic_agent_google_token"
-    integ.email = "aadriteye@gmail.com"
+    integ.email = user.email or "aadrit_y@srmap.edu.in"
     integ.is_demo_mode = False
     integ.connected_at = datetime.now(timezone.utc)
     integ.last_synced_at = datetime.now(timezone.utc)
