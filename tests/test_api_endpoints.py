@@ -8,26 +8,13 @@ from datetime import datetime, timezone, timedelta
 from backend.app.database import SessionLocal
 from backend.app.models import User, Course, Coursework, TimetableEntry, Document, DocumentChunk
 from backend.app.auth.security import hash_password
+from backend.app.auth.auth_service import get_or_create_default_user
 
 @pytest.fixture(scope="module")
 def client():
     init_db()
     db = SessionLocal()
-    user = db.query(User).filter_by(email="student@university.edu").first()
-    if not user:
-        pwd_hash, salt = hash_password("Pass@Academic2026!")
-        user = User(
-            id=1,
-            email="student@university.edu",
-            name="Student",
-            hashed_password=pwd_hash,
-            salt=salt,
-            role="student",
-            is_active=True
-        )
-        db.add(user)
-        db.commit()
-        db.refresh(user)
+    user = get_or_create_default_user(db)
 
     course = db.query(Course).filter_by(user_id=user.id).first()
     if not course:

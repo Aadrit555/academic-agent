@@ -2,6 +2,7 @@ import os
 import json
 import logging
 from typing import Optional
+from pydantic import BaseModel
 from contextlib import asynccontextmanager
 from pathlib import Path
 from fastapi import FastAPI, Request, Header, Depends, HTTPException, UploadFile, File, Form, Query
@@ -286,8 +287,9 @@ def direct_token_google(req: DirectTokenRequest, db: Session = Depends(get_db), 
 @app.post("/api/erp/quick-connect")
 def quick_connect_erp(db: Session = Depends(get_db), user: User = Depends(current_user)):
     integ = db.query(ERPIntegration).filter_by(user_id=user.id).first()
-    student_id = (integ.student_id if integ and integ.student_id and integ.student_id != "AP22110010555" else None) or user.email.split("@")[0].upper()
-    return ERPService._connect_offline_fallback(db, user, student_id, "demo", "User requested Quick Connect")
+    if not integ or not integ.student_id:
+        raise HTTPException(status_code=400, detail="Please enter your SRM AP Registration Number and password in Settings to connect.")
+    return {"message": "Student ID registered", "student_id": integ.student_id, "is_connected": integ.is_connected}
 
 @app.post("/api/auth/register", response_model=TokenResponse)
 def register_user(req: UserRegister, db: Session = Depends(get_db)):

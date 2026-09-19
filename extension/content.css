@@ -87,6 +87,53 @@
   background: #059669;
 }
 
+.aa-injected-card {
+  margin: 10px 0;
+  padding: 12px;
+  background: #0f172a;
+  border-radius: 8px;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.aa-injected-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.aa-injected-header .aa-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: #60a5fa;
+  letter-spacing: 0.5px;
+}
+
+.aa-classroom-secondary-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: #1e293b;
+  color: #94a3b8 !important;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid #334155;
+  cursor: pointer;
+  width: 100%;
+  margin-top: 6px;
+  transition: all 0.15s ease;
+  text-decoration: none;
+}
+
+.aa-classroom-secondary-btn:hover {
+  background: #334155;
+  color: #f8fafc !important;
+}
+
 /* Side Drawer Overlay Iframe */
 #academic-agent-drawer {
   position: fixed !important;

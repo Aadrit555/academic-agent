@@ -181,9 +181,8 @@ class ERPService:
                     "student_name": integ.student_name,
                     "last_synced_at": integ.last_synced_at.isoformat() if integ.last_synced_at else None
                 }
-            # If the SRM AP portal itself is unreachable (campus intranet only / DNS error from home)
             if "unreachable" in last_error.lower() or "getaddrinfo" in last_error.lower() or "connection" in last_error.lower():
-                return cls._connect_offline_fallback(db, user, clean_id, clean_pw, last_error)
+                raise ValueError(f"SRM AP Student Portal unreachable ({last_error}). Please ensure you are connected to the campus network or VPN.")
             raise ValueError(f"SRM AP ERP Login Failed: {last_error or 'Please check your Registration Number and Password'}")
 
         # Login Succeeded: Fetch all student report fragments
@@ -450,88 +449,4 @@ class ERPService:
         return {
             "message": f"Successfully imported and synced {len(parsed_entries)} schedule entries.",
             "imported_count": len(parsed_entries)
-        }
-
-    @classmethod
-    def _connect_offline_fallback(
-        cls,
-        db: Session,
-        user: User,
-        clean_id: str,
-        clean_pw: str,
-        network_error: str
-    ) -> Dict[str, Any]:
-        """Provides a realistic SRM AP CSE student integration when student.srmap.edu.in is offline or unreachable from outside campus."""
-        logger.info(f"Connecting in offline mode for student {clean_id} due to network reachability: {network_error}")
-        
-        sample_attendance = [
-            {"subject": "Design and Analysis of Algorithms", "code": "21CSC204J", "conducted": 36, "attended": 32, "percentage": 88.8, "margin": 5},
-            {"subject": "Digital Electronics", "code": "21ECE201J", "conducted": 30, "attended": 27, "percentage": 90.0, "margin": 4},
-            {"subject": "Operating Systems", "code": "21CSC203J", "conducted": 28, "attended": 24, "percentage": 85.7, "margin": 3},
-            {"subject": "Computer Networks", "code": "21CSC205J", "conducted": 32, "attended": 28, "percentage": 87.5, "margin": 4},
-            {"subject": "Formal Language and Automata Theory", "code": "21CSC206T", "conducted": 26, "attended": 22, "percentage": 84.6, "margin": 2},
-        ]
-        sample_profile = {
-            "reg_no": clean_id,
-            "name": user.name if user.name and user.name != "Student" else f"Student ({clean_id})",
-            "program": "B.Tech Computer Science and Engineering",
-            "semester": "5",
-            "section": "CSE-1",
-            "cgpa": "8.82",
-            "email": f"{clean_id.lower()}@srmap.edu.in"
-        }
-        sample_timetable = [
-            {"day": "Monday", "day_of_week": 0, "start_time": "09:00", "end_time": "09:50", "course_code": "21CSC204J", "course_name": "Design and Analysis of Algorithms", "room_no": "ALH 201", "faculty": "Dr. CSE Faculty"},
-            {"day": "Monday", "day_of_week": 0, "start_time": "10:00", "end_time": "10:50", "course_code": "21ECE201J", "course_name": "Digital Electronics", "room_no": "ALH 201", "faculty": "Prof. ECE Dept"},
-            {"day": "Monday", "day_of_week": 0, "start_time": "11:00", "end_time": "11:50", "course_code": "21CSC203J", "course_name": "Operating Systems", "room_no": "Tiered 102", "faculty": "Dr. OS Faculty"},
-            {"day": "Tuesday", "day_of_week": 1, "start_time": "09:00", "end_time": "09:50", "course_code": "21CSC205J", "course_name": "Computer Networks", "room_no": "Tiered 102", "faculty": "Dr. CN Faculty"},
-            {"day": "Tuesday", "day_of_week": 1, "start_time": "10:00", "end_time": "10:50", "course_code": "21CSC204J", "course_name": "Design and Analysis of Algorithms", "room_no": "ALH 304", "faculty": "Dr. CSE Faculty"},
-            {"day": "Wednesday", "day_of_week": 2, "start_time": "09:00", "end_time": "10:50", "course_code": "21CSC204J", "course_name": "Algorithms Lab", "room_no": "Lab 402", "faculty": "Dr. CSE Faculty"},
-            {"day": "Thursday", "day_of_week": 3, "start_time": "09:00", "end_time": "09:50", "course_code": "21CSC203J", "course_name": "Operating Systems", "room_no": "ALH 201", "faculty": "Dr. OS Faculty"},
-            {"day": "Friday", "day_of_week": 4, "start_time": "10:00", "end_time": "10:50", "course_code": "21CSC205J", "course_name": "Computer Networks", "room_no": "ALH 201", "faculty": "Dr. CN Faculty"},
-        ]
-
-        integ = cls.get_or_create_integration(db, user)
-        integ.portal_type = "srmap_evarsity"
-        integ.portal_url = "https://student.srmap.edu.in/srmapstudentcorner"
-        integ.student_id = clean_id
-        integ.student_name = sample_profile["name"]
-        integ.encrypted_password = encrypt_secret(clean_pw)
-        integ.session_cookie = encrypt_secret("offline_intranet_session")
-        integ.attendance_data = json.dumps(sample_attendance)
-        integ.profile_data = json.dumps(sample_profile)
-        integ.timetable_data = json.dumps(sample_timetable)
-        integ.is_connected = True
-        integ.last_synced_at = utcnow()
-
-        user.name = sample_profile["name"]
-        if "@" not in user.email or user.email == "student@university.edu":
-            user.email = sample_profile["email"]
-
-        # Clear and repopulate Timetable entries
-        db.query(TimetableEntry).filter_by(user_id=user.id).delete()
-        for te in sample_timetable:
-            entry = TimetableEntry(
-                user_id=user.id,
-                day_of_week=te["day_of_week"],
-                subject=te["course_name"],
-                classroom=te["room_no"],
-                faculty=te["faculty"],
-                start_time=te["start_time"],
-                end_time=te["end_time"]
-            )
-            db.add(entry)
-        db.commit()
-        db.refresh(integ)
-
-        return {
-            "success": True,
-            "is_cached": False,
-            "is_offline_mode": True,
-            "student_name": integ.student_name,
-            "student_id": integ.student_id,
-            "message": "Connected! (SRM AP portal is campus-intranet only; loaded official SRM AP CSE schedule & variable classrooms).",
-            "enrolled_courses": len(sample_attendance),
-            "attendance_records": len(sample_attendance),
-            "timetable_entries": len(sample_timetable)
         }

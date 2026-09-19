@@ -118,10 +118,42 @@
         <span>⚡ Auto-Create &amp; Turn In (Zero Download)</span>
       </button>
 
-      <button class="aa-classroom-inline-btn" id="aa-btn-open-dashboard" style="background: #334155; margin-top: 2px;">
+      <button class="aa-classroom-secondary-btn" id="aa-drawer-download-btn" style="padding: 10px 14px; font-size: 12px;">
+        <span>📥 Download Verified Solution &amp; Report (.zip)</span>
+      </button>
+
+      <button class="aa-classroom-inline-btn" id="aa-btn-open-dashboard" style="background: #334155; margin-top: 4px;">
         <span>Open Companion Web Layer ↗</span>
       </button>
     `;
+
+    const drawerDlBtn = document.getElementById("aa-drawer-download-btn");
+    if (drawerDlBtn) {
+      drawerDlBtn.addEventListener("click", async () => {
+        drawerDlBtn.innerHTML = `<span>⏳ Preparing Solution Package...</span>`;
+        try {
+          const cwRes = await fetch(`${BACKEND_URL}/api/classroom/coursework`).catch(() => null);
+          if (cwRes && cwRes.ok) {
+            const cwList = await cwRes.json();
+            if (cwList && cwList[0]) {
+              await fetch(`${BACKEND_URL}/api/assignment/generate`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ coursework_id: cwList[0].id })
+              }).catch(() => null);
+              window.open(`${BACKEND_URL}/api/assignment/${cwList[0].id}/download-all`, "_blank");
+              drawerDlBtn.innerHTML = `<span>✓ Downloaded Solution Package</span>`;
+              showToast("Downloaded verified solution code & academic lab report!", "success");
+              return;
+            }
+          }
+          throw new Error("No assignment found to download.");
+        } catch (e) {
+          drawerDlBtn.innerHTML = `<span>📥 Download Verified Solution &amp; Report (.zip)</span>`;
+          showToast(e.message, "error");
+        }
+      });
+    }
 
     const saveBtn = document.getElementById("aa-btn-save-id");
     if (saveBtn) {
@@ -302,13 +334,25 @@
       }
     }
 
-    if (!target || !target.container) return;
+    if (document.getElementById("aa-injected-card")) return;
 
-    const btn = document.createElement("button");
-    btn.id = "aa-injected-submit-btn";
-    btn.className = "aa-classroom-inline-btn";
-    btn.innerHTML = `<span>⚡ Auto-Create &amp; Turn In (Zero Download)</span>`;
+    const card = document.createElement("div");
+    card.id = "aa-injected-card";
+    card.className = "aa-injected-card";
+    card.innerHTML = `
+      <div class="aa-injected-header">
+        <span class="aa-badge">⚡ ACADEMIC AGENT AI</span>
+        <span style="font-size: 10px; color: #94a3b8;">Zero-Touch Direct Turn-In</span>
+      </div>
+      <button class="aa-classroom-inline-btn" id="aa-injected-submit-btn" style="margin: 4px 0;">
+        <span>⚡ Auto-Create &amp; Turn In (Zero Download)</span>
+      </button>
+      <button class="aa-classroom-secondary-btn" id="aa-injected-download-btn">
+        <span>📥 Download Verified Solution &amp; Report (.zip)</span>
+      </button>
+    `;
 
+    const btn = card.querySelector("#aa-injected-submit-btn");
     btn.addEventListener("click", async (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -373,10 +417,68 @@
       }
     });
 
+    const dlBtn = card.querySelector("#aa-injected-download-btn");
+    dlBtn.addEventListener("click", async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dlBtn.innerHTML = `<span>⏳ Preparing Solution Package...</span>`;
+
+      try {
+        const details = getLivePageDetails();
+        const ctx = getCourseContext();
+        let cwId = null;
+
+        if (details.title && details.title !== "Current Classroom Assignment") {
+          const regRes = await fetch(`${BACKEND_URL}/api/classroom/register-live`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              title: details.title,
+              description: details.description || "",
+              course_name: details.courseName || "Google Classroom Course",
+              classroom_course_id: ctx ? ctx.courseId : "c_live",
+              coursework_id: ctx ? ctx.courseworkId : "",
+              materials: details.attachments.map(a => ({ driveFile: { title: a, id: "live_handout" } }))
+            })
+          }).catch(() => null);
+
+          if (regRes && regRes.ok) {
+            const regData = await regRes.json();
+            cwId = regData.id;
+          }
+        }
+
+        if (!cwId) {
+          const cwRes = await fetch(`${BACKEND_URL}/api/classroom/coursework`).catch(() => null);
+          if (cwRes && cwRes.ok) {
+            const cwList = await cwRes.json();
+            if (cwList && cwList[0]) cwId = cwList[0].id;
+          }
+        }
+
+        if (cwId) {
+          await fetch(`${BACKEND_URL}/api/assignment/generate`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ coursework_id: cwId })
+          }).catch(() => null);
+
+          window.open(`${BACKEND_URL}/api/assignment/${cwId}/download-all`, "_blank");
+          dlBtn.innerHTML = `<span>✓ Downloaded Solution Package</span>`;
+          showToast("Downloaded verified solution code & academic lab report!", "success");
+        } else {
+          throw new Error("Could not resolve assignment ID for download.");
+        }
+      } catch (err) {
+        dlBtn.innerHTML = `<span>📥 Download Verified Solution &amp; Report (.zip)</span>`;
+        showToast(err.message, "error");
+      }
+    });
+
     if (target.insertBefore) {
-      target.container.insertBefore(btn, target.insertBefore);
+      target.container.insertBefore(card, target.insertBefore);
     } else {
-      target.container.prepend(btn);
+      target.container.prepend(card);
     }
   }
 
